@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v2.0</title>
-  <link rel="manifest" href="manifest.json?v=2.0" />
-  <link rel="stylesheet" href="styles.css?v=2.0" />
+  <title>자산 매니저 v2.2</title>
+  <link rel="manifest" href="manifest.json?v=2.1" />
+  <link rel="stylesheet" href="styles.css?v=2.1" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v2.0</p>
+      <p>통합 순자산 대시보드 v2.1</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -27,7 +27,7 @@
       </div>
 
       <div class="card fx-card">
-        <div class="card-head"><h2>환율 기준</h2><small id="fxUpdatedAtText">아직 저장 기록 없음</small></div>
+        <div class="card-head"><h2>환율 기준</h2><small id="fxUpdatedAtText">아직 갱신 기록 없음</small></div>
         <div class="fx-grid">
           <div><span>USD/KRW</span><b id="usdRateView">₩0</b></div>
           <div><span>USDT/KRW</span><b id="usdtRateView">₩0</b></div>
@@ -57,9 +57,10 @@
           <select id="assetType">
             <option>코인</option><option>주식</option><option>은행</option><option>현금</option><option>부동산</option><option>자동차</option><option>금</option><option>기타</option>
           </select>
-          <input id="assetAccount" placeholder="거래소/은행/증권사/계좌명 예: 업비트, 연금저축" />
+          <input id="assetAccount" placeholder="거래소/은행/증권사/계좌명 예: 업비트, 바이낸스, 연금저축" />
           <input id="assetName" placeholder="자산명 예: BTC, SCHD, HKD 예금" required />
           <input id="assetCurrency" placeholder="통화 KRW/USD/HKD/USDT" value="KRW" />
+          <div id="currencyHint" class="mini-hint">기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate=USDT</div>
           <input id="assetQty" type="number" step="any" placeholder="수량" value="1" required />
           <input id="assetPrice" type="number" step="any" placeholder="단가 또는 평가액" required />
           <div id="assetPreview" class="preview">평가액 미리보기: ₩0</div>
@@ -96,15 +97,23 @@
     <section id="settings" class="view">
       <div class="card">
         <h2>목표 / 환율</h2>
-        <div class="form always">
-          <input id="goalAmount" type="number" placeholder="순자산 목표 KRW 예: 1000000000" />
-          <input id="usdRate" type="number" placeholder="USD → KRW" value="1380" />
-          <input id="usdtRate" type="number" placeholder="USDT → KRW" value="1380" />
-          <input id="hkdRate" type="number" placeholder="HKD → KRW" value="195" />
-          <input id="audRate" type="number" placeholder="AUD → KRW" value="1080" />
-          <button id="savePrefs">설정 저장</button>
+        <div class="form always fx-form">
+          <label><span>순자산 목표</span><input id="goalAmount" type="number" placeholder="KRW 예: 1000000000" /></label>
+          <label><span>USD/KRW</span><input id="usdRate" type="number" placeholder="미국 달러 1달러당 원화" value="1380" /></label>
+          <label><span>USDT/KRW</span><input id="usdtRate" type="number" placeholder="테더 1USDT당 원화" value="1380" /></label>
+          <label><span>HKD/KRW</span><input id="hkdRate" type="number" placeholder="홍콩달러 1달러당 원화" value="195" /></label>
+          <label><span>AUD/KRW</span><input id="audRate" type="number" placeholder="호주달러 1달러당 원화" value="1080" /></label>
+          <button id="savePrefs">수동 환율/목표 저장</button>
+          <p id="fxAutoStatus" class="status">앱 실행 시 자동으로 환율을 조회합니다.</p>
         </div>
-        <p class="note">v2.0은 환율을 기준으로 외국 거래소 자산을 원화로 환산합니다. 자동 환율 조회는 다음 단계에서 붙일 수 있습니다.</p>
+        <div class="exchange-guide">
+          <b>거래소 기본통화</b>
+          <div><span>업비트 · 빗썸 · 코인원</span><strong>KRW</strong></div>
+          <div><span>바이낸스 · OKX · Bybit · Bitget · MEXC · Gate.io</span><strong>USDT</strong></div>
+          <div><span>미국주식 · 미국 ETF</span><strong>USD</strong></div>
+          <div><span>홍콩 은행 · 홍콩 모기지</span><strong>HKD</strong></div>
+        </div>
+        <p class="note">v2.2는 앱 실행 시 환율을 자동조회합니다. 실패하면 마지막 저장 환율을 그대로 사용하며, 필요할 때만 수동 저장을 사용하세요.</p>
       </div>
       <div class="card">
         <h2>백업 / 복원</h2>
@@ -133,6 +142,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=2.0"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>

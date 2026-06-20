@@ -1,1 +1,9 @@
-{"name":"자산 매니저","short_name":"자산매니저","start_url":"./?v=2.0","display":"standalone","background_color":"#0f172a","theme_color":"#111827","icons":[]}
+{
+  "name": "Asset Manager",
+  "short_name": "Asset",
+  "start_url": "./index.html?v=2.2",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#111827",
+  "icons": []
+}

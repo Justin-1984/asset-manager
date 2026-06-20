@@ -1,5 +1,5 @@
-const STORAGE_KEY='asset-manager-v2-0';
-const OLD_KEYS=['asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
+const STORAGE_KEY='asset-manager-v2-2';
+const OLD_KEYS=['asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -10,15 +10,53 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const money=n=>new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n)||0);
 const moneyShort=n=>{n=Math.round(Number(n)||0);const abs=Math.abs(n);if(abs>=100000000)return '₩'+(n/100000000).toFixed(abs>=1000000000?1:2).replace(/\.0+$|0+$/,'')+'억';if(abs>=10000)return '₩'+Math.round(n/10000).toLocaleString('ko-KR')+'만';return money(n);};
 const num=n=>new Intl.NumberFormat('ko-KR',{maximumFractionDigits:8}).format(Number(n)||0);
+
+const exchangeCurrencyMap={
+  '업비트':'KRW','upbit':'KRW','빗썸':'KRW','bithumb':'KRW','코인원':'KRW','coinone':'KRW',
+  '바이낸스':'USDT','binance':'USDT','okx':'USDT','오케이엑스':'USDT','bybit':'USDT','바이비트':'USDT','bitget':'USDT','비트겟':'USDT','mexc':'USDT','gate':'USDT','gate.io':'USDT','kucoin':'USDT','쿠코인':'USDT',
+  '미국주식':'USD','미국':'USD','schwab':'USD','키움':'USD','토스증권':'USD','연금저축':'KRW','isa':'KRW','irp':'KRW',
+  '항생':'HKD','hang seng':'HKD','hsbc':'HKD','홍콩':'HKD'
+};
+function guessCurrencyFromAccount(account){const v=String(account||'').trim().toLowerCase();if(!v)return '';for(const [k,c] of Object.entries(exchangeCurrencyMap)){if(v.includes(k.toLowerCase()))return c;}return '';}
+function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate=USDT';}
+
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'2.0'};}catch{}} return {version:'2.0',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='2.0';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'2.2'};}catch{}} return {version:'2.2',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='2.2';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function debtAmount(d){return (Number(d.amount)||0)*fx(d.currency);}
 function foreignExchange(account){return /binance|바이낸스|okx|bybit|바이비트|bitget|mexc|gate|kucoin|kraken/i.test(String(account||''));}
-function updateAssetPreview(){const el=$('assetPreview');if(!el)return;const cur=String($('assetCurrency').value||'KRW').toUpperCase();const qty=Number($('assetQty').value)||0;const price=Number($('assetPrice').value)||0;const krw=qty*price*fx(cur);el.innerHTML=`평가액 미리보기: <b>${money(krw)}</b> <span>(${num(qty)} × ${num(price)} ${esc(cur)} × 환율 ${num(fx(cur))})</span>`;}
-function refreshFxBoard(){['usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{const el=$(id+'View');if(el)el.textContent=money(Number(prefs[id])||0);});const t=$('fxUpdatedAtText');if(t)t.textContent=prefs.fxUpdatedAt?`마지막 저장 ${prefs.fxUpdatedAt}`:'아직 저장 기록 없음';}
+function updateAssetPreview(){updateCurrencyHint();const el=$('assetPreview');if(!el)return;const cur=String($('assetCurrency').value||'KRW').toUpperCase();const qty=Number($('assetQty').value)||0;const price=Number($('assetPrice').value)||0;const krw=qty*price*fx(cur);el.innerHTML=`평가액 미리보기: <b>${money(krw)}</b> <span>(${num(qty)} × ${num(price)} ${esc(cur)} × 환율 ${num(fx(cur))})</span>`;}
+function refreshFxBoard(){['usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{const el=$(id+'View');if(el)el.textContent=money(Number(prefs[id])||0);const input=$(id);if(input && document.activeElement!==input)input.value=prefs[id]||'';});const t=$('fxUpdatedAtText');if(t)t.textContent=prefs.fxUpdatedAt?`마지막 갱신 ${prefs.fxUpdatedAt}`:'아직 갱신 기록 없음';const st=$('fxAutoStatus');if(st)st.textContent=prefs.fxAutoStatus||'앱 실행 시 자동으로 환율을 조회합니다.';}
+
+async function autoUpdateFx(){
+ const st=$('fxAutoStatus');
+ try{
+  if(st)st.textContent='환율 자동조회 중...';
+  const res=await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW,HKD,AUD',{cache:'no-store'});
+  if(!res.ok)throw new Error('환율 서버 응답 오류');
+  const data=await res.json();
+  const r=data.rates||{};
+  const usdKrw=Number(r.KRW);
+  const hkdPerUsd=Number(r.HKD);
+  const audPerUsd=Number(r.AUD);
+  if(!usdKrw||!hkdPerUsd||!audPerUsd)throw new Error('환율 데이터 부족');
+  prefs.usdRate=Math.round(usdKrw*100)/100;
+  prefs.usdtRate=Math.round(usdKrw*100)/100;
+  prefs.hkdRate=Math.round((usdKrw/hkdPerUsd)*100)/100;
+  prefs.audRate=Math.round((usdKrw/audPerUsd)*100)/100;
+  prefs.fxUpdatedAt=new Date().toLocaleString('ko-KR');
+  prefs.fxAutoStatus='자동 환율 조회 완료 · Frankfurter 기준';
+  localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+  render();
+ }catch(e){
+  prefs.fxAutoStatus='자동 환율 조회 실패 · 마지막 저장 환율 사용';
+  localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+  if(st)st.textContent=prefs.fxAutoStatus;
+ }
+}
+
 function totalAssets(){return state.assets.reduce((s,a)=>s+assetAmount(a),0)}
 function totalDebts(){return state.debts.reduce((s,d)=>s+debtAmount(d),0)}
 function netWorth(){return totalAssets()-totalDebts()}
@@ -54,6 +92,7 @@ window.editDebt=id=>{const d=state.debts.find(x=>x.id===id);if(!d)return;editing
 $('addAssetBtn').onclick=()=>{$('assetForm').classList.toggle('hidden');if(!$('assetForm').classList.contains('hidden'))resetAssetForm();};$('addDebtBtn').onclick=()=>{$('debtForm').classList.toggle('hidden');if(!$('debtForm').classList.contains('hidden'))resetDebtForm();};$('assetCancelBtn').onclick=resetAssetForm;$('debtCancelBtn').onclick=resetDebtForm;
 ['assetCurrency','assetQty','assetPrice','assetAccount'].forEach(id=>{if($(id))$(id).addEventListener('input',()=>{if(id==='assetAccount'&&$('assetType').value==='코인'&&foreignExchange($('assetAccount').value)&&!editingAssetId){$('assetCurrency').value='USDT';}updateAssetPreview();});});
 if($('assetType'))$('assetType').addEventListener('change',()=>{if($('assetType').value==='코인'&&foreignExchange($('assetAccount').value))$('assetCurrency').value='USDT';updateAssetPreview();});
+if($('assetAccount'))$('assetAccount').addEventListener('blur',()=>{const guessed=guessCurrencyFromAccount($('assetAccount').value);if(guessed && (!$('assetCurrency').value || $('assetCurrency').value==='KRW')){$('assetCurrency').value=guessed;}updateAssetPreview();});
 $('assetForm').onsubmit=e=>{e.preventDefault();const item={id:editingAssetId||uid(),type:$('assetType').value,account:$('assetAccount').value.trim(),name:$('assetName').value.trim(),currency:$('assetCurrency').value.trim().toUpperCase()||'KRW',qty:Number($('assetQty').value),price:Number($('assetPrice').value)};if(editingAssetId){state.assets=state.assets.map(a=>a.id===editingAssetId?item:a);}else state.assets.push(item);resetAssetForm();save();};
 $('debtForm').onsubmit=e=>{e.preventDefault();const item={id:editingDebtId||uid(),type:$('debtType').value,name:$('debtName').value.trim(),currency:$('debtCurrency').value.trim().toUpperCase()||'KRW',amount:Number($('debtAmount').value),rate:$('debtRate').value};if(editingDebtId){state.debts=state.debts.map(d=>d.id===editingDebtId?item:d);}else state.debts.push(item);resetDebtForm();save();};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render();});
@@ -62,11 +101,11 @@ if($('assetSearch'))$('assetSearch').oninput=e=>{assetSearch=e.target.value;rend
 document.querySelectorAll('[data-bar-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bar-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');barMode=b.dataset.barMode;drawBar();});
 $('themeToggle').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('asset-manager-theme',document.body.classList.contains('dark')?'dark':'light');render();};if(localStorage.getItem('asset-manager-theme')==='dark')document.body.classList.add('dark');
 $('snapshotBtn').onclick=()=>{const today=new Date().toLocaleDateString('ko-KR');const snap={date:today,assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()};const same=state.snapshots.findIndex(s=>s.date===today);if(same>=0)state.snapshots[same]=snap;else state.snapshots.push(snap);save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
-['goalAmount','usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,fxUpdatedAt:new Date().toLocaleString('ko-KR')};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표 설정 저장 완료');};
+['goalAmount','usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,fxUpdatedAt:new Date().toLocaleString('ko-KR')};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표 설정 저장 완료');prefs.fxAutoStatus='수동 환율 저장 완료';localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));};
 ['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');};function setStatus(m){$('syncStatus').textContent=m;}
 async function gh(method,body){settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');const{ghOwner,ghRepo,ghPath,ghToken}=settings;if(!ghOwner||!ghRepo||!ghPath||!ghToken)throw new Error('GitHub 설정을 먼저 저장하세요.');const url=`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${encodeURIComponent(ghPath).replaceAll('%2F','/')}`;const headers={Authorization:`Bearer ${ghToken}`,Accept:'application/vnd.github+json'};return method==='GET'?fetch(url,{headers}):fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});}
 $('backupBtn').onclick=async()=>{try{setStatus('백업 중...');let sha;const r=await gh('GET');if(r.ok)sha=(await r.json()).sha;const payload={state,prefs,backupAt:new Date().toISOString()};const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));const res=await gh('PUT',{message:`asset-manager backup ${new Date().toISOString()}`,content,sha});if(!res.ok)throw new Error(await res.text());setStatus('GitHub 백업 완료');}catch(e){setStatus('백업 실패: '+e.message)}};
 $('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){setStatus('복원 실패: '+e.message)}};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});updateAssetPreview();render();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=2.2').catch(()=>{});updateAssetPreview();render();autoUpdateFx();
