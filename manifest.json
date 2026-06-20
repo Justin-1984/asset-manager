@@ -1,7 +1,7 @@
 {
   "name": "Asset Manager",
   "short_name": "Asset",
-  "start_url": "./index.html?v=2.3",
+  "start_url": "./index.html?v=3.0",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#111827",
