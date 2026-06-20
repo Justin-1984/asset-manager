@@ -1,5 +1,5 @@
 const STORAGE_KEY='asset-manager-v3-9';
-const OLD_KEYS=['asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
+const OLD_KEYS=['asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -123,7 +123,7 @@ async function fetchPublicTicker(exchange){
 }
 
 function cleanCoinSymbol(name){return String(name||'').toUpperCase().replace(/(USDT|KRW|USD)$/,'').replace(/[^A-Z0-9]/g,'').trim();}
-function preferredPriceSources(asset){const acct=String(asset.account||'').toLowerCase();const cur=String(asset.currency||'').toUpperCase();if(cur==='KRW'||/upbit|업비트|bithumb|빗썸|coinone|코인원/.test(acct))return ['upbit','binance','okx','bybit','bitget','gate','htx','bingx'];if(/okx|오케이엑스/.test(acct))return ['okx','binance','bybit','bitget','gate','htx','bingx','upbit'];if(/bybit|바이비트/.test(acct))return ['bybit','binance','okx','bitget','gate','htx','bingx','upbit'];if(/bitget|비트겟/.test(acct))return ['bitget','binance','okx','bybit','gate','htx','bingx','upbit'];if(/gate/.test(acct))return ['gate','binance','okx','bybit','bitget','htx','bingx','upbit'];if(/htx|huobi|후오비/.test(acct))return ['htx','binance','okx','bybit','bitget','gate','bingx','upbit'];if(/bingx|빙엑스/.test(acct))return ['bingx','binance','okx','bybit','bitget','gate','htx','upbit'];return ['binance','okx','bybit','bitget','gate','htx','bingx','upbit'];}
+function preferredPriceSources(asset){const acct=String(asset.account||'').toLowerCase();const cur=String(asset.currency||'').toUpperCase();const stableUsdt=['binance','okx','bybit','bitget','htx','gate','bingx','upbit'];if(cur==='KRW'||/upbit|업비트|bithumb|빗썸|coinone|코인원/.test(acct))return ['upbit','binance','okx','bybit','bitget','htx','gate','bingx'];return stableUsdt;}
 async function fetchCryptoPriceBySource(symbol,source){
  const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
  const getJson=async url=>{const r=await timeout(9000,fetch(url,{cache:'no-store'}));if(!r.ok)throw new Error(source+' HTTP '+r.status);return r.json();};
