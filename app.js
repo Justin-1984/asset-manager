@@ -1,5 +1,5 @@
-const STORAGE_KEY='asset-manager-v2-2';
-const OLD_KEYS=['asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
+const STORAGE_KEY='asset-manager-v2-3';
+const OLD_KEYS=['asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -13,27 +13,27 @@ const num=n=>new Intl.NumberFormat('ko-KR',{maximumFractionDigits:8}).format(Num
 
 const exchangeCurrencyMap={
   '업비트':'KRW','upbit':'KRW','빗썸':'KRW','bithumb':'KRW','코인원':'KRW','coinone':'KRW',
-  '바이낸스':'USDT','binance':'USDT','okx':'USDT','오케이엑스':'USDT','bybit':'USDT','바이비트':'USDT','bitget':'USDT','비트겟':'USDT','mexc':'USDT','gate':'USDT','gate.io':'USDT','kucoin':'USDT','쿠코인':'USDT',
+  '바이낸스':'USDT','binance':'USDT','bingx':'USDT','빙엑스':'USDT','htx':'USDT','후오비':'USDT','huobi':'USDT','okx':'USDT','오케이엑스':'USDT','bybit':'USDT','바이비트':'USDT','bitget':'USDT','비트겟':'USDT','mexc':'USDT','gate':'USDT','gate.io':'USDT','kucoin':'USDT','쿠코인':'USDT',
   '미국주식':'USD','미국':'USD','schwab':'USD','키움':'USD','토스증권':'USD','연금저축':'KRW','isa':'KRW','irp':'KRW',
   '항생':'HKD','hang seng':'HKD','hsbc':'HKD','홍콩':'HKD'
 };
 function guessCurrencyFromAccount(account){const v=String(account||'').trim().toLowerCase();if(!v)return '';for(const [k,c] of Object.entries(exchangeCurrencyMap)){if(v.includes(k.toLowerCase()))return c;}return '';}
-function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate=USDT';}
+function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'2.2'};}catch{}} return {version:'2.2',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='2.2';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'2.3'};}catch{}} return {version:'2.3',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='2.3';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function debtAmount(d){return (Number(d.amount)||0)*fx(d.currency);}
-function foreignExchange(account){return /binance|바이낸스|okx|bybit|바이비트|bitget|mexc|gate|kucoin|kraken/i.test(String(account||''));}
+function foreignExchange(account){return /binance|바이낸스|bingx|빙엑스|htx|후오비|huobi|okx|bybit|바이비트|bitget|mexc|gate|kucoin|kraken/i.test(String(account||''));}
 function updateAssetPreview(){updateCurrencyHint();const el=$('assetPreview');if(!el)return;const cur=String($('assetCurrency').value||'KRW').toUpperCase();const qty=Number($('assetQty').value)||0;const price=Number($('assetPrice').value)||0;const krw=qty*price*fx(cur);el.innerHTML=`평가액 미리보기: <b>${money(krw)}</b> <span>(${num(qty)} × ${num(price)} ${esc(cur)} × 환율 ${num(fx(cur))})</span>`;}
 function refreshFxBoard(){['usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{const el=$(id+'View');if(el)el.textContent=money(Number(prefs[id])||0);const input=$(id);if(input && document.activeElement!==input)input.value=prefs[id]||'';});const t=$('fxUpdatedAtText');if(t)t.textContent=prefs.fxUpdatedAt?`마지막 갱신 ${prefs.fxUpdatedAt}`:'아직 갱신 기록 없음';const st=$('fxAutoStatus');if(st)st.textContent=prefs.fxAutoStatus||'앱 실행 시 자동으로 환율을 조회합니다.';}
 
-async function autoUpdateFx(){
- const st=$('fxAutoStatus');
+async function autoUpdateFx(manual=false){
+ const st=$('fxAutoStatus'); const btn=$('refreshFxBtn');
  try{
-  if(st)st.textContent='환율 자동조회 중...';
+  if(st)st.textContent=manual?'환율 수동 갱신 중...':'환율 자동조회 중...'; if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
   const res=await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW,HKD,AUD',{cache:'no-store'});
   if(!res.ok)throw new Error('환율 서버 응답 오류');
   const data=await res.json();
@@ -47,14 +47,14 @@ async function autoUpdateFx(){
   prefs.hkdRate=Math.round((usdKrw/hkdPerUsd)*100)/100;
   prefs.audRate=Math.round((usdKrw/audPerUsd)*100)/100;
   prefs.fxUpdatedAt=new Date().toLocaleString('ko-KR');
-  prefs.fxAutoStatus='자동 환율 조회 완료 · Frankfurter 기준';
+  prefs.fxAutoStatus=(manual?'수동 환율 갱신 완료':'자동 환율 조회 완료')+' · Frankfurter 기준';
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
   render();
  }catch(e){
-  prefs.fxAutoStatus='자동 환율 조회 실패 · 마지막 저장 환율 사용';
+  prefs.fxAutoStatus=(manual?'수동 환율 갱신 실패':'자동 환율 조회 실패')+' · 마지막 저장 환율 사용';
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
   if(st)st.textContent=prefs.fxAutoStatus;
- }
+ } finally { if(btn){btn.disabled=false;btn.textContent='환율 갱신';} }
 }
 
 function totalAssets(){return state.assets.reduce((s,a)=>s+assetAmount(a),0)}
@@ -108,4 +108,4 @@ $('backupBtn').onclick=async()=>{try{setStatus('백업 중...');let sha;const r=
 $('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){setStatus('복원 실패: '+e.message)}};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=2.2').catch(()=>{});updateAssetPreview();render();autoUpdateFx();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=2.3').catch(()=>{});updateAssetPreview();render();autoUpdateFx();

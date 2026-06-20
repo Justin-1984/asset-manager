@@ -8,3 +8,7 @@
 .mini-hint{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:12px;background:rgba(37,99,235,.04);text-align:left}
 .exchange-guide{margin-top:12px;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:left;background:rgba(37,99,235,.04)}
 .exchange-guide>b{display:block;margin-bottom:8px}.exchange-guide>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}.exchange-guide span{color:var(--muted)}.exchange-guide strong{white-space:nowrap}
+.head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+button.small{padding:7px 10px;border-radius:10px;font-size:12px}
+button:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:760px){.head-actions{justify-content:flex-start}}
