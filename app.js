@@ -1,5 +1,5 @@
-const STORAGE_KEY='asset-manager-v1-3';
-const OLD_KEYS=['asset-manager-v1-2','asset-manager-v1-1'];
+const STORAGE_KEY='asset-manager-v1-4';
+const OLD_KEYS=['asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -7,13 +7,14 @@ let state=loadState();
 let settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
 let prefs=JSON.parse(localStorage.getItem(PREFS_KEY)||'{"usdRate":1380,"hkdRate":195,"audRate":1080,"goalAmount":0}');
 let assetFilter='전체';
+let barMode='account';
 const $=id=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const money=n=>new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n)||0);
 const moneyShort=n=>{n=Math.round(Number(n)||0);const abs=Math.abs(n);if(abs>=100000000)return '₩'+(n/100000000).toFixed(abs>=1000000000?1:2).replace(/\.0+$|0+$/,'')+'억';if(abs>=10000)return '₩'+Math.round(n/10000).toLocaleString('ko-KR')+'만';return money(n);};
 const num=n=>new Intl.NumberFormat('ko-KR',{maximumFractionDigits:8}).format(Number(n)||0);
 const esc=s=>String(s||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'1.3'};}catch{}} return {version:'1.3',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'1.4'};}catch{}} return {version:'1.4',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
 function save(){state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD'||cur==='USDT')return Number(prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
@@ -25,9 +26,11 @@ function groupBy(list,keyFn,valFn){return list.reduce((m,x)=>{const k=keyFn(x)||
 function byType(){return groupBy(state.assets,a=>a.type,assetAmount)}
 function byCrypto(){return groupBy(state.assets.filter(a=>a.type==='코인'),a=>a.name,assetAmount)}
 function byAccount(){return groupBy(state.assets,a=>a.account,assetAmount)}
+function byCurrency(){return groupBy(state.assets,a=>(a.currency||'KRW').toUpperCase(),assetAmount)}
+function barData(){if(barMode==='type')return {title:'자산군별 자산',data:byType()};if(barMode==='currency')return {title:'통화별 자산',data:byCurrency()};return {title:'계좌/거래소별 자산',data:byAccount()};}
 function render(){
  $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());
- const last=state.snapshots[state.snapshots.length-1];$('monthChange').textContent=last?money(netWorth()-last.netWorth):money(0);
+ const last=state.snapshots[state.snapshots.length-1];const change=last?netWorth()-last.netWorth:0;$('monthChange').textContent=money(change);if($('monthChangePct')){$('monthChangePct').textContent=last&&last.netWorth?((change/Math.abs(last.netWorth))*100).toFixed(1)+'%':'0%';}
  const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
  renderAssets();renderDebts();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
 }
@@ -40,7 +43,7 @@ function drawPie(id,obj,legendId,label){const {ctx,w,h}=setupCanvas(id,360,360);
   mids.filter(x=>x.share>=0.055).slice(0,6).forEach(x=>{const lx=cx+Math.cos(x.mid)*92;const ly=cy+Math.sin(x.mid)*92;const text=moneyShort(x.value);ctx.font='800 12px sans-serif';const tw=Math.max(ctx.measureText(text).width+18,58);roundRect(ctx,lx-tw/2,ly-13,tw,26,13);ctx.fillStyle='rgba(255,255,255,.92)';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=COLORS[x.i%COLORS.length];ctx.stroke();ctx.fillStyle='#111827';ctx.textAlign='center';ctx.fillText(text,lx,ly+4);});
   if(legendId)$(legendId).innerHTML=data.map(([n,v],i)=>`<span class="pill"><b style="color:${COLORS[i%COLORS.length]}">●</b> ${esc(n)} ${moneyShort(v)} · ${Math.round(v/total*100)}%</span>`).join('');}
 function drawLine(){const {ctx,w,h}=setupCanvas('netLine',720,280);const data=state.snapshots.slice(-12);ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line');ctx.beginPath();ctx.moveTo(40,20);ctx.lineTo(40,h-40);ctx.lineTo(w-20,h-40);ctx.stroke();if(data.length<2){ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('스냅샷 2개 이상부터 추이가 표시됩니다.',w/2,h/2);return;}const vals=data.map(d=>d.netWorth),min=Math.min(...vals),max=Math.max(...vals),pad=(max-min)||1;ctx.strokeStyle='#2563eb';ctx.lineWidth=3;ctx.beginPath();data.forEach((d,i)=>{const x=40+i*((w-70)/(data.length-1));const y=(h-40)-((d.netWorth-min)/pad)*(h-70);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();ctx.fillStyle=textColor();ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(money(max),45,22);ctx.fillText(money(min),45,h-45);}
-function drawBar(){const {ctx,w,h}=setupCanvas('accountBar',720,340);const data=Object.entries(byAccount()).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!data.length){ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('데이터 없음',w/2,h/2);return;}const max=Math.max(...data.map(([,v])=>v));ctx.font='13px sans-serif';data.forEach(([name,val],i)=>{const y=28+i*38;const bw=Math.max((val/max)*(w-210),6);ctx.fillStyle=COLORS[i%COLORS.length];roundRect(ctx,150,y,bw,24,12);ctx.fill();ctx.fillStyle=textColor();ctx.textAlign='right';ctx.font='700 13px sans-serif';ctx.fillText(name,140,y+17);const label=moneyShort(val);ctx.font='800 12px sans-serif';const lw=ctx.measureText(label).width+18;const lx=Math.min(154+bw,w-lw-12);roundRect(ctx,lx,y+2,lw,20,10);ctx.fillStyle='rgba(255,255,255,.94)';ctx.fill();ctx.strokeStyle=COLORS[i%COLORS.length];ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#111827';ctx.textAlign='center';ctx.fillText(label,lx+lw/2,y+16);});}
+function drawBar(){const {title,data:raw}=barData();if($('barTitle'))$('barTitle').textContent=title;const {ctx,w,h}=setupCanvas('accountBar',720,380);const data=Object.entries(raw).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!data.length){ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('데이터 없음',w/2,h/2);return;}const total=data.reduce((s,[,v])=>s+v,0);const max=Math.max(...data.map(([,v])=>v));data.forEach(([name,val],i)=>{const y=34+i*42;const label=moneyShort(val);const pct=total?Math.round(val/total*100):0;ctx.fillStyle=textColor();ctx.textAlign='left';ctx.font='800 13px sans-serif';ctx.fillText(name,20,y+15);ctx.textAlign='right';ctx.font='800 13px sans-serif';ctx.fillText(`${label} (${pct}%)`,w-20,y+15);ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--line');roundRect(ctx,20,y+24,w-40,16,8);ctx.fill();const bw=Math.max((val/max)*(w-40),6);ctx.fillStyle=COLORS[i%COLORS.length];roundRect(ctx,20,y+24,bw,16,8);ctx.fill();});}
 window.removeAsset=id=>{state.assets=state.assets.filter(a=>a.id!==id);save()};window.removeDebt=id=>{state.debts=state.debts.filter(d=>d.id!==id);save()};
 window.editAsset=id=>{const a=state.assets.find(x=>x.id===id);if(!a)return;$('assetForm').classList.remove('hidden');$('assetType').value=a.type;$('assetAccount').value=a.account||'';$('assetName').value=a.name;$('assetCurrency').value=a.currency||'KRW';$('assetQty').value=a.qty;$('assetPrice').value=a.price;state.assets=state.assets.filter(x=>x.id!==id);save();};
 window.editDebt=id=>{const d=state.debts.find(x=>x.id===id);if(!d)return;$('debtForm').classList.remove('hidden');$('debtType').value=d.type;$('debtName').value=d.name;$('debtCurrency').value=d.currency||'KRW';$('debtAmount').value=d.amount;$('debtRate').value=d.rate||'';state.debts=state.debts.filter(x=>x.id!==id);save();};
@@ -49,6 +52,7 @@ $('assetForm').onsubmit=e=>{e.preventDefault();state.assets.push({id:uid(),type:
 $('debtForm').onsubmit=e=>{e.preventDefault();state.debts.push({id:uid(),type:$('debtType').value,name:$('debtName').value.trim(),currency:$('debtCurrency').value.trim().toUpperCase()||'KRW',amount:Number($('debtAmount').value),rate:$('debtRate').value});e.target.reset();$('debtCurrency').value='KRW';save();};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render();});
 document.querySelectorAll('[data-asset-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-asset-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');assetFilter=b.dataset.assetFilter;renderAssets();});
+document.querySelectorAll('[data-bar-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bar-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');barMode=b.dataset.barMode;drawBar();});
 $('themeToggle').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('asset-manager-theme',document.body.classList.contains('dark')?'dark':'light');render();};if(localStorage.getItem('asset-manager-theme')==='dark')document.body.classList.add('dark');
 $('snapshotBtn').onclick=()=>{state.snapshots.push({date:new Date().toLocaleDateString('ko-KR'),assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()});save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
 ['goalAmount','usdRate','hkdRate','audRate'].forEach(id=>{$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('설정 저장 완료');};

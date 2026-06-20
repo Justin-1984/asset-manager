@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v1.3</title>
+  <title>자산 매니저 v1.4</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
   <meta name="theme-color" content="#111827" />
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v1.3</p>
+      <p>통합 순자산 대시보드 v1.4</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -23,7 +23,7 @@
         <article class="summary main"><span>순자산</span><strong id="netWorth">₩0</strong><em id="goalText">목표 없음</em></article>
         <article class="summary"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
         <article class="summary"><span>총부채</span><strong id="totalLiabilities">₩0</strong></article>
-        <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong></article>
+        <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
       </div>
 
       <div class="card chart-card">
@@ -76,7 +76,7 @@
     <section id="graphs" class="view">
       <div class="grid-2">
         <div class="card chart-card"><h2>코인별 비중</h2><canvas id="cryptoPie" width="320" height="320"></canvas><div id="cryptoLegend" class="legend"></div></div>
-        <div class="card chart-card"><h2>계좌/거래소별 자산</h2><canvas id="accountBar" width="720" height="320"></canvas></div>
+        <div class="card chart-card"><div class="card-head"><h2 id="barTitle">계좌/거래소별 자산</h2><div class="segmented"><button data-bar-mode="account" class="active">계좌별</button><button data-bar-mode="type">자산군별</button><button data-bar-mode="currency">통화별</button></div></div><canvas id="accountBar" width="720" height="360"></canvas></div>
       </div>
     </section>
 
