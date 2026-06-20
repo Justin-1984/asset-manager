@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v1.4</title>
+  <title>자산 매니저 v1.5</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
   <meta name="theme-color" content="#111827" />
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v1.4</p>
+      <p>통합 순자산 대시보드 v1.5</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -36,6 +36,7 @@
         <div class="card-head"><h2>순자산 추이</h2><button id="clearSnapshotsBtn" class="danger">추이 초기화</button></div>
         <canvas id="netLine" width="720" height="280"></canvas>
         <p class="note">스냅샷을 저장하면 월별/일별 순자산 변화가 쌓입니다.</p>
+        <div id="snapshotList" class="snapshot-list"></div>
       </div>
     </section>
 
@@ -51,9 +52,10 @@
           <input id="assetCurrency" placeholder="통화 KRW/USD/HKD/USDT" value="KRW" />
           <input id="assetQty" type="number" step="any" placeholder="수량" value="1" required />
           <input id="assetPrice" type="number" step="any" placeholder="단가 또는 평가액" required />
-          <button type="submit">저장</button>
+          <button id="assetSubmitBtn" type="submit">저장</button><button id="assetCancelBtn" type="button" class="ghost hidden">취소</button>
         </form>
-        <div class="filters"><button data-asset-filter="전체" class="active">전체</button><button data-asset-filter="코인">코인</button><button data-asset-filter="주식">주식</button><button data-asset-filter="은행">은행</button><button data-asset-filter="부동산">부동산</button><button data-asset-filter="자동차">자동차</button></div>
+        <div class="toolbar"><input id="assetSearch" placeholder="자산 검색: BTC, 업비트, 연금저축" /><select id="assetSort"><option value="amountDesc">금액 높은순</option><option value="amountAsc">금액 낮은순</option><option value="nameAsc">이름순</option><option value="typeAsc">자산군순</option></select></div>
+        <div class="filters"><button data-asset-filter="전체" class="active">전체</button><button data-asset-filter="코인">코인</button><button data-asset-filter="주식">주식</button><button data-asset-filter="은행">은행</button><button data-asset-filter="현금">현금</button><button data-asset-filter="부동산">부동산</button><button data-asset-filter="자동차">자동차</button><button data-asset-filter="금">금</button><button data-asset-filter="기타">기타</button></div>
         <div id="assetList" class="list"></div>
       </div>
     </section>
@@ -67,7 +69,7 @@
           <input id="debtCurrency" placeholder="통화 KRW/HKD/USD" value="KRW" />
           <input id="debtAmount" type="number" step="any" placeholder="잔액" required />
           <input id="debtRate" type="number" step="any" placeholder="금리(선택)" />
-          <button type="submit">저장</button>
+          <button id="debtSubmitBtn" type="submit">저장</button><button id="debtCancelBtn" type="button" class="ghost hidden">취소</button>
         </form>
         <div id="debtList" class="list"></div>
       </div>
