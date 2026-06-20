@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v1.5</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+  <title>자산 매니저 v2.0</title>
+  <link rel="manifest" href="manifest.json?v=2.0" />
+  <link rel="stylesheet" href="styles.css?v=2.0" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v1.5</p>
+      <p>통합 순자산 대시보드 v2.0</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -24,6 +24,16 @@
         <article class="summary"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
         <article class="summary"><span>총부채</span><strong id="totalLiabilities">₩0</strong></article>
         <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
+      </div>
+
+      <div class="card fx-card">
+        <div class="card-head"><h2>환율 기준</h2><small id="fxUpdatedAtText">아직 저장 기록 없음</small></div>
+        <div class="fx-grid">
+          <div><span>USD/KRW</span><b id="usdRateView">₩0</b></div>
+          <div><span>USDT/KRW</span><b id="usdtRateView">₩0</b></div>
+          <div><span>HKD/KRW</span><b id="hkdRateView">₩0</b></div>
+          <div><span>AUD/KRW</span><b id="audRateView">₩0</b></div>
+        </div>
       </div>
 
       <div class="card chart-card">
@@ -52,6 +62,7 @@
           <input id="assetCurrency" placeholder="통화 KRW/USD/HKD/USDT" value="KRW" />
           <input id="assetQty" type="number" step="any" placeholder="수량" value="1" required />
           <input id="assetPrice" type="number" step="any" placeholder="단가 또는 평가액" required />
+          <div id="assetPreview" class="preview">평가액 미리보기: ₩0</div>
           <button id="assetSubmitBtn" type="submit">저장</button><button id="assetCancelBtn" type="button" class="ghost hidden">취소</button>
         </form>
         <div class="toolbar"><input id="assetSearch" placeholder="자산 검색: BTC, 업비트, 연금저축" /><select id="assetSort"><option value="amountDesc">금액 높은순</option><option value="amountAsc">금액 낮은순</option><option value="nameAsc">이름순</option><option value="typeAsc">자산군순</option></select></div>
@@ -87,12 +98,13 @@
         <h2>목표 / 환율</h2>
         <div class="form always">
           <input id="goalAmount" type="number" placeholder="순자산 목표 KRW 예: 1000000000" />
-          <input id="usdRate" type="number" placeholder="USD/USDT → KRW" value="1380" />
+          <input id="usdRate" type="number" placeholder="USD → KRW" value="1380" />
+          <input id="usdtRate" type="number" placeholder="USDT → KRW" value="1380" />
           <input id="hkdRate" type="number" placeholder="HKD → KRW" value="195" />
           <input id="audRate" type="number" placeholder="AUD → KRW" value="1080" />
           <button id="savePrefs">설정 저장</button>
         </div>
-        <p class="note">v1.2는 환율 수동 입력 방식입니다. v2에서 자동 환율 조회를 붙일 수 있습니다.</p>
+        <p class="note">v2.0은 환율을 기준으로 외국 거래소 자산을 원화로 환산합니다. 자동 환율 조회는 다음 단계에서 붙일 수 있습니다.</p>
       </div>
       <div class="card">
         <h2>백업 / 복원</h2>
@@ -121,6 +133,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.0"></script>
 </body>
 </html>
