@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v3.9.1</title>
+  <title>자산 매니저 v3.9.2</title>
   <link rel="manifest" href="manifest.json?v=391" />
   <link rel="stylesheet" href="styles.css?v=391" />
   <meta name="theme-color" content="#111827" />
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v3.9.1</p>
+      <p>통합 순자산 대시보드 v3.9.2</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -79,7 +79,7 @@
       <div class="card">
         <div class="card-head"><h2>부채 입력</h2><button id="addDebtBtn">+ 부채 추가</button></div>
         <form id="debtForm" class="form hidden">
-          <select id="debtType"><option>홍콩 모기지</option><option>주택담보대출</option><option>차량할부</option><option>신용대출</option><option>기타부채</option></select>
+          <select id="debtType"><option>홍콩 모기지</option><option>주택담보대출</option><option>차량할부</option><option>신용대출</option><option>카드 결제예정액</option><option>기타부채</option></select>
           <input id="debtName" placeholder="부채명 예: HKD 모기지" required />
           <input id="debtCurrency" placeholder="통화 KRW/HKD/USD" value="KRW" />
           <input id="debtAmount" type="number" step="any" placeholder="잔액" required />
@@ -101,7 +101,7 @@
     <section id="exchanges" class="view">
       <div class="card">
         <div class="card-head"><h2>거래소 연결 관리</h2><button id="addExchangeBtn">+ 거래소 연결 추가</button></div>
-        <p class="note">v3.9.1는 잔고 API 대신 수동 보유수량 + 공개 시세 자동조회 방식으로 안정화했습니다.</p>
+        <p class="note">v3.9.2는 잔고 API 대신 수동 보유수량 + 공개 시세 자동조회 방식으로 안정화했습니다.</p>
         <form id="exchangeForm" class="form hidden">
           <select id="exchangeName">
             <option>Binance</option><option>Upbit</option><option>OKX</option><option>Bybit</option><option>Bitget</option><option>Gate.io</option><option>HTX</option><option>BingX</option>
@@ -130,7 +130,9 @@
           <label><span>USDT/KRW</span><input id="usdtRate" type="number" placeholder="테더 1USDT당 원화" value="1380" /></label>
           <label><span>HKD/KRW</span><input id="hkdRate" type="number" placeholder="홍콩달러 1달러당 원화" value="195" /></label>
           <label><span>AUD/KRW</span><input id="audRate" type="number" placeholder="호주달러 1달러당 원화" value="1080" /></label>
-          <button id="savePrefs">수동 환율/목표 저장</button>
+          <label class="checkline"><input id="autoGithubBackup" type="checkbox" /> 변경 후 GitHub 자동 백업 사용</label>
+          <button id="savePrefs">수동 환율/목표/자동백업 저장</button>
+          <p id="autoBackupStatus" class="status"></p>
           <p id="fxAutoStatus" class="status">앱 실행 시 자동으로 환율을 조회합니다.</p>
         </div>
         <div class="exchange-guide">
@@ -140,7 +142,7 @@
           <div><span>미국주식 · 미국 ETF</span><strong>USD</strong></div>
           <div><span>홍콩 은행 · 홍콩 모기지</span><strong>HKD</strong></div>
         </div>
-        <p class="note">v3.9.1는 환율 자동조회, 수익률 계산, 보유 코인 공개 시세 자동조회 방식을 포함합니다.</p>
+        <p class="note">v3.9.2는 환율 자동조회, 수익률 계산, 보유 코인 공개 시세 자동조회 방식을 포함합니다.</p>
       </div>
       <div class="card">
         <h2>백업 / 복원</h2>
