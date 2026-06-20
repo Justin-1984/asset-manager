@@ -1,92 +1,57 @@
-const STORAGE_KEY = 'asset-manager-v1-1';
-const SETTINGS_KEY = 'asset-manager-github-settings';
-const COLORS = ['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b'];
-
-let state = loadState();
-let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-
-const $ = id => document.getElementById(id);
-const fmt = n => new Intl.NumberFormat('ko-KR', { style:'currency', currency:'KRW', maximumFractionDigits:0 }).format(Number(n)||0);
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-
-function loadState(){
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if(saved) return JSON.parse(saved);
-  return { assets: [], debts: [], snapshots: [], updatedAt: new Date().toISOString(), version: '1.1' };
-}
-function save(){ state.updatedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); }
-function amountAsset(a){ return (Number(a.qty)||0) * (Number(a.price)||0); }
-function totalAssets(){ return state.assets.reduce((s,a)=>s+amountAsset(a),0); }
-function totalDebts(){ return state.debts.reduce((s,d)=>s+(Number(d.amount)||0),0); }
-function byType(){ return state.assets.reduce((m,a)=>{ m[a.type]=(m[a.type]||0)+amountAsset(a); return m; },{}); }
-
+const STORAGE_KEY='asset-manager-v1-2';
+const OLD_KEYS=['asset-manager-v1-1'];
+const SETTINGS_KEY='asset-manager-github-settings';
+const PREFS_KEY='asset-manager-prefs';
+const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
+let state=loadState();
+let settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+let prefs=JSON.parse(localStorage.getItem(PREFS_KEY)||'{"usdRate":1380,"hkdRate":195,"audRate":1080,"goalAmount":0}');
+let assetFilter='전체';
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const money=n=>new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n)||0);
+const num=n=>new Intl.NumberFormat('ko-KR',{maximumFractionDigits:8}).format(Number(n)||0);
+const esc=s=>String(s||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[]},...s,version:'1.2'};}catch{}} return {version:'1.2',assets:[],debts:[],snapshots:[],updatedAt:new Date().toISOString()};}
+function save(){state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
+function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD'||cur==='USDT')return Number(prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
+function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
+function debtAmount(d){return (Number(d.amount)||0)*fx(d.currency);}
+function totalAssets(){return state.assets.reduce((s,a)=>s+assetAmount(a),0)}
+function totalDebts(){return state.debts.reduce((s,d)=>s+debtAmount(d),0)}
+function netWorth(){return totalAssets()-totalDebts()}
+function groupBy(list,keyFn,valFn){return list.reduce((m,x)=>{const k=keyFn(x)||'미지정';m[k]=(m[k]||0)+valFn(x);return m;},{});}
+function byType(){return groupBy(state.assets,a=>a.type,assetAmount)}
+function byCrypto(){return groupBy(state.assets.filter(a=>a.type==='코인'),a=>a.name,assetAmount)}
+function byAccount(){return groupBy(state.assets,a=>a.account,assetAmount)}
 function render(){
-  $('netWorth').textContent = fmt(totalAssets()-totalDebts());
-  $('totalAssets').textContent = fmt(totalAssets());
-  $('totalLiabilities').textContent = fmt(totalDebts());
-  renderAssets(); renderDebts(); drawPie();
+ $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());
+ const last=state.snapshots[state.snapshots.length-1];$('monthChange').textContent=last?money(netWorth()-last.netWorth):money(0);
+ const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
+ renderAssets();renderDebts();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
 }
-function renderAssets(){
-  $('assetList').innerHTML = state.assets.length ? state.assets.map(a=>`
-    <div class="item">
-      <div><div class="name">${escapeHtml(a.name)}</div><div class="meta">${escapeHtml(a.type)} · ${escapeHtml(a.account||'미지정')}</div></div>
-      <div class="meta">수량 ${num(a.qty)} × 단가 ${fmt(a.price)}</div>
-      <div class="amount">${fmt(amountAsset(a))}</div>
-      <button class="danger" onclick="removeAsset('${a.id}')">삭제</button>
-    </div>`).join('') : '<p class="note">아직 등록된 자산이 없습니다.</p>';
-}
-function renderDebts(){
-  $('debtList').innerHTML = state.debts.length ? state.debts.map(d=>`
-    <div class="item">
-      <div><div class="name">${escapeHtml(d.name)}</div><div class="meta">${escapeHtml(d.type)}</div></div>
-      <div class="meta">부채 잔액</div>
-      <div class="amount">${fmt(d.amount)}</div>
-      <button class="danger" onclick="removeDebt('${d.id}')">삭제</button>
-    </div>`).join('') : '<p class="note">아직 등록된 부채가 없습니다.</p>';
-}
-function drawPie(){
-  const canvas = $('assetPie'); const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1; const size = 320;
-  canvas.width = size*dpr; canvas.height = size*dpr; canvas.style.width=size+'px'; canvas.style.height=size+'px'; ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,size,size);
-  const data = Object.entries(byType()).filter(([,v])=>v>0);
-  const total = data.reduce((s,[,v])=>s+v,0);
-  if(!total){ ctx.fillStyle = getTextColor(); ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.fillText('자산을 입력하면 그래프가 표시됩니다',160,160); $('assetLegend').innerHTML=''; return; }
-  let start = -Math.PI/2;
-  data.forEach(([name,value],i)=>{ const angle = value/total*Math.PI*2; ctx.beginPath(); ctx.moveTo(160,160); ctx.arc(160,160,120,start,start+angle); ctx.closePath(); ctx.fillStyle=COLORS[i%COLORS.length]; ctx.fill(); start+=angle; });
-  ctx.beginPath(); ctx.arc(160,160,66,0,Math.PI*2); ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card'); ctx.fill();
-  ctx.fillStyle = getTextColor(); ctx.font='700 15px sans-serif'; ctx.textAlign='center'; ctx.fillText('총자산',160,153); ctx.font='800 18px sans-serif'; ctx.fillText(fmt(totalAssets()).replace('₩','₩ '),160,178);
-  $('assetLegend').innerHTML = data.map(([name,value],i)=>`<span class="pill"><b style="color:${COLORS[i%COLORS.length]}">●</b> ${escapeHtml(name)} ${Math.round(value/total*100)}%</span>`).join('');
-}
-function getTextColor(){ return getComputedStyle(document.body).getPropertyValue('--text').trim(); }
-function num(n){ return new Intl.NumberFormat('ko-KR', { maximumFractionDigits:8 }).format(Number(n)||0); }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-window.removeAsset = id => { state.assets = state.assets.filter(a=>a.id!==id); save(); };
-window.removeDebt = id => { state.debts = state.debts.filter(d=>d.id!==id); save(); };
-
-$('addAssetBtn').onclick = () => $('assetForm').classList.toggle('hidden');
-$('addDebtBtn').onclick = () => $('debtForm').classList.toggle('hidden');
-$('themeToggle').onclick = () => { document.body.classList.toggle('dark'); localStorage.setItem('asset-manager-theme', document.body.classList.contains('dark')?'dark':'light'); drawPie(); };
-if(localStorage.getItem('asset-manager-theme')==='dark') document.body.classList.add('dark');
-
-$('assetForm').onsubmit = e => { e.preventDefault(); state.assets.push({ id:uid(), type:$('assetType').value, account:$('assetAccount').value.trim(), name:$('assetName').value.trim(), qty:Number($('assetQty').value), price:Number($('assetPrice').value) }); e.target.reset(); save(); };
-$('debtForm').onsubmit = e => { e.preventDefault(); state.debts.push({ id:uid(), type:$('debtType').value, name:$('debtName').value.trim(), amount:Number($('debtAmount').value) }); e.target.reset(); save(); };
-
-['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{ if(settings[id]) $(id).value=settings[id]; });
-$('saveSettings').onclick = () => { settings = { ghOwner:$('ghOwner').value.trim(), ghRepo:$('ghRepo').value.trim(), ghPath:$('ghPath').value.trim()||'asset-manager-data.json', ghToken:$('ghToken').value.trim() }; localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); setStatus('GitHub 설정 저장 완료'); };
-function setStatus(msg){ $('syncStatus').textContent = msg; }
-async function githubRequest(method, body){
-  settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-  const {ghOwner,ghRepo,ghPath,ghToken}=settings;
-  if(!ghOwner||!ghRepo||!ghPath||!ghToken) throw new Error('GitHub 설정을 먼저 저장하세요.');
-  const url = `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${encodeURIComponent(ghPath).replaceAll('%2F','/')}`;
-  const headers = { Authorization:`Bearer ${ghToken}`, Accept:'application/vnd.github+json' };
-  if(method==='GET') return fetch(url,{headers});
-  return fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
-}
-$('backupBtn').onclick = async () => { try{ setStatus('백업 준비 중...'); let sha; const r=await githubRequest('GET'); if(r.ok){ const j=await r.json(); sha=j.sha; } const content = btoa(unescape(encodeURIComponent(JSON.stringify(state,null,2)))); const res=await githubRequest('PUT',{message:`asset-manager backup ${new Date().toISOString()}`, content, sha}); if(!res.ok) throw new Error(await res.text()); setStatus('GitHub 백업 완료'); }catch(e){ setStatus('백업 실패: '+e.message); } };
-$('restoreBtn').onclick = async () => { try{ setStatus('복원 중...'); const r=await githubRequest('GET'); if(!r.ok) throw new Error(await r.text()); const j=await r.json(); const restored = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))))); state = restored; localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); setStatus('GitHub 복원 완료'); render(); }catch(e){ setStatus('복원 실패: '+e.message); } };
-
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
-render();
+function renderAssets(){const rows=state.assets.filter(a=>assetFilter==='전체'||a.type===assetFilter);$('assetList').innerHTML=rows.length?rows.map(a=>`<div class="item"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}</div><div class="amount">${money(assetAmount(a))}</div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`).join(''):'<p class="note">등록된 자산이 없습니다.</p>';}
+function renderDebts(){$('debtList').innerHTML=state.debts.length?state.debts.map(d=>`<div class="item"><div><div class="name">${esc(d.name)}</div><div class="meta">${esc(d.type)} · ${esc(d.currency||'KRW')} ${d.rate?`· 금리 ${d.rate}%`:''}</div></div><div class="meta">부채 잔액</div><div class="amount">${money(debtAmount(d))}</div><button onclick="editDebt('${d.id}')">수정</button><button class="danger" onclick="removeDebt('${d.id}')">삭제</button></div>`).join(''):'<p class="note">등록된 부채가 없습니다.</p>';}
+function textColor(){return getComputedStyle(document.body).getPropertyValue('--text').trim()}function cardColor(){return getComputedStyle(document.body).getPropertyValue('--card').trim()}
+function setupCanvas(id,w=320,h=320){const c=$(id),ctx=c.getContext('2d'),dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);return{c,ctx,w,h};}
+function drawPie(id,obj,legendId,label){const {ctx,w,h}=setupCanvas(id,320,320);const data=Object.entries(obj).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);const total=data.reduce((s,[,v])=>s+v,0);if(!total){ctx.fillStyle=textColor();ctx.font='15px sans-serif';ctx.textAlign='center';ctx.fillText('데이터 없음',w/2,h/2);if(legendId)$(legendId).innerHTML='';return;}let start=-Math.PI/2;data.forEach(([name,value],i)=>{const angle=value/total*Math.PI*2;ctx.beginPath();ctx.moveTo(160,160);ctx.arc(160,160,120,start,start+angle);ctx.closePath();ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();start+=angle;});ctx.beginPath();ctx.arc(160,160,68,0,Math.PI*2);ctx.fillStyle=cardColor();ctx.fill();ctx.fillStyle=textColor();ctx.font='700 15px sans-serif';ctx.textAlign='center';ctx.fillText(label,160,153);ctx.font='800 18px sans-serif';ctx.fillText(money(total).replace('₩','₩ '),160,178);if(legendId)$(legendId).innerHTML=data.map(([n,v],i)=>`<span class="pill"><b style="color:${COLORS[i%COLORS.length]}">●</b> ${esc(n)} ${Math.round(v/total*100)}%</span>`).join('');}
+function drawLine(){const {ctx,w,h}=setupCanvas('netLine',720,280);const data=state.snapshots.slice(-12);ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line');ctx.beginPath();ctx.moveTo(40,20);ctx.lineTo(40,h-40);ctx.lineTo(w-20,h-40);ctx.stroke();if(data.length<2){ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('스냅샷 2개 이상부터 추이가 표시됩니다.',w/2,h/2);return;}const vals=data.map(d=>d.netWorth),min=Math.min(...vals),max=Math.max(...vals),pad=(max-min)||1;ctx.strokeStyle='#2563eb';ctx.lineWidth=3;ctx.beginPath();data.forEach((d,i)=>{const x=40+i*((w-70)/(data.length-1));const y=(h-40)-((d.netWorth-min)/pad)*(h-70);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();ctx.fillStyle=textColor();ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(money(max),45,22);ctx.fillText(money(min),45,h-45);}
+function drawBar(){const {ctx,w,h}=setupCanvas('accountBar',720,320);const data=Object.entries(byAccount()).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!data.length){ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('데이터 없음',w/2,h/2);return;}const max=Math.max(...data.map(([,v])=>v));ctx.font='13px sans-serif';data.forEach(([name,val],i)=>{const y=25+i*34;const bw=(val/max)*(w-190);ctx.fillStyle=COLORS[i%COLORS.length];ctx.fillRect(150,y,bw,20);ctx.fillStyle=textColor();ctx.textAlign='right';ctx.fillText(name,140,y+15);ctx.textAlign='left';ctx.fillText(money(val),155+bw,y+15);});}
+window.removeAsset=id=>{state.assets=state.assets.filter(a=>a.id!==id);save()};window.removeDebt=id=>{state.debts=state.debts.filter(d=>d.id!==id);save()};
+window.editAsset=id=>{const a=state.assets.find(x=>x.id===id);if(!a)return;$('assetForm').classList.remove('hidden');$('assetType').value=a.type;$('assetAccount').value=a.account||'';$('assetName').value=a.name;$('assetCurrency').value=a.currency||'KRW';$('assetQty').value=a.qty;$('assetPrice').value=a.price;state.assets=state.assets.filter(x=>x.id!==id);save();};
+window.editDebt=id=>{const d=state.debts.find(x=>x.id===id);if(!d)return;$('debtForm').classList.remove('hidden');$('debtType').value=d.type;$('debtName').value=d.name;$('debtCurrency').value=d.currency||'KRW';$('debtAmount').value=d.amount;$('debtRate').value=d.rate||'';state.debts=state.debts.filter(x=>x.id!==id);save();};
+$('addAssetBtn').onclick=()=>$('assetForm').classList.toggle('hidden');$('addDebtBtn').onclick=()=>$('debtForm').classList.toggle('hidden');
+$('assetForm').onsubmit=e=>{e.preventDefault();state.assets.push({id:uid(),type:$('assetType').value,account:$('assetAccount').value.trim(),name:$('assetName').value.trim(),currency:$('assetCurrency').value.trim().toUpperCase()||'KRW',qty:Number($('assetQty').value),price:Number($('assetPrice').value)});e.target.reset();$('assetCurrency').value='KRW';$('assetQty').value=1;save();};
+$('debtForm').onsubmit=e=>{e.preventDefault();state.debts.push({id:uid(),type:$('debtType').value,name:$('debtName').value.trim(),currency:$('debtCurrency').value.trim().toUpperCase()||'KRW',amount:Number($('debtAmount').value),rate:$('debtRate').value});e.target.reset();$('debtCurrency').value='KRW';save();};
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render();});
+document.querySelectorAll('[data-asset-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-asset-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');assetFilter=b.dataset.assetFilter;renderAssets();});
+$('themeToggle').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('asset-manager-theme',document.body.classList.contains('dark')?'dark':'light');render();};if(localStorage.getItem('asset-manager-theme')==='dark')document.body.classList.add('dark');
+$('snapshotBtn').onclick=()=>{state.snapshots.push({date:new Date().toLocaleDateString('ko-KR'),assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()});save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
+['goalAmount','usdRate','hkdRate','audRate'].forEach(id=>{$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('설정 저장 완료');};
+['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');};function setStatus(m){$('syncStatus').textContent=m;}
+async function gh(method,body){settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');const{ghOwner,ghRepo,ghPath,ghToken}=settings;if(!ghOwner||!ghRepo||!ghPath||!ghToken)throw new Error('GitHub 설정을 먼저 저장하세요.');const url=`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${encodeURIComponent(ghPath).replaceAll('%2F','/')}`;const headers={Authorization:`Bearer ${ghToken}`,Accept:'application/vnd.github+json'};return method==='GET'?fetch(url,{headers}):fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});}
+$('backupBtn').onclick=async()=>{try{setStatus('백업 중...');let sha;const r=await gh('GET');if(r.ok)sha=(await r.json()).sha;const payload={state,prefs,backupAt:new Date().toISOString()};const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));const res=await gh('PUT',{message:`asset-manager backup ${new Date().toISOString()}`,content,sha});if(!res.ok)throw new Error(await res.text());setStatus('GitHub 백업 완료');}catch(e){setStatus('백업 실패: '+e.message)}};
+$('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){setStatus('복원 실패: '+e.message)}};
+$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
+$('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});render();

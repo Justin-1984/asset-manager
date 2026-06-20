@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>자산 매니저 v1.2</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#111827" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>자산 매니저</h1>
+      <p>통합 순자산 대시보드 v1.2</p>
+    </div>
+    <button id="themeToggle" class="ghost">다크모드</button>
+  </header>
+
+  <main>
+    <section id="dashboard" class="view active">
+      <div class="summary-grid">
+        <article class="summary main"><span>순자산</span><strong id="netWorth">₩0</strong><em id="goalText">목표 없음</em></article>
+        <article class="summary"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
+        <article class="summary"><span>총부채</span><strong id="totalLiabilities">₩0</strong></article>
+        <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong></article>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head"><h2>자산군 비중</h2><button id="snapshotBtn">오늘 스냅샷 저장</button></div>
+        <canvas id="assetPie" width="320" height="320"></canvas>
+        <div id="assetLegend" class="legend"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head"><h2>순자산 추이</h2><button id="clearSnapshotsBtn" class="danger">추이 초기화</button></div>
+        <canvas id="netLine" width="720" height="280"></canvas>
+        <p class="note">스냅샷을 저장하면 월별/일별 순자산 변화가 쌓입니다.</p>
+      </div>
+    </section>
+
+    <section id="assets" class="view">
+      <div class="card">
+        <div class="card-head"><h2>자산 입력</h2><button id="addAssetBtn">+ 자산 추가</button></div>
+        <form id="assetForm" class="form hidden">
+          <select id="assetType">
+            <option>코인</option><option>주식</option><option>은행</option><option>현금</option><option>부동산</option><option>자동차</option><option>금</option><option>기타</option>
+          </select>
+          <input id="assetAccount" placeholder="거래소/은행/증권사/계좌명 예: 업비트, 연금저축" />
+          <input id="assetName" placeholder="자산명 예: BTC, SCHD, HKD 예금" required />
+          <input id="assetCurrency" placeholder="통화 KRW/USD/HKD/USDT" value="KRW" />
+          <input id="assetQty" type="number" step="any" placeholder="수량" value="1" required />
+          <input id="assetPrice" type="number" step="any" placeholder="단가 또는 평가액" required />
+          <button type="submit">저장</button>
+        </form>
+        <div class="filters"><button data-asset-filter="전체" class="active">전체</button><button data-asset-filter="코인">코인</button><button data-asset-filter="주식">주식</button><button data-asset-filter="은행">은행</button><button data-asset-filter="부동산">부동산</button><button data-asset-filter="자동차">자동차</button></div>
+        <div id="assetList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="debts" class="view">
+      <div class="card">
+        <div class="card-head"><h2>부채 입력</h2><button id="addDebtBtn">+ 부채 추가</button></div>
+        <form id="debtForm" class="form hidden">
+          <select id="debtType"><option>홍콩 모기지</option><option>주택담보대출</option><option>차량할부</option><option>신용대출</option><option>기타부채</option></select>
+          <input id="debtName" placeholder="부채명 예: HKD 모기지" required />
+          <input id="debtCurrency" placeholder="통화 KRW/HKD/USD" value="KRW" />
+          <input id="debtAmount" type="number" step="any" placeholder="잔액" required />
+          <input id="debtRate" type="number" step="any" placeholder="금리(선택)" />
+          <button type="submit">저장</button>
+        </form>
+        <div id="debtList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="graphs" class="view">
+      <div class="grid-2">
+        <div class="card chart-card"><h2>코인별 비중</h2><canvas id="cryptoPie" width="320" height="320"></canvas><div id="cryptoLegend" class="legend"></div></div>
+        <div class="card chart-card"><h2>계좌/거래소별 자산</h2><canvas id="accountBar" width="720" height="320"></canvas></div>
+      </div>
+    </section>
+
+    <section id="settings" class="view">
+      <div class="card">
+        <h2>목표 / 환율</h2>
+        <div class="form always">
+          <input id="goalAmount" type="number" placeholder="순자산 목표 KRW 예: 1000000000" />
+          <input id="usdRate" type="number" placeholder="USD/USDT → KRW" value="1380" />
+          <input id="hkdRate" type="number" placeholder="HKD → KRW" value="195" />
+          <input id="audRate" type="number" placeholder="AUD → KRW" value="1080" />
+          <button id="savePrefs">설정 저장</button>
+        </div>
+        <p class="note">v1.2는 환율 수동 입력 방식입니다. v2에서 자동 환율 조회를 붙일 수 있습니다.</p>
+      </div>
+      <div class="card">
+        <h2>백업 / 복원</h2>
+        <p class="note">GitHub 저장소가 Public이어도 실제 자산 데이터는 기본적으로 기기 안에만 저장됩니다. 아래 백업을 누를 때만 지정한 JSON 파일로 올라갑니다.</p>
+        <div class="form always">
+          <input id="ghOwner" placeholder="GitHub 아이디 예: Justin-1984" />
+          <input id="ghRepo" placeholder="저장소명 예: asset-manager" />
+          <input id="ghPath" placeholder="백업 파일명 예: asset-manager-data.json" />
+          <input id="ghToken" placeholder="GitHub Token" type="password" />
+          <button id="saveSettings">GitHub 설정 저장</button>
+          <button id="backupBtn" type="button">GitHub 백업</button>
+          <button id="restoreBtn" type="button">GitHub 복원</button>
+          <button id="exportBtn" type="button">파일로 내보내기</button>
+          <label class="fileBtn">파일에서 가져오기<input id="importFile" type="file" accept="application/json" hidden /></label>
+        </div>
+        <p id="syncStatus" class="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-tab="dashboard" class="active">홈</button>
+    <button data-tab="assets">자산</button>
+    <button data-tab="debts">부채</button>
+    <button data-tab="graphs">그래프</button>
+    <button data-tab="settings">설정</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
