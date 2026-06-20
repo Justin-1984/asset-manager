@@ -1,7 +1,6 @@
-# 자산 매니저 v3.5
+# 자산 매니저 v3.6
 
-- 거래소 API 연결 관리 화면 추가
-- Binance, Upbit, OKX, Bybit, Bitget, Gate.io, HTX, BingX 등록 지원
-- 조회 전용 권한 확인 체크
-- API Key/Secret 로컬 저장
-- 다음 단계: Binance 실제 잔고 조회
+- 거래소 실제 공개 시세 API 테스트 추가
+- Binance/Upbit/OKX/Bybit/Bitget/Gate.io/HTX/BingX BTC 시세 테스트
+- 잔고 조회 전 브라우저 호출 가능 여부 확인 단계
+- sw.js 캐시 v3.6
