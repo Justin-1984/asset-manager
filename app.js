@@ -1,5 +1,5 @@
 const STORAGE_KEY='asset-manager-v3-8';
-const OLD_KEYS=['asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
+const OLD_KEYS=['asset-manager-v3-6','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -128,13 +128,17 @@ async function fetchBinanceBalancesViaWorker(x){
   const workerUrl=(x.workerUrl||'').trim();
   if(!workerUrl) throw new Error('Binance Worker URL을 먼저 입력하세요. Cloudflare Worker 배포 후 URL을 거래소 설정에 저장해야 합니다.');
   if(!x.apiKey||!x.secret) throw new Error('Binance API Key와 Secret Key를 입력하세요.');
-  const res=await fetch(workerUrl.replace(/\/$/,'')+'/binance/balances',{
+  const base=workerUrl.replace(/\/$/,'');
+  const endpoint=base.endsWith('/binance/balances') ? base : base + '/binance/balances';
+  const res=await fetch(endpoint,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({apiKey:x.apiKey,secret:x.secret})
   });
   const txt=await res.text();
-  let data;try{data=JSON.parse(txt)}catch{throw new Error(txt||'Worker 응답 파싱 실패')}
+  let data;
+  try{data=JSON.parse(txt)}
+  catch{throw new Error('Worker 응답이 JSON이 아닙니다. Worker 코드가 최신인지 확인하세요. 응답: '+(txt||'').slice(0,300))}
   if(!res.ok||!data.ok) throw new Error(data.error||('HTTP '+res.status));
   return data.balances||[];
 }
