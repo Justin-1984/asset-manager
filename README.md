@@ -1,8 +1,7 @@
-# 자산 매니저 v3.0
+# 자산 매니저 v3.5
 
-- 코인/주식 평균매수가 입력
-- 자산별 수익금/수익률 표시
-- 대시보드 투자원금/총수익/총수익률 표시
-- 환율 자동조회 및 수동 갱신 유지
-- BingX, HTX 기본통화 USDT 유지
-- sw.js 캐시 v3.0 적용
+- 거래소 API 연결 관리 화면 추가
+- Binance, Upbit, OKX, Bybit, Bitget, Gate.io, HTX, BingX 등록 지원
+- 조회 전용 권한 확인 체크
+- API Key/Secret 로컬 저장
+- 다음 단계: Binance 실제 잔고 조회

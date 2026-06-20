@@ -14,3 +14,10 @@ button:disabled{opacity:.6;cursor:not-allowed}
 @media(max-width:760px){.head-actions{justify-content:flex-start}}
 
 .profit{display:block;margin-top:5px;font-size:13px;font-weight:900}.profit.plus{color:#16a34a}.profit.minus{color:#dc2626}body.dark .profit.plus{color:#4ade80}body.dark .profit.minus{color:#f87171}
+
+.checkline{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--text)}
+.checkline input{width:auto;min-height:auto}
+.exchange-warning{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:14px 0;padding:14px;border-radius:18px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--text)}
+.exchange-warning span{color:var(--muted);font-size:13px}
+.bottom-nav{grid-template-columns:repeat(6,1fr)}
+@media(max-width:560px){.exchange-warning{display:block}.bottom-nav button{font-size:11px;padding:10px 4px}}

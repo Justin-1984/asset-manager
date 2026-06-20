@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v3.0</title>
-  <link rel="manifest" href="manifest.json?v=3.0" />
-  <link rel="stylesheet" href="styles.css?v=3.0" />
+  <title>자산 매니저 v3.5</title>
+  <link rel="manifest" href="manifest.json?v=3.5" />
+  <link rel="stylesheet" href="styles.css?v=3.5" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v3.0</p>
+      <p>통합 순자산 대시보드 v3.5</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -97,6 +97,29 @@
       </div>
     </section>
 
+
+    <section id="exchanges" class="view">
+      <div class="card">
+        <div class="card-head"><h2>거래소 연결 관리</h2><button id="addExchangeBtn">+ 거래소 연결 추가</button></div>
+        <p class="note">v3.5는 실제 잔고 조회 전 단계입니다. API 키를 기기 안에 저장하고, 다음 버전에서 Binance부터 읽기 전용 잔고 조회를 붙입니다.</p>
+        <form id="exchangeForm" class="form hidden">
+          <select id="exchangeName">
+            <option>Binance</option><option>Upbit</option><option>OKX</option><option>Bybit</option><option>Bitget</option><option>Gate.io</option><option>HTX</option><option>BingX</option>
+          </select>
+          <input id="exchangeApiKey" placeholder="API Key" autocomplete="off" />
+          <input id="exchangeSecret" placeholder="Secret Key" type="password" autocomplete="off" />
+          <input id="exchangePassphrase" placeholder="Passphrase / UID 필요한 거래소만 입력" autocomplete="off" />
+          <label class="checkline"><input id="exchangeReadOnly" type="checkbox" checked /> 조회 전용 권한만 사용했습니다</label>
+          <button id="exchangeSubmitBtn" type="submit">저장</button><button id="exchangeCancelBtn" type="button" class="ghost hidden">취소</button>
+        </form>
+        <div class="exchange-warning">
+          <b>API 권한 원칙</b>
+          <span>조회 권한만 ON · 거래 권한 OFF · 출금 권한 OFF</span>
+        </div>
+        <div id="exchangeList" class="list"></div>
+      </div>
+    </section>
+
     <section id="settings" class="view">
       <div class="card">
         <h2>목표 / 환율</h2>
@@ -116,7 +139,7 @@
           <div><span>미국주식 · 미국 ETF</span><strong>USD</strong></div>
           <div><span>홍콩 은행 · 홍콩 모기지</span><strong>HKD</strong></div>
         </div>
-        <p class="note">v3.0은 앱 실행 시 환율을 자동조회하고, 코인/주식은 평균매수가를 입력하면 수익금과 수익률을 계산합니다. 실패하면 마지막 저장 환율을 그대로 사용합니다.</p>
+        <p class="note">v3.5는 환율 자동조회, 수익률 계산, 거래소 API 연결 관리 화면을 포함합니다. 실패하면 마지막 저장 환율을 그대로 사용합니다.</p>
       </div>
       <div class="card">
         <h2>백업 / 복원</h2>
@@ -142,9 +165,10 @@
     <button data-tab="assets">자산</button>
     <button data-tab="debts">부채</button>
     <button data-tab="graphs">그래프</button>
+    <button data-tab="exchanges">거래소</button>
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 </html>
