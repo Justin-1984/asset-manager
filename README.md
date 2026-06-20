@@ -1,14 +1,15 @@
-# Asset Manager v3.8.1
+# Asset Manager v3.9
 
-## 핵심 수정
-- Binance Worker 405 오류 대응
-- Worker가 `/`와 `/binance/balances` POST를 모두 허용
-- Worker URL을 루트 주소로 넣어도 되고 `/binance/balances`까지 넣어도 동작
-- Binance signed account endpoint를 GET 방식으로 명시
-- Worker root URL 접속 시 health check JSON 표시
+## 핵심 변경
+- 거래소 잔고 API 자동조회는 보류
+- 보유수량은 수동 입력
+- 보유 코인의 현재가는 공개 시세 API로 자동조회
+- 앱 실행 시 환율 자동조회 후 코인 시세 자동조회
+- `전체 시세 갱신` 버튼 추가
+- 시세 반영 후 평가액/수익률 자동 계산
 
 ## 업로드
-GitHub Pages에는 아래 6개 파일만 업로드하세요.
+GitHub Pages에는 아래 6개 파일을 업로드하세요.
 - index.html
 - app.js
 - styles.css
@@ -16,4 +17,4 @@ GitHub Pages에는 아래 6개 파일만 업로드하세요.
 - sw.js
 - README.md
 
-Cloudflare Worker에는 `binance-worker.js` 전체를 붙여넣고 Deploy 하세요.
+`binance-worker.js`는 v3.9부터 필수 사용 대상이 아닙니다.

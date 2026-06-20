@@ -1,5 +1,5 @@
-const STORAGE_KEY='asset-manager-v3-8-1';
-const OLD_KEYS=['asset-manager-v3-6','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
+const STORAGE_KEY='asset-manager-v3-9';
+const OLD_KEYS=['asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
@@ -27,8 +27,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'3.8'};}catch{}} return {version:'3.8',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='3.8';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'3.9'};}catch{}} return {version:'3.9',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='3.9';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -90,9 +90,9 @@ function render(){
  renderAssets();renderDebts();renderExchanges();renderSnapshots();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
 }
 function filteredAssets(){let rows=state.assets.filter(a=>assetFilter==='전체'||a.type===assetFilter);const q=assetSearch.trim().toLowerCase();if(q)rows=rows.filter(a=>[a.type,a.account,a.name,a.currency].some(v=>String(v||'').toLowerCase().includes(q)));return rows.sort((a,b)=>{if(assetSort==='amountAsc')return assetAmount(a)-assetAmount(b);if(assetSort==='nameAsc')return String(a.name).localeCompare(String(b.name),'ko');if(assetSort==='typeAsc')return String(a.type).localeCompare(String(b.type),'ko')||assetAmount(b)-assetAmount(a);return assetAmount(b)-assetAmount(a);});}
-function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}</div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
+function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}<div class="meta">${a.priceSource?`시세 ${esc(a.priceSource)} · ${esc(a.priceUpdatedAt||'')}`:''}</div></div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
 function renderDebts(){$('debtList').innerHTML=state.debts.length?state.debts.map(d=>`<div class="item"><div><div class="name">${esc(d.name)}</div><div class="meta">${esc(d.type)} · ${esc(d.currency||'KRW')} ${d.rate?`· 금리 ${d.rate}%`:''}</div></div><div class="meta">부채 잔액</div><div class="amount">${money(debtAmount(d))}</div><button onclick="editDebt('${d.id}')">수정</button><button class="danger" onclick="removeDebt('${d.id}')">삭제</button></div>`).join(''):'<p class="note">등록된 부채가 없습니다.</p>';}
-function renderExchanges(){const el=$('exchangeList');if(!el)return;state.exchanges=state.exchanges||[];el.innerHTML=state.exchanges.length?state.exchanges.map(x=>{const test=x.lastPublicTest?`<br>시세 테스트: ${esc(x.lastPublicTest)}`:'';return `<div class="item"><div><div class="name">${esc(x.name)}</div><div class="meta">API ${maskKey(x.apiKey)} · ${x.passphrase?'Passphrase 저장됨':'Passphrase 없음'} · ${x.workerUrl?'Worker URL 저장됨':'Worker URL 없음'}<br>마지막 동기화: ${esc(x.lastSync||'아직 없음')}${test}</div></div><div class="amount"><div class="profit ${exchangeStatusClass(x)}">${exchangeStatusLabel(x)}</div><div class="meta">${x.readOnly?'조회 전용 확인':'조회 전용 미확인'}</div></div><button onclick="editExchange('${x.id}')">수정</button><button class="ghost" onclick="testExchange('${x.id}')">시세 테스트</button>${String(x.name).toLowerCase().includes('binance')?`<button class="primary" onclick="syncBinance('${x.id}')">Binance 잔고 동기화</button>`:''}<button class="danger" onclick="removeExchange('${x.id}')">삭제</button></div>`}).join(''):'<p class="note">등록된 거래소 API가 없습니다. Binance부터 추가해 보세요.</p>';}
+function renderExchanges(){const el=$('exchangeList');if(!el)return;state.exchanges=state.exchanges||[];el.innerHTML=state.exchanges.length?state.exchanges.map(x=>{const test=x.lastPublicTest?`<br>시세 테스트: ${esc(x.lastPublicTest)}`:'';return `<div class="item"><div><div class="name">${esc(x.name)}</div><div class="meta">시세조회 기준 거래소 · API Key 없이 사용 가능<br>마지막 확인: ${esc(x.lastSync||'아직 없음')}${test}</div></div><div class="amount"><div class="profit plus">시세조회용</div><div class="meta">잔고는 수동 입력</div></div><button onclick="editExchange('${x.id}')">수정</button><button class="ghost" onclick="testExchange('${x.id}')">시세 테스트</button><button class="danger" onclick="removeExchange('${x.id}')">삭제</button></div>`}).join(''):'<p class="note">등록된 거래소가 없어도 코인 시세 자동조회는 작동합니다. 자산의 계좌/거래소명 기준으로 우선 조회합니다.</p>';}
 function renderSnapshots(){const el=$('snapshotList');if(!el)return;const rows=state.snapshots.slice(-5).reverse();el.innerHTML=rows.length?rows.map(s=>`<div><span>${esc(s.date)}</span><b>${money(s.netWorth)}</b><small>자산 ${moneyShort(s.assets)} · 부채 ${moneyShort(s.debts)}</small></div>`).join(''):'<p class="note">아직 저장된 스냅샷이 없습니다.</p>';}
 function textColor(){return getComputedStyle(document.body).getPropertyValue('--text').trim()}function cardColor(){return getComputedStyle(document.body).getPropertyValue('--card').trim()}
 function setupCanvas(id,w=320,h=320){const c=$(id),ctx=c.getContext('2d'),dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);return{c,ctx,w,h};}
@@ -121,6 +121,33 @@ async function fetchPublicTicker(exchange){
  if(name.includes('bingx')){const j=await getJson('https://open-api.bingx.com/openApi/spot/v1/ticker/24hr?symbol=BTC-USDT');const d=j.data||{};return {symbol:'BTC/USDT',price:Number(d.lastPrice||d.last||d.close),currency:'USDT'};}
  throw new Error('지원하지 않는 거래소입니다');
 }
+
+function cleanCoinSymbol(name){return String(name||'').toUpperCase().replace(/(USDT|KRW|USD)$/,'').replace(/[^A-Z0-9]/g,'').trim();}
+function preferredPriceSources(asset){const acct=String(asset.account||'').toLowerCase();const cur=String(asset.currency||'').toUpperCase();if(cur==='KRW'||/upbit|업비트|bithumb|빗썸|coinone|코인원/.test(acct))return ['upbit','binance','okx','bybit','bitget','gate','htx','bingx'];if(/okx|오케이엑스/.test(acct))return ['okx','binance','bybit','bitget','gate','htx','bingx','upbit'];if(/bybit|바이비트/.test(acct))return ['bybit','binance','okx','bitget','gate','htx','bingx','upbit'];if(/bitget|비트겟/.test(acct))return ['bitget','binance','okx','bybit','gate','htx','bingx','upbit'];if(/gate/.test(acct))return ['gate','binance','okx','bybit','bitget','htx','bingx','upbit'];if(/htx|huobi|후오비/.test(acct))return ['htx','binance','okx','bybit','bitget','gate','bingx','upbit'];if(/bingx|빙엑스/.test(acct))return ['bingx','binance','okx','bybit','bitget','gate','htx','upbit'];return ['binance','okx','bybit','bitget','gate','htx','bingx','upbit'];}
+async function fetchCryptoPriceBySource(symbol,source){
+ const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
+ const getJson=async url=>{const r=await timeout(9000,fetch(url,{cache:'no-store'}));if(!r.ok)throw new Error(source+' HTTP '+r.status);return r.json();};
+ if(source==='upbit'){const j=await getJson(`https://api.upbit.com/v1/ticker?markets=KRW-${symbol}`);return {price:Number(j[0]?.trade_price),currency:'KRW',source:'Upbit'};}
+ if(source==='binance'){const j=await getJson(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`);return {price:Number(j.price),currency:'USDT',source:'Binance'};}
+ if(source==='okx'){const j=await getJson(`https://www.okx.com/api/v5/market/ticker?instId=${symbol}-USDT`);return {price:Number(j.data?.[0]?.last),currency:'USDT',source:'OKX'};}
+ if(source==='bybit'){const j=await getJson(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}USDT`);return {price:Number(j.result?.list?.[0]?.lastPrice),currency:'USDT',source:'Bybit'};}
+ if(source==='bitget'){const j=await getJson(`https://api.bitget.com/api/v2/spot/market/tickers?symbol=${symbol}USDT`);const row=Array.isArray(j.data)?j.data[0]:j.data;return {price:Number(row?.lastPr||row?.close||row?.last),currency:'USDT',source:'Bitget'};}
+ if(source==='gate'){const j=await getJson(`https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}_USDT`);return {price:Number(j[0]?.last),currency:'USDT',source:'Gate.io'};}
+ if(source==='htx'){const j=await getJson(`https://api.huobi.pro/market/detail/merged?symbol=${symbol.toLowerCase()}usdt`);return {price:Number(j.tick?.close),currency:'USDT',source:'HTX'};}
+ if(source==='bingx'){const j=await getJson(`https://open-api.bingx.com/openApi/spot/v1/ticker/24hr?symbol=${symbol}-USDT`);const d=j.data||{};return {price:Number(d.lastPrice||d.last||d.close),currency:'USDT',source:'BingX'};}
+ throw new Error('지원하지 않는 시세 출처');
+}
+async function fetchCryptoPriceForAsset(asset){const symbol=cleanCoinSymbol(asset.name);if(!symbol)throw new Error('코인 심볼 없음');for(const source of preferredPriceSources(asset)){try{const t=await fetchCryptoPriceBySource(symbol,source);if(t.price>0)return t;}catch(e){console.warn('price source failed',symbol,source,e.message);}}throw new Error(`${symbol} 시세 조회 실패`);}
+async function refreshCryptoPrices(manual=false){
+ const assets=state.assets.filter(a=>a.type==='코인'&&cleanCoinSymbol(a.name));
+ const btn=$('refreshPricesBtn'); const st=$('priceAutoStatus')||$('fxAutoStatus');
+ if(!assets.length){alert('시세를 조회할 코인 자산이 없습니다. 먼저 코인을 추가해 주세요.');return;}
+ let ok=0,fail=[]; if(btn){btn.disabled=true;btn.textContent='시세 갱신 중...';} if(st)st.textContent='보유 코인 시세 조회 중...';
+ for(const a of assets){try{const t=await fetchCryptoPriceForAsset(a);a.price=t.price;a.currency=t.currency;a.priceSource=t.source;a.priceUpdatedAt=new Date().toLocaleString('ko-KR');ok++;}catch(e){fail.push(`${a.name}: ${e.message}`);}}
+ state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+ prefs.priceUpdatedAt=new Date().toLocaleString('ko-KR');prefs.priceAutoStatus=`코인 시세 갱신 ${ok}개 완료${fail.length?` · 실패 ${fail.length}개`:''}`;localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+ if(btn){btn.disabled=false;btn.textContent='전체 시세 갱신';} render(); if(manual&&fail.length)alert('일부 시세 조회 실패\n'+fail.slice(0,8).join('\n'));
+}
 window.testExchange=async id=>{const x=(state.exchanges||[]).find(v=>v.id===id);if(!x)return;try{const btn=event?.target;if(btn){btn.disabled=true;btn.textContent='테스트 중...';}const t=await fetchPublicTicker(x.name);if(!t.price)throw new Error('가격 파싱 실패');x.lastPublicTest=`${t.symbol} ${num(t.price)} ${t.currency} · ${new Date().toLocaleString('ko-KR')}`;x.lastSync=new Date().toLocaleString('ko-KR');save();alert(`${x.name} 실제 시세 테스트 성공\n${t.symbol}: ${num(t.price)} ${t.currency}\n\n이 테스트는 API Key 없이 공개 시세 API가 브라우저에서 호출되는지 확인하는 단계입니다.`);}catch(e){alert(`${x.name} 실제 시세 테스트 실패\n${e.message}\n\n일부 거래소는 브라우저 직접 호출을 막을 수 있습니다. 이 경우 서버/프록시 방식으로 연결해야 합니다.`);}finally{render();}};
 
 
@@ -142,36 +169,6 @@ async function fetchBinanceBalancesViaWorker(x){
   if(!res.ok||!data.ok) throw new Error(data.error||('HTTP '+res.status));
   return data.balances||[];
 }
-window.syncBinance=async id=>{
-  const x=(state.exchanges||[]).find(v=>v.id===id); if(!x)return;
-  if(!confirm('Binance 잔고를 동기화할까요?\n\n기존 Binance API 자동연동 자산은 새 잔고로 교체됩니다. 수동으로 입력한 Binance 자산은 유지됩니다.'))return;
-  const btn=event?.target;
-  try{
-    if(btn){btn.disabled=true;btn.textContent='동기화 중...';}
-    const balances=await fetchBinanceBalancesViaWorker(x);
-    const oldAuto=state.assets.filter(a=>a.source==='binance-api');
-    const oldCost=new Map(oldAuto.map(a=>[String(a.name).toUpperCase(),Number(a.costPrice)||0]));
-    state.assets=state.assets.filter(a=>a.source!=='binance-api');
-    for(const b of balances){
-      const asset=String(b.asset||'').toUpperCase();
-      const total=Number(b.total)||0;
-      if(!asset||total<=0)continue;
-      const price=asset==='USDT'?1:(Number(b.priceUSDT)||0);
-      state.assets.push({
-        id:uid(), type:'코인', account:'Binance', name:asset, currency:'USDT',
-        qty:total, price:price, costPrice:oldCost.get(asset)||0, source:'binance-api',
-        syncedAt:new Date().toISOString()
-      });
-    }
-    x.lastSync=new Date().toLocaleString('ko-KR');
-    x.lastPublicTest=`Binance 잔고 ${balances.length}개 동기화 · ${x.lastSync}`;
-    save();
-    alert(`Binance 잔고 동기화 완료\n${balances.length}개 코인이 자산 목록에 반영되었습니다.\n\n평균매수가는 거래소에서 가져오지 못하므로 기존값이 있으면 유지하고, 없으면 0으로 표시됩니다.`);
-  }catch(e){
-    alert('Binance 잔고 동기화 실패\n'+e.message+'\n\nAPI 권한은 Reading만 켜고, Worker URL과 API Key/Secret을 다시 확인하세요.');
-  }finally{if(btn){btn.disabled=false;btn.textContent='Binance 잔고 동기화';}render();}
-};
-
 window.editExchange=id=>{const x=(state.exchanges||[]).find(v=>v.id===id);if(!x)return;editingExchangeId=id;$('exchangeForm').classList.remove('hidden');$('exchangeSubmitBtn').textContent='수정 저장';$('exchangeCancelBtn').classList.remove('hidden');$('exchangeName').value=x.name;$('exchangeApiKey').value=x.apiKey||'';$('exchangeSecret').value=x.secret||'';$('exchangePassphrase').value=x.passphrase||'';if($('exchangeWorkerUrl'))$('exchangeWorkerUrl').value=x.workerUrl||'';$('exchangeReadOnly').checked=!!x.readOnly;updateExchangePassHint();window.scrollTo({top:$('exchanges').offsetTop,behavior:'smooth'});};
 function resetExchangeForm(){editingExchangeId=null;if(!$('exchangeForm'))return;$('exchangeSubmitBtn').textContent='저장';$('exchangeCancelBtn').classList.add('hidden');$('exchangeForm').reset();$('exchangeReadOnly').checked=true;if($('exchangeWorkerUrl'))$('exchangeWorkerUrl').value='';updateExchangePassHint();}
 window.editDebt=id=>{const d=state.debts.find(x=>x.id===id);if(!d)return;editingDebtId=id;$('debtForm').classList.remove('hidden');$('debtSubmitBtn').textContent='수정 저장';$('debtCancelBtn').classList.remove('hidden');$('debtType').value=d.type;$('debtName').value=d.name;$('debtCurrency').value=d.currency||'KRW';$('debtAmount').value=d.amount;$('debtRate').value=d.rate||'';window.scrollTo({top:$('debts').offsetTop,behavior:'smooth'});};
@@ -197,5 +194,6 @@ async function gh(method,body){settings=JSON.parse(localStorage.getItem(SETTINGS
 $('backupBtn').onclick=async()=>{try{setStatus('백업 중...');let sha;const r=await gh('GET');if(r.ok)sha=(await r.json()).sha;const payload={state,prefs,backupAt:new Date().toISOString()};const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));const res=await gh('PUT',{message:`asset-manager backup ${new Date().toISOString()}`,content,sha});if(!res.ok)throw new Error(await res.text());setStatus('GitHub 백업 완료');}catch(e){setStatus('백업 실패: '+e.message)}};
 $('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){setStatus('복원 실패: '+e.message)}};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
+if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(true);
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=3.8').catch(()=>{});updateAssetPreview();render();autoUpdateFx();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=3.9').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
