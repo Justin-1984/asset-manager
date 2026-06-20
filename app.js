@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v3-8';
+const STORAGE_KEY='asset-manager-v3-8-1';
 const OLD_KEYS=['asset-manager-v3-6','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
