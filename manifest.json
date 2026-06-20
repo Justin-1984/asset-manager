@@ -1,0 +1,9 @@
+{
+  "name": "자산 매니저",
+  "short_name": "자산매니저",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": []
+}
