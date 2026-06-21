@@ -18,10 +18,10 @@
         "name": "XLM",
         "currency": "KRW",
         "qty": 10000,
-        "price": 320,
+        "price": 322,
         "costPrice": 0,
         "priceSource": "Upbit",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:31:33"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1465,
+        "price": 1.1487,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:31:33"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -42,9 +42,9 @@
         "name": "BCH",
         "currency": "USDT",
         "qty": 5,
-        "price": 197.6,
+        "price": 198.1,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:31:33"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
       },
       {
         "id": "mqnl9fskpwgcj9",
@@ -53,8 +53,20 @@
         "name": "schd",
         "currency": "USD",
         "qty": 50,
-        "price": 30,
-        "costPrice": 20
+        "price": 31.86,
+        "costPrice": 20,
+        "priceSource": "Finnhub",
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
+      },
+      {
+        "id": "mqnlskqg1q0g6i",
+        "type": "주식",
+        "account": "카카오",
+        "name": "441640",
+        "currency": "KRW",
+        "qty": 10,
+        "price": 10800,
+        "costPrice": 10100
       }
     ],
     "debts": [],
@@ -258,8 +270,8 @@
         "lastPublicTest": ""
       }
     ],
-    "version": "4.4.2",
-    "updatedAt": "2026-06-21T09:33:05.205Z",
+    "version": "4.5",
+    "updatedAt": "2026-06-21T09:47:58.072Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -270,11 +282,17 @@
     "audRate": 1073.91,
     "fxUpdatedAt": "2026. 6. 21. 오후 6:32:15",
     "fxAutoStatus": "수동 환율 저장 완료",
-    "priceUpdatedAt": "2026-06-21T09:31:33.782Z",
-    "priceAutoStatus": "시세 갱신 3개 완료",
+    "priceUpdatedAt": "2026-06-21T09:47:15.947Z",
+    "priceAutoStatus": "시세 갱신 4개 완료",
     "autoGithubBackup": true,
-    "lastRestoreAt": "2026-06-21T09:32:11.369Z",
+    "lastRestoreAt": "2026-06-21T09:47:10.498Z",
     "backupLogs": [
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T09:47:10.498Z",
+        "display": "2026. 6. 21. 오후 6:47:10"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
@@ -321,6 +339,6 @@
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "lastBackupAt": "2026-06-21T09:32:18.819Z"
   },
-  "backupAt": "2026-06-21T09:33:08.529Z",
+  "backupAt": "2026-06-21T09:48:01.357Z",
   "backupMode": "auto"
 }
