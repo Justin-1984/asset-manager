@@ -25,3 +25,9 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mini-log{margin-top:12px}.mini-log div small{display:block;color:var(--muted);font-size:12px}.status-board em{display:block;margin-top:4px;color:var(--muted);font-style:normal;font-size:12px}
 
 .meta.code{font-weight:700;color:var(--muted);margin-top:2px;font-size:12px}
+
+.performance-list{display:flex;flex-direction:column;gap:10px}
+.perf-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08)}
+.perf-row small{display:block;color:var(--muted);margin-top:4px}
+.perf-row strong{display:block;text-align:right}
+.perf-row span{display:block;text-align:right;font-weight:800}

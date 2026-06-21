@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v4.5.1</title>
-  <link rel="manifest" href="manifest.json?v=451" />
-  <link rel="stylesheet" href="styles.css?v=451" />
+  <title>자산 매니저 v4.6</title>
+  <link rel="manifest" href="manifest.json?v=46" />
+  <link rel="stylesheet" href="styles.css?v=46" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v4.5.1</p>
+      <p>통합 순자산 대시보드 v4.6</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -27,6 +27,7 @@
         <article class="summary"><span>투자원금</span><strong id="totalInvestCost">₩0</strong><em>코인/주식 기준</em></article>
         <article class="summary"><span>총수익</span><strong id="totalProfit">₩0</strong><em id="totalProfitPct">0%</em></article>
         <article class="summary"><span>월별 순자산 변화</span><strong id="monthlyChange">₩0</strong><em id="monthlyChangePct">0%</em></article>
+        <article class="summary"><span>전일 대비 순자산</span><strong id="dailyChange">₩0</strong><em id="dailyChangePct">0%</em></article>
       </div>
 
       <div class="card fx-card">
@@ -74,6 +75,24 @@
         <canvas id="monthlyLine" width="720" height="280"></canvas>
         <p class="note">앱 실행 시 이번 달 순자산을 자동 저장합니다. 같은 달 데이터는 최신 값으로 갱신됩니다.</p>
         <div id="monthlySnapshotList" class="snapshot-list"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <h2>일별 순자산 추이</h2>
+          <div class="head-actions">
+            <button id="dailySnapshotBtn" class="ghost small">오늘 스냅샷 저장</button>
+            <button id="clearDailySnapshotsBtn" class="danger small">일별 초기화</button>
+          </div>
+        </div>
+        <canvas id="dailyLine" width="720" height="260"></canvas>
+        <p class="note">앱 실행 시 오늘 순자산을 자동 저장합니다. 같은 날 데이터는 최신 값으로 갱신됩니다.</p>
+        <div id="dailySnapshotList" class="snapshot-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>계좌/거래소별 수익률</h2></div>
+        <div id="accountPerformanceList" class="performance-list"></div>
       </div>
     </section>
 
@@ -200,6 +219,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=451"></script>
+  <script src="app.js?v=46"></script>
 </body>
 </html>

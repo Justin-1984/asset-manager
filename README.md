@@ -1,15 +1,13 @@
-# 자산 매니저 v4.5.1
+# 자산 매니저 v4.6
 
 ## 변경 사항
-- 종목코드/티커 표시명 자동 표시
-  - 441640 → KODEX 미국S&P500TR
-  - 360750 → TIGER 미국S&P500
-  - 133690 → TIGER 미국나스닥100
-  - SCHD → Schwab U.S. Dividend Equity ETF
-  - VOO/QQQ/JEPI/JEPQ 등 주요 미국 ETF 표시명 추가
-  - BTC/ETH/XRP 등 주요 코인 표시명 추가
-- 실제 조회용 코드는 그대로 유지
-- 기존 v4.5 한국 ETF Worker 시세조회, 미국주식 Worker 시세조회, 코인 자동시세 유지
+- 일별 순자산 자동 스냅샷 추가
+- 앱 실행 시 오늘 순자산 자동 저장/갱신
+- 대시보드에 전일 대비 순자산 카드 추가
+- 일별 순자산 추이 그래프 추가
+- 계좌/거래소별 수익률 분석 추가
+  - 업비트, 바이낸스, 미국주식, 한국ETF 등 계좌명 기준
+- 기존 자동 시세, 종목명 표시, 환율, GitHub 백업, 월별 스냅샷 유지
 
 ## 업데이트 확인 주소
-https://justin-1984.github.io/asset-manager/?v=451
+https://justin-1984.github.io/asset-manager/?v=46
