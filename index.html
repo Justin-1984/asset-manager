@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v4.6</title>
-  <link rel="manifest" href="manifest.json?v=46" />
-  <link rel="stylesheet" href="styles.css?v=46" />
+  <title>자산 매니저 v4.7.1</title>
+  <link rel="manifest" href="manifest.json?v=471" />
+  <link rel="stylesheet" href="styles.css?v=471" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v4.6</p>
+      <p>통합 순자산 대시보드 v4.7.1</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -165,6 +165,33 @@
       </div>
     </section>
 
+
+    <section id="insurance" class="view">
+      <div class="card">
+        <div class="card-head"><h2>보험 관리</h2><button id="addInsuranceBtn">+ 보험 추가</button></div>
+        <p class="note">해지환급금이 있는 보험은 자산에 포함할 수 있고, 순수 보장성 보험은 월 보험료/보장금액 관리용으로 사용할 수 있습니다.</p>
+        <div class="summary-grid mini-summary">
+          <article class="summary"><span>총 월 보험료</span><strong id="insuranceMonthlyPremiumTotal">₩0</strong></article>
+          <article class="summary"><span>총 해지환급금</span><strong id="insuranceRefundTotal">₩0</strong></article>
+          <article class="summary"><span>총 보장금액</span><strong id="insuranceCoverageTotal">₩0</strong></article>
+        </div>
+        <form id="insuranceForm" class="form hidden">
+          <input id="insuranceCompany" placeholder="보험사 예: 삼성생명, 현대해상" />
+          <input id="insuranceName" placeholder="상품명" required />
+          <select id="insuranceType"><option>종신/저축성</option><option>실손</option><option>암보험</option><option>건강보험</option><option>자동차보험</option><option>연금보험</option><option>기타보험</option></select>
+          <input id="insuranceCurrency" placeholder="통화 KRW/USD/HKD" value="KRW" />
+          <input id="insuranceMonthlyPremium" type="number" step="any" placeholder="월 보험료" />
+          <input id="insurancePayDate" placeholder="납입일 예: 매월 25일" />
+          <input id="insuranceRefundValue" type="number" step="any" placeholder="해지환급금/적립금" />
+          <input id="insuranceCoverageAmount" type="number" step="any" placeholder="보장금액" />
+          <label class="checkline"><input id="insuranceIncludeAsset" type="checkbox" /> 해지환급금을 자산에 포함</label>
+          <input id="insuranceMemo" placeholder="메모" />
+          <button id="insuranceSubmitBtn" type="submit">저장</button><button id="insuranceCancelBtn" type="button" class="ghost hidden">취소</button>
+        </form>
+        <div id="insuranceList" class="list"></div>
+      </div>
+    </section>
+
     <section id="settings" class="view">
       <div class="card">
         <h2>목표 / 환율</h2>
@@ -203,6 +230,7 @@
           <button id="backupBtn" type="button">GitHub 백업</button>
           <button id="restoreBtn" type="button">GitHub 복원</button>
           <button id="exportBtn" type="button">파일로 내보내기</button>
+          <button id="clearCacheBtn" type="button" class="ghost">앱 캐시 정리</button>
           <label class="fileBtn">파일에서 가져오기<input id="importFile" type="file" accept="application/json" hidden /></label>
         </div>
         <p id="syncStatus" class="status"></p>
@@ -216,9 +244,10 @@
     <button data-tab="debts">부채</button>
     <button data-tab="graphs">그래프</button>
     <button data-tab="exchanges">거래소</button>
+    <button data-tab="insurance">보험</button>
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=46"></script>
+  <script src="app.js?v=471"></script>
 </body>
 </html>

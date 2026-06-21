@@ -1,12 +1,24 @@
-const STORAGE_KEY='asset-manager-v4-6';
+const STORAGE_KEY='asset-manager-v4-7-1';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
 const COLORS=['#2563eb','#0f766e','#f59e0b','#7c3aed','#ef4444','#06b6d4','#84cc16','#64748b','#db2777','#14b8a6'];
 let state=loadState(), settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'), prefs=JSON.parse(localStorage.getItem(PREFS_KEY)||'{"usdRate":1530,"usdtRate":1530,"hkdRate":195,"audRate":1080,"goalAmount":0,"fxUpdatedAt":""}');
-let assetFilter='전체', barMode='account', assetSearch='', assetSort='amountDesc', editingAssetId=null, editingDebtId=null, editingExchangeId=null;
+let assetFilter='전체', barMode='account', assetSearch='', assetSort='amountDesc', editingAssetId=null, editingDebtId=null, editingExchangeId=null, editingInsuranceId=null;
 const $=id=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+let renderScheduled=false;
+let lastRenderedTab='dashboard';
+function requestRender(){
+ if(renderScheduled)return;
+ renderScheduled=true;
+ requestAnimationFrame(()=>{renderScheduled=false;render();});
+}
+function currentTabId(){
+ const active=document.querySelector('.view.active');
+ return active?active.id:'dashboard';
+}
+function isVisibleTab(id){return currentTabId()===id;}
 const money=n=>new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n)||0);
 const moneyShort=n=>{n=Math.round(Number(n)||0);const abs=Math.abs(n);if(abs>=100000000)return '₩'+(n/100000000).toFixed(abs>=1000000000?1:2).replace(/\.0+$|0+$/,'')+'억';if(abs>=10000)return '₩'+Math.round(n/10000).toLocaleString('ko-KR')+'만';return money(n);};
 const num=n=>new Intl.NumberFormat('ko-KR',{maximumFractionDigits:8}).format(Number(n)||0);
@@ -92,8 +104,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.6'};}catch{}} return {version:'4.6',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.6';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'4.7.1'};}catch{}} return {version:'4.7.1',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.7.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -204,7 +216,7 @@ async function autoUpdateFx(manual=false){
   prefs.fxUpdatedAt=new Date().toLocaleString('ko-KR');
   prefs.fxAutoStatus=(manual?'수동 환율 갱신 완료':'자동 환율 조회 완료')+' · '+source;
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
-  render();
+  requestRender();
  }catch(e){
   // 실패 시 기본값 1380으로 되돌리지 않고 마지막 정상 저장 환율을 유지합니다.
   setMsg((manual?'수동 환율 갱신 실패':'자동 환율 조회 실패')+' · 마지막 저장 환율 유지 · '+e.message);
@@ -213,7 +225,7 @@ async function autoUpdateFx(manual=false){
  }
 }
 
-function totalAssets(){return state.assets.reduce((s,a)=>s+assetAmount(a),0)}
+function totalAssets(){return state.assets.reduce((s,a)=>s+assetAmount(a),0)+insuranceAssetAmount()}
 function totalDebts(){return state.debts.reduce((s,d)=>s+debtAmount(d),0)}
 function netWorth(){return totalAssets()-totalDebts()}
 function groupBy(list,keyFn,valFn){return list.reduce((m,x)=>{const k=keyFn(x)||'미지정';m[k]=(m[k]||0)+valFn(x);return m;},{});}
@@ -390,6 +402,22 @@ function drawDailyLine(){
  data.forEach((d,i)=>{const x=40+i*((w-70)/(data.length-1)),y=(h-40)-(((Number(d.netWorth)||0)-min)/pad)*(h-70);ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});
  ctx.fillStyle=textColor();ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(money(max),45,22);ctx.fillText(money(min),45,h-45);
 }
+
+function insuranceMonthlyPremiumTotal(){state.insurances=state.insurances||[];return state.insurances.reduce((s,i)=>s+(Number(i.monthlyPremium)||0)*fx(i.currency),0);}
+function insuranceRefundTotal(){state.insurances=state.insurances||[];return state.insurances.filter(i=>i.includeAsset).reduce((s,i)=>s+(Number(i.refundValue)||0)*fx(i.currency),0);}
+function insuranceCoverageTotal(){state.insurances=state.insurances||[];return state.insurances.reduce((s,i)=>s+(Number(i.coverageAmount)||0)*fx(i.currency),0);}
+function insuranceAssetAmount(){return insuranceRefundTotal();}
+function renderInsurances(){
+ const el=$('insuranceList'); if(!el)return; state.insurances=state.insurances||[];
+ if($('insuranceMonthlyPremiumTotal'))$('insuranceMonthlyPremiumTotal').textContent=money(insuranceMonthlyPremiumTotal());
+ if($('insuranceRefundTotal'))$('insuranceRefundTotal').textContent=money(insuranceRefundTotal());
+ if($('insuranceCoverageTotal'))$('insuranceCoverageTotal').textContent=money(insuranceCoverageTotal());
+ el.innerHTML=state.insurances.length?state.insurances.map(i=>`<div class="item"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.type||'보험')} · ${esc(i.company||'보험사 미입력')} · ${esc(i.currency||'KRW')}${i.payDate?` · 납입일 ${esc(i.payDate)}`:''}</div>${i.memo?`<div class="meta">${esc(i.memo)}</div>`:''}</div><div class="meta">월 보험료 ${money((Number(i.monthlyPremium)||0)*fx(i.currency))}<br>해지환급금 ${money((Number(i.refundValue)||0)*fx(i.currency))}<br>${i.includeAsset?'자산 포함':'자산 미포함'}</div><div class="amount">보장 ${money((Number(i.coverageAmount)||0)*fx(i.currency))}</div><button onclick="editInsurance('${i.id}')">수정</button><button class="danger" onclick="removeInsurance('${i.id}')">삭제</button></div>`).join(''):'<p class="note">등록된 보험이 없습니다.</p>';
+}
+function resetInsuranceForm(){editingInsuranceId=null;if(!$('insuranceForm'))return;$('insuranceSubmitBtn').textContent='저장';$('insuranceCancelBtn').classList.add('hidden');$('insuranceForm').reset();$('insuranceCurrency').value='KRW';$('insuranceIncludeAsset').checked=false;}
+window.editInsurance=id=>{const i=(state.insurances||[]).find(x=>x.id===id);if(!i)return;editingInsuranceId=id;$('insuranceForm').classList.remove('hidden');$('insuranceSubmitBtn').textContent='수정 저장';$('insuranceCancelBtn').classList.remove('hidden');$('insuranceCompany').value=i.company||'';$('insuranceName').value=i.name||'';$('insuranceType').value=i.type||'종신/저축성';$('insuranceCurrency').value=i.currency||'KRW';$('insuranceMonthlyPremium').value=i.monthlyPremium||'';$('insurancePayDate').value=i.payDate||'';$('insuranceRefundValue').value=i.refundValue||'';$('insuranceCoverageAmount').value=i.coverageAmount||'';$('insuranceIncludeAsset').checked=!!i.includeAsset;$('insuranceMemo').value=i.memo||'';window.scrollTo({top:$('insurance').offsetTop,behavior:'smooth'});};
+window.removeInsurance=id=>{if(confirm('이 보험을 삭제할까요?')){state.insurances=(state.insurances||[]).filter(i=>i.id!==id);save();}};
+
 function render(){
  refreshFxBoard();refreshStatusBoard();
  $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());if($('totalInvestCost'))$('totalInvestCost').textContent=money(totalInvestCost());if($('totalProfit')){$('totalProfit').textContent=signedMoney(totalProfit());$('totalProfit').className=profitClass(totalProfit());}if($('totalProfitPct')){$('totalProfitPct').textContent=signedPct(totalProfitPct());$('totalProfitPct').className=profitClass(totalProfit());}
@@ -397,7 +425,11 @@ function render(){
  const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
  const mc=monthlyChange();if($('monthlyChange')){$('monthlyChange').textContent=signedMoney(mc.amount);$('monthlyChange').className=profitClass(mc.amount);}if($('monthlyChangePct')){$('monthlyChangePct').textContent=signedPct(mc.pct);$('monthlyChangePct').className=profitClass(mc.amount);}
  const dc=dailyChange();if($('dailyChange')){$('dailyChange').textContent=signedMoney(dc.amount);$('dailyChange').className=profitClass(dc.amount);}if($('dailyChangePct')){$('dailyChangePct').textContent=signedPct(dc.pct);$('dailyChangePct').className=profitClass(dc.amount);}
- renderAssets();renderDebts();renderExchanges();renderSnapshots();renderMonthlySnapshots();renderDailySnapshots();renderAccountPerformance();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawMonthlyLine();drawDailyLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
+ renderAssets();renderDebts();renderInsurances();renderExchanges();renderSnapshots();renderMonthlySnapshots();renderDailySnapshots();renderAccountPerformance();
+ const tab=currentTabId();
+ if(tab==='dashboard'){drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawMonthlyLine();drawDailyLine();}
+ if(tab==='graphs'){drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();}
+ lastRenderedTab=tab;
 }
 function filteredAssets(){let rows=state.assets.filter(a=>assetFilter==='전체'||a.type===assetFilter);const q=assetSearch.trim().toLowerCase();if(q)rows=rows.filter(a=>[a.type,a.account,a.name,a.currency].some(v=>String(v||'').toLowerCase().includes(q)));return rows.sort((a,b)=>{if(assetSort==='amountAsc')return assetAmount(a)-assetAmount(b);if(assetSort==='nameAsc')return String(a.name).localeCompare(String(b.name),'ko');if(assetSort==='typeAsc')return String(a.type).localeCompare(String(b.type),'ko')||assetAmount(b)-assetAmount(a);return assetAmount(b)-assetAmount(a);});}
 function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div>${assetTitleHtml(a)}<div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}<div class="meta">${a.priceSource?`시세 ${esc(a.priceSource)} · ${esc(a.priceUpdatedAt||'')}`:''}</div></div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
@@ -614,7 +646,7 @@ async function fetchBinanceBalancesViaWorker(x){
   return data.balances||[];
 }
 window.editExchange=id=>{const x=(state.exchanges||[]).find(v=>v.id===id);if(!x)return;editingExchangeId=id;$('exchangeForm').classList.remove('hidden');$('exchangeSubmitBtn').textContent='수정 저장';$('exchangeCancelBtn').classList.remove('hidden');$('exchangeName').value=x.name;$('exchangeApiKey').value=x.apiKey||'';$('exchangeSecret').value=x.secret||'';$('exchangePassphrase').value=x.passphrase||'';if($('exchangeWorkerUrl'))$('exchangeWorkerUrl').value=x.workerUrl||'';$('exchangeReadOnly').checked=!!x.readOnly;updateExchangePassHint();window.scrollTo({top:$('exchanges').offsetTop,behavior:'smooth'});};
-function resetExchangeForm(){editingExchangeId=null;if(!$('exchangeForm'))return;$('exchangeSubmitBtn').textContent='저장';$('exchangeCancelBtn').classList.add('hidden');$('exchangeForm').reset();$('exchangeReadOnly').checked=true;if($('exchangeWorkerUrl'))$('exchangeWorkerUrl').value='';updateExchangePassHint();}
+function resetExchangeForm(){editingExchangeId=null, editingInsuranceId=null;if(!$('exchangeForm'))return;$('exchangeSubmitBtn').textContent='저장';$('exchangeCancelBtn').classList.add('hidden');$('exchangeForm').reset();$('exchangeReadOnly').checked=true;if($('exchangeWorkerUrl'))$('exchangeWorkerUrl').value='';updateExchangePassHint();}
 window.editDebt=id=>{const d=state.debts.find(x=>x.id===id);if(!d)return;editingDebtId=id;$('debtForm').classList.remove('hidden');$('debtSubmitBtn').textContent='수정 저장';$('debtCancelBtn').classList.remove('hidden');$('debtType').value=d.type;$('debtName').value=d.name;$('debtCurrency').value=d.currency||'KRW';$('debtAmount').value=d.amount;$('debtRate').value=d.rate||'';window.scrollTo({top:$('debts').offsetTop,behavior:'smooth'});};
 $('addAssetBtn').onclick=()=>{$('assetForm').classList.toggle('hidden');if(!$('assetForm').classList.contains('hidden'))resetAssetForm();};$('addDebtBtn').onclick=()=>{$('debtForm').classList.toggle('hidden');if(!$('debtForm').classList.contains('hidden'))resetDebtForm();};$('assetCancelBtn').onclick=resetAssetForm;$('debtCancelBtn').onclick=resetDebtForm;
 if($('addExchangeBtn'))$('addExchangeBtn').onclick=()=>{$('exchangeForm').classList.toggle('hidden');if(!$('exchangeForm').classList.contains('hidden'))resetExchangeForm();};if($('exchangeCancelBtn'))$('exchangeCancelBtn').onclick=resetExchangeForm;if($('exchangeName'))$('exchangeName').onchange=updateExchangePassHint;
@@ -625,7 +657,17 @@ if($('assetAccount'))$('assetAccount').addEventListener('blur',()=>{const guesse
 $('assetForm').onsubmit=e=>{e.preventDefault();const item={id:editingAssetId||uid(),type:$('assetType').value,account:$('assetAccount').value.trim(),name:$('assetName').value.trim(),currency:$('assetCurrency').value.trim().toUpperCase()||'KRW',qty:Number($('assetQty').value),price:Number($('assetPrice').value),costPrice:Number($('assetCostPrice')?.value)||0};if(editingAssetId){state.assets=state.assets.map(a=>a.id===editingAssetId?item:a);}else state.assets.push(item);resetAssetForm();save();};
 $('debtForm').onsubmit=e=>{e.preventDefault();const item={id:editingDebtId||uid(),type:$('debtType').value,name:$('debtName').value.trim(),currency:$('debtCurrency').value.trim().toUpperCase()||'KRW',amount:Number($('debtAmount').value),rate:$('debtRate').value};if(editingDebtId){state.debts=state.debts.map(d=>d.id===editingDebtId?item:d);}else state.debts.push(item);resetDebtForm();save();};
 if($('exchangeForm'))$('exchangeForm').onsubmit=e=>{e.preventDefault();state.exchanges=state.exchanges||[];const item={id:editingExchangeId||uid(),name:$('exchangeName').value,apiKey:$('exchangeApiKey').value.trim(),secret:$('exchangeSecret').value.trim(),passphrase:$('exchangePassphrase').value.trim(),workerUrl:($('exchangeWorkerUrl')?.value||'').trim(),readOnly:$('exchangeReadOnly').checked,lastSync:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastSync||'',lastPublicTest:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastPublicTest||''};if(!item.readOnly){alert('안전을 위해 조회 전용 권한 확인이 필요합니다. 거래/출금 권한은 절대 켜지 마세요.');return;}if(editingExchangeId){state.exchanges=state.exchanges.map(x=>x.id===editingExchangeId?item:x);}else state.exchanges.push(item);resetExchangeForm();save();};
+
+if($('addInsuranceBtn'))$('addInsuranceBtn').onclick=()=>{$('insuranceForm').classList.toggle('hidden');if(!$('insuranceForm').classList.contains('hidden'))resetInsuranceForm();};
+if($('insuranceCancelBtn'))$('insuranceCancelBtn').onclick=resetInsuranceForm;
+if($('insuranceForm'))$('insuranceForm').onsubmit=e=>{e.preventDefault();state.insurances=state.insurances||[];const item={id:editingInsuranceId||uid(),company:$('insuranceCompany').value.trim(),name:$('insuranceName').value.trim(),type:$('insuranceType').value,currency:$('insuranceCurrency').value.trim().toUpperCase()||'KRW',monthlyPremium:Number($('insuranceMonthlyPremium').value)||0,payDate:$('insurancePayDate').value,refundValue:Number($('insuranceRefundValue').value)||0,coverageAmount:Number($('insuranceCoverageAmount').value)||0,includeAsset:$('insuranceIncludeAsset').checked,memo:$('insuranceMemo').value.trim()};if(editingInsuranceId)state.insurances=state.insurances.map(i=>i.id===editingInsuranceId?item:i);else state.insurances.push(item);resetInsuranceForm();save();};
+
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if($('exchangeForm'))$('exchangeForm').onsubmit=e=>{e.preventDefault();state.exchanges=state.exchanges||[];const item={id:editingExchangeId||uid(),name:$('exchangeName').value,apiKey:$('exchangeApiKey').value.trim(),secret:$('exchangeSecret').value.trim(),passphrase:$('exchangePassphrase').value.trim(),workerUrl:($('exchangeWorkerUrl')?.value||'').trim(),readOnly:$('exchangeReadOnly').checked,lastSync:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastSync||'',lastPublicTest:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastPublicTest||''};if(!item.readOnly){alert('안전을 위해 조회 전용 권한 확인이 필요합니다. 거래/출금 권한은 절대 켜지 마세요.');return;}if(editingExchangeId){state.exchanges=state.exchanges.map(x=>x.id===editingExchangeId?item:x);}else state.exchanges.push(item);resetExchangeForm();save();};
+
+if($('addInsuranceBtn'))$('addInsuranceBtn').onclick=()=>{$('insuranceForm').classList.toggle('hidden');if(!$('insuranceForm').classList.contains('hidden'))resetInsuranceForm();};
+if($('insuranceCancelBtn'))$('insuranceCancelBtn').onclick=resetInsuranceForm;
+if($('insuranceForm'))$('insuranceForm').onsubmit=e=>{e.preventDefault();state.insurances=state.insurances||[];const item={id:editingInsuranceId||uid(),company:$('insuranceCompany').value.trim(),name:$('insuranceName').value.trim(),type:$('insuranceType').value,currency:$('insuranceCurrency').value.trim().toUpperCase()||'KRW',monthlyPremium:Number($('insuranceMonthlyPremium').value)||0,payDate:$('insurancePayDate').value,refundValue:Number($('insuranceRefundValue').value)||0,coverageAmount:Number($('insuranceCoverageAmount').value)||0,includeAsset:$('insuranceIncludeAsset').checked,memo:$('insuranceMemo').value.trim()};if(editingInsuranceId)state.insurances=state.insurances.map(i=>i.id===editingInsuranceId?item:i);else state.insurances.push(item);resetInsuranceForm();save();};
+
 document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render();});
 document.querySelectorAll('[data-asset-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-asset-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');assetFilter=b.dataset.assetFilter;renderAssets();});
 if($('assetSearch'))$('assetSearch').oninput=e=>{assetSearch=e.target.value;renderAssets();};if($('assetSort'))$('assetSort').onchange=e=>{assetSort=e.target.value;renderAssets();};
@@ -687,4 +729,19 @@ if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(t
 if($('testMarketWorkerBtn'))$('testMarketWorkerBtn').onclick=()=>testMarketWorker();
 if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=46').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+async function clearAppCache(){
+ try{
+  if('serviceWorker' in navigator){
+   const regs=await navigator.serviceWorker.getRegistrations();
+   for(const r of regs){await r.unregister();}
+  }
+  if(window.caches){
+   const keys=await caches.keys();
+   for(const k of keys){if(k.includes('asset-manager'))await caches.delete(k);}
+  }
+  setStatus('앱 캐시 정리 완료 · 새로고침 해주세요');
+  alert('앱 캐시를 정리했습니다. 페이지를 새로고침하세요.');
+ }catch(e){setStatus('캐시 정리 실패: '+e.message);}
+}
+if($('clearCacheBtn'))$('clearCacheBtn').onclick=()=>clearAppCache();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=471').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));

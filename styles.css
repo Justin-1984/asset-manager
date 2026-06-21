@@ -31,3 +31,5 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .perf-row small{display:block;color:var(--muted);margin-top:4px}
 .perf-row strong{display:block;text-align:right}
 .perf-row span{display:block;text-align:right;font-weight:800}
+
+.mini-summary{margin:12px 0}.mini-summary .summary{min-height:auto}
