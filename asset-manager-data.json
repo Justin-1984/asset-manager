@@ -16,12 +16,12 @@
         "type": "코인",
         "account": "업비트",
         "name": "XLM",
-        "currency": "USDT",
+        "currency": "KRW",
         "qty": 10000,
-        "price": 0.2136,
+        "price": 321,
         "costPrice": 0,
-        "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
+        "priceSource": "Upbit",
+        "priceUpdatedAt": "2026. 6. 21. 오후 5:57:45"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1489,
+        "price": 1.1444,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
+        "priceUpdatedAt": "2026. 6. 21. 오후 5:57:45"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -42,9 +42,9 @@
         "name": "BCH",
         "currency": "USDT",
         "qty": 5,
-        "price": 199.2,
+        "price": 197.7,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
+        "priceUpdatedAt": "2026. 6. 21. 오후 5:57:45"
       },
       {
         "id": "mqnhdlikv4o5jq",
@@ -269,7 +269,7 @@
       }
     ],
     "version": "4.2",
-    "updatedAt": "2026-06-21T07:58:37.584Z",
+    "updatedAt": "2026-06-21T08:57:47.794Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -278,12 +278,22 @@
     "usdtRate": 1511,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "fxUpdatedAt": "2026. 6. 21. 오후 4:42:33",
-    "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API + Upbit USDT",
-    "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34",
-    "priceAutoStatus": "코인 시세 갱신 3개 완료",
-    "autoGithubBackup": true
+    "fxUpdatedAt": "2026. 6. 21. 오후 5:59:34",
+    "fxAutoStatus": "수동 환율 저장 완료",
+    "priceUpdatedAt": "2026-06-21T08:57:47.794Z",
+    "priceAutoStatus": "시세 갱신 3개 완료 · 실패 2개",
+    "autoGithubBackup": true,
+    "lastRestoreAt": "2026-06-21T08:57:38.038Z",
+    "backupLogs": [
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T08:57:38.038Z",
+        "display": "2026. 6. 21. 오후 5:57:38"
+      }
+    ],
+    "marketWorkerUrl": "https://justin-1984.github.io/asset-manager/?v=44"
   },
-  "backupAt": "2026-06-21T07:58:45.685Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-21T08:59:37.741Z",
+  "backupMode": "auto"
 }
