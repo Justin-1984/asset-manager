@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-2';
+const STORAGE_KEY='asset-manager-v4-3';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -27,8 +27,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.2'};}catch{}} return {version:'4.2',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.2';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.3'};}catch{}} return {version:'4.3',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.3';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -44,7 +44,49 @@ function signedPct(v){return (v>0?'+':'')+(Number(v)||0).toFixed(2)+'%';}
 function debtAmount(d){return (Number(d.amount)||0)*fx(d.currency);}
 function foreignExchange(account){return /binance|바이낸스|bingx|빙엑스|htx|후오비|huobi|okx|bybit|바이비트|bitget|mexc|gate|kucoin|kraken/i.test(String(account||''));}
 function updateAssetPreview(){updateCurrencyHint();const el=$('assetPreview');if(!el)return;const cur=String($('assetCurrency').value||'KRW').toUpperCase();const qty=Number($('assetQty').value)||0;const price=Number($('assetPrice').value)||0;const costPrice=Number($('assetCostPrice')?.value)||0;const krw=qty*price*fx(cur);const cost=qty*costPrice*fx(cur);const profit=costPrice?krw-cost:0;const pct=cost?profit/cost*100:0;el.innerHTML=`평가액 미리보기: <b>${money(krw)}</b> <span>(${num(qty)} × ${num(price)} ${esc(cur)} × 환율 ${num(fx(cur))})</span>${costPrice?`<br><b class="${profitClass(profit)}">손익 ${signedMoney(profit)} (${signedPct(pct)})</b>`:''}`;}
-function refreshFxBoard(){['usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{const el=$(id+'View');if(el)el.textContent=money(Number(prefs[id])||0);const input=$(id);if(input && document.activeElement!==input)input.value=prefs[id]||'';});const t=$('fxUpdatedAtText');if(t)t.textContent=prefs.fxUpdatedAt?`마지막 갱신 ${prefs.fxUpdatedAt}`:'아직 갱신 기록 없음';const st=$('fxAutoStatus');if(st)st.textContent=prefs.fxAutoStatus||'앱 실행 시 자동으로 환율을 조회합니다.';}
+function refreshFxBoard(){['usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{const el=$(id+'View');if(el)el.textContent=money(Number(prefs[id])||0);const input=$(id);if(input && document.activeElement!==input)input.value=prefs[id]||'';});const t=$('fxUpdatedAtText');if(t)t.textContent=prefs.fxUpdatedAt?`마지막 갱신 ${prefs.fxUpdatedAt}`:'아직 갱신 기록 없음';const st=$('fxAutoStatus');if(st)st.textContent=prefs.fxAutoStatus||'앱 실행 시 자동으로 환율을 조회합니다.';}function timeAgoText(dateText){
+ if(!dateText)return '기록 없음';
+ const t=new Date(dateText.replace(/\./g,'-'));
+ const ts=isNaN(t.getTime())?Date.parse(dateText):t.getTime();
+ if(!ts)return dateText;
+ const diff=Date.now()-ts;
+ const min=Math.floor(diff/60000), hr=Math.floor(min/60), day=Math.floor(hr/24);
+ if(min<1)return '방금 전';
+ if(min<60)return `${min}분 전`;
+ if(hr<24)return `${hr}시간 전`;
+ return `${day}일 전`;
+}
+function freshnessLabel(dateText, warnHours=24, dangerHours=168){
+ if(!dateText)return '🔴 기록 없음';
+ const ts=Date.parse(dateText);
+ if(!ts)return '🟡 확인 필요';
+ const hours=(Date.now()-ts)/3600000;
+ if(hours<=warnHours)return '🟢 최신';
+ if(hours<=dangerHours)return '🟡 '+Math.floor(hours)+'시간 경과';
+ return '🔴 '+Math.floor(hours/24)+'일 경과';
+}
+function addBackupLog(type,msg){
+ prefs.backupLogs=prefs.backupLogs||[];
+ prefs.backupLogs.unshift({type,msg,time:new Date().toISOString(),display:new Date().toLocaleString('ko-KR')});
+ prefs.backupLogs=prefs.backupLogs.slice(0,10);
+ localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+}
+function refreshStatusBoard(){
+ const set=(id,v)=>{const el=$(id);if(el)el.textContent=v;};
+ set('lastPriceUpdateText', prefs.priceUpdatedAt||'기록 없음');
+ set('lastFxUpdateText', prefs.fxUpdatedAt||'기록 없음');
+ set('lastBackupText', prefs.lastBackupAt||'기록 없음');
+ set('lastRestoreText', prefs.lastRestoreAt||'기록 없음');
+ set('priceFreshness', freshnessLabel(prefs.priceUpdatedAt,6,48));
+ set('fxFreshness', freshnessLabel(prefs.fxUpdatedAt,12,72));
+ set('backupFreshness', freshnessLabel(prefs.lastBackupAt,24,168));
+ set('restoreFreshness', prefs.lastRestoreAt?timeAgoText(prefs.lastRestoreAt):'-');
+ const log=$('backupLogList');
+ if(log){
+  const rows=(prefs.backupLogs||[]).slice(0,5);
+  log.innerHTML=rows.length?rows.map(x=>`<div><span>${esc(x.display||'')}</span><b>${esc(x.type||'로그')}</b><small>${esc(x.msg||'')}</small></div>`).join(''):'<p class="note">백업/복원 로그가 없습니다.</p>';
+ }
+}
 
 async function autoUpdateFx(manual=false){
  const st=$('fxAutoStatus'); const btn=$('refreshFxBtn');
@@ -198,7 +240,7 @@ function drawMonthlyLine(){
  ctx.fillStyle=textColor();ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(money(max),45,22);ctx.fillText(money(min),45,h-45);
 }
 function render(){
- refreshFxBoard();
+ refreshFxBoard();refreshStatusBoard();
  $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());if($('totalInvestCost'))$('totalInvestCost').textContent=money(totalInvestCost());if($('totalProfit')){$('totalProfit').textContent=signedMoney(totalProfit());$('totalProfit').className=profitClass(totalProfit());}if($('totalProfitPct')){$('totalProfitPct').textContent=signedPct(totalProfitPct());$('totalProfitPct').className=profitClass(totalProfit());}
  const last=state.snapshots[state.snapshots.length-1];const change=last?netWorth()-last.netWorth:0;$('monthChange').textContent=money(change);if($('monthChangePct'))$('monthChangePct').textContent=last&&last.netWorth?((change/Math.abs(last.netWorth))*100).toFixed(1)+'%':'0%';
  const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
@@ -254,15 +296,89 @@ async function fetchCryptoPriceBySource(symbol,source){
  throw new Error('지원하지 않는 시세 출처');
 }
 async function fetchCryptoPriceForAsset(asset){const symbol=cleanCoinSymbol(asset.name);if(!symbol)throw new Error('코인 심볼 없음');for(const source of preferredPriceSources(asset)){try{const t=await fetchCryptoPriceBySource(symbol,source);if(t.price>0)return t;}catch(e){console.warn('price source failed',symbol,source,e.message);}}throw new Error(`${symbol} 시세 조회 실패`);}
+function normalizeStockSymbol(name){
+ return String(name||'').trim().toUpperCase().replace(/\s+/g,'');
+}
+function extractKoreanTicker(name){
+ const s=String(name||'');
+ const m=s.match(/(\d{6})/);
+ return m?m[1]:'';
+}
+async function fetchYahooChart(symbol){
+ const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
+ const r=await timeout(9000,fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1d`,{cache:'no-store'}));
+ if(!r.ok)throw new Error('Yahoo HTTP '+r.status);
+ const j=await r.json();
+ const meta=j.chart?.result?.[0]?.meta||{};
+ const price=Number(meta.regularMarketPrice||meta.previousClose);
+ if(!price)throw new Error('가격 파싱 실패');
+ return price;
+}
+async function fetchStooqPrice(symbol){
+ const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
+ const r=await timeout(9000,fetch(`https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`,{cache:'no-store'}));
+ if(!r.ok)throw new Error('Stooq HTTP '+r.status);
+ const txt=await r.text();
+ const lines=txt.trim().split(/\r?\n/);
+ if(lines.length<2)throw new Error('Stooq 데이터 없음');
+ const cols=lines[1].split(',');
+ const close=Number(cols[6]||cols[3]||cols[4]);
+ if(!close)throw new Error('Stooq 가격 파싱 실패');
+ return close;
+}
+async function fetchStockPriceForAsset(asset){
+ const raw=normalizeStockSymbol(asset.name);
+ const cur=String(asset.currency||'').toUpperCase();
+ const acct=String(asset.account||'').toLowerCase();
+
+ // 한국 ETF/주식: 자산명에 6자리 종목코드 입력 권장. 예: 360750
+ const krCode=extractKoreanTicker(asset.name);
+ if(cur==='KRW'||/isa|irp|연금|한국|국내|kodex|tiger|ace|kbstar|sol/.test(acct+raw)||krCode){
+  const code=krCode||raw;
+  if(!/^\d{6}$/.test(code))throw new Error('한국 ETF는 6자리 종목코드를 자산명에 넣어주세요. 예: 360750');
+  try{return {price:await fetchYahooChart(`${code}.KS`),currency:'KRW',source:'Yahoo KR'};}catch(e1){
+   try{return {price:await fetchYahooChart(`${code}.KQ`),currency:'KRW',source:'Yahoo KQ'};}catch(e2){
+    throw new Error(`${code} 한국 시세 조회 실패`);
+   }
+  }
+ }
+
+ // 미국주식/ETF: SCHD, VOO, QQQ 같은 티커
+ const symbol=raw.replace(/[^A-Z.]/g,'');
+ if(!symbol)throw new Error('미국주식 티커 없음');
+ try{return {price:await fetchYahooChart(symbol),currency:'USD',source:'Yahoo US'};}catch(e1){
+  try{return {price:await fetchStooqPrice(symbol.toLowerCase()+'.us'),currency:'USD',source:'Stooq US'};}catch(e2){
+   throw new Error(`${symbol} 미국 시세 조회 실패`);
+  }
+ }
+}
+async function fetchMarketPriceForAsset(asset){
+ if(asset.type==='코인')return fetchCryptoPriceForAsset(asset);
+ if(asset.type==='주식')return fetchStockPriceForAsset(asset);
+ throw new Error('시세조회 대상 아님');
+}
 async function refreshCryptoPrices(manual=false){
- const assets=state.assets.filter(a=>a.type==='코인'&&cleanCoinSymbol(a.name));
+ const assets=state.assets.filter(a=>(a.type==='코인'&&cleanCoinSymbol(a.name))||(a.type==='주식'&&String(a.name||'').trim()));
  const btn=$('refreshPricesBtn'); const st=$('priceAutoStatus')||$('fxAutoStatus');
- if(!assets.length){alert('시세를 조회할 코인 자산이 없습니다. 먼저 코인을 추가해 주세요.');return;}
- let ok=0,fail=[]; if(btn){btn.disabled=true;btn.textContent='시세 갱신 중...';} if(st)st.textContent='보유 코인 시세 조회 중...';
- for(const a of assets){try{const t=await fetchCryptoPriceForAsset(a);a.price=t.price;a.currency=t.currency;a.priceSource=t.source;a.priceUpdatedAt=new Date().toLocaleString('ko-KR');ok++;}catch(e){fail.push(`${a.name}: ${e.message}`);}}
+ if(!assets.length){if(manual)alert('시세를 조회할 코인/주식 자산이 없습니다. 먼저 자산을 추가해 주세요.');return;}
+ let ok=0,fail=[]; if(btn){btn.disabled=true;btn.textContent='시세 갱신 중...';} if(st)st.textContent='보유 코인/주식 시세 조회 중...';
+ for(const a of assets){
+  try{
+   const t=await fetchMarketPriceForAsset(a);
+   a.price=t.price;
+   a.currency=t.currency;
+   a.priceSource=t.source;
+   a.priceUpdatedAt=new Date().toLocaleString('ko-KR');
+   ok++;
+  }catch(e){fail.push(`${a.name}: ${e.message}`);}
+ }
  state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
- prefs.priceUpdatedAt=new Date().toLocaleString('ko-KR');prefs.priceAutoStatus=`코인 시세 갱신 ${ok}개 완료${fail.length?` · 실패 ${fail.length}개`:''}`;localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
- if(btn){btn.disabled=false;btn.textContent='전체 시세 갱신';} render(); if(manual&&fail.length)alert('일부 시세 조회 실패\n'+fail.slice(0,8).join('\n'));
+ prefs.priceUpdatedAt=new Date().toISOString();
+ prefs.priceAutoStatus=`시세 갱신 ${ok}개 완료${fail.length?` · 실패 ${fail.length}개`:''}`;
+ localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+ if(btn){btn.disabled=false;btn.textContent='전체 시세 갱신';}
+ render();
+ if(manual&&fail.length)alert('일부 시세 조회 실패\n'+fail.slice(0,10).join('\n'));
 }
 window.testExchange=async id=>{const x=(state.exchanges||[]).find(v=>v.id===id);if(!x)return;try{const btn=event?.target;if(btn){btn.disabled=true;btn.textContent='테스트 중...';}const t=await fetchPublicTicker(x.name);if(!t.price)throw new Error('가격 파싱 실패');x.lastPublicTest=`${t.symbol} ${num(t.price)} ${t.currency} · ${new Date().toLocaleString('ko-KR')}`;x.lastSync=new Date().toLocaleString('ko-KR');save();alert(`${x.name} 실제 시세 테스트 성공\n${t.symbol}: ${num(t.price)} ${t.currency}\n\n이 테스트는 API Key 없이 공개 시세 API가 브라우저에서 호출되는지 확인하는 단계입니다.`);}catch(e){alert(`${x.name} 실제 시세 테스트 실패\n${e.message}\n\n일부 거래소는 브라우저 직접 호출을 막을 수 있습니다. 이 경우 서버/프록시 방식으로 연결해야 합니다.`);}finally{render();}};
 
@@ -330,14 +446,16 @@ async function doGithubBackup(auto=false){
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   const res=await gh('PUT',{message:`asset-manager ${auto?'auto ':''}backup ${new Date().toISOString()}`,content,sha});
   if(!res.ok)throw new Error(await res.text());
+  prefs.lastBackupAt=new Date().toISOString();addBackupLog(auto?'자동백업':'수동백업','성공');localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
   const msg=(auto?'자동 GitHub 백업 완료':'GitHub 백업 완료')+' · '+new Date().toLocaleString('ko-KR');
-  if(auto)updateAutoBackupStatus(msg);else setStatus(msg);
- }catch(e){const msg=(auto?'자동 백업 실패: ':'백업 실패: ')+e.message;if(auto)updateAutoBackupStatus(msg);else setStatus(msg)}
+  if(auto)updateAutoBackupStatus(msg);else setStatus(msg);refreshStatusBoard();
+ }catch(e){addBackupLog(auto?'자동백업':'수동백업','실패: '+e.message);const msg=(auto?'자동 백업 실패: ':'백업 실패: ')+e.message;if(auto)updateAutoBackupStatus(msg);else setStatus(msg);refreshStatusBoard();}
  finally{autoBackupBusy=false;}
 }
 $('backupBtn').onclick=()=>doGithubBackup(false);
-$('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){setStatus('복원 실패: '+e.message)}};
+$('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await gh('GET');if(!r.ok)throw new Error(await r.text());const j=await r.json();const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));state=payload.state||payload;prefs=payload.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));prefs.lastRestoreAt=new Date().toISOString();addBackupLog('복원','성공');localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('GitHub 복원 완료');render();}catch(e){addBackupLog('복원','실패: '+e.message);setStatus('복원 실패: '+e.message);refreshStatusBoard();}};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
 if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(true);
+if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=42').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=43').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
