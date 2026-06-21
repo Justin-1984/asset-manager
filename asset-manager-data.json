@@ -55,6 +55,16 @@
         "qty": 90,
         "price": 280,
         "costPrice": 250
+      },
+      {
+        "id": "mqnhvymnrk5w6j",
+        "type": "주식",
+        "account": "카카오",
+        "name": "441640",
+        "currency": "KRW",
+        "qty": 98,
+        "price": 10800,
+        "costPrice": 10000
       }
     ],
     "debts": [],
@@ -259,7 +269,7 @@
       }
     ],
     "version": "4.2",
-    "updatedAt": "2026-06-21T07:45:17.082Z",
+    "updatedAt": "2026-06-21T07:58:37.584Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -274,6 +284,6 @@
     "priceAutoStatus": "코인 시세 갱신 3개 완료",
     "autoGithubBackup": true
   },
-  "backupAt": "2026-06-21T07:45:20.843Z",
+  "backupAt": "2026-06-21T07:58:40.905Z",
   "backupMode": "auto"
 }
