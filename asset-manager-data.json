@@ -21,7 +21,7 @@
         "price": 321,
         "costPrice": 0,
         "priceSource": "Upbit",
-        "priceUpdatedAt": "2026. 6. 21. 오후 5:59:43"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:02:12"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1443,
+        "price": 1.1445,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 5:59:43"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:02:12"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -42,9 +42,9 @@
         "name": "BCH",
         "currency": "USDT",
         "qty": 5,
-        "price": 197.8,
+        "price": 197.9,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 5:59:43"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:02:12"
       },
       {
         "id": "mqnhdlikv4o5jq",
@@ -269,7 +269,7 @@
       }
     ],
     "version": "4.2",
-    "updatedAt": "2026-06-21T08:59:45.480Z",
+    "updatedAt": "2026-06-21T09:02:15.152Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -278,13 +278,19 @@
     "usdtRate": 1511,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "fxUpdatedAt": "2026. 6. 21. 오후 6:02:04",
+    "fxUpdatedAt": "2026. 6. 21. 오후 6:02:47",
     "fxAutoStatus": "수동 환율 저장 완료",
-    "priceUpdatedAt": "2026-06-21T08:59:45.480Z",
+    "priceUpdatedAt": "2026-06-21T09:02:15.152Z",
     "priceAutoStatus": "시세 갱신 3개 완료 · 실패 2개",
     "autoGithubBackup": true,
     "lastRestoreAt": "2026-06-21T08:57:38.038Z",
     "backupLogs": [
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:02:09.077Z",
+        "display": "2026. 6. 21. 오후 6:02:09"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
@@ -299,8 +305,8 @@
       }
     ],
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
-    "lastBackupAt": "2026-06-21T08:59:38.506Z"
+    "lastBackupAt": "2026-06-21T09:02:09.077Z"
   },
-  "backupAt": "2026-06-21T09:02:08.285Z",
+  "backupAt": "2026-06-21T09:02:51.106Z",
   "backupMode": "auto"
 }
