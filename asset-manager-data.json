@@ -1,34 +1,346 @@
 {
   "state": {
-    "version": "4.6",
-    "assets": [],
+    "assets": [
+      {
+        "id": "mqmgya1k2ym3bh",
+        "type": "은행",
+        "account": "제일은행",
+        "name": "원화",
+        "currency": "KRW",
+        "qty": 100000000,
+        "price": 1,
+        "costPrice": 1
+      },
+      {
+        "id": "mqmgyvj2gwdhdo",
+        "type": "코인",
+        "account": "업비트",
+        "name": "XLM",
+        "currency": "KRW",
+        "qty": 10000,
+        "price": 322,
+        "costPrice": 0,
+        "priceSource": "Upbit",
+        "priceUpdatedAt": "2026. 6. 21. 오후 10:19:16"
+      },
+      {
+        "id": "mqmhora59nopij",
+        "type": "코인",
+        "account": "바이낸스",
+        "name": "XRP",
+        "currency": "USDT",
+        "qty": 20000,
+        "price": 1.1464,
+        "costPrice": 0.5,
+        "priceSource": "Binance",
+        "priceUpdatedAt": "2026. 6. 21. 오후 10:19:16"
+      },
+      {
+        "id": "mqmik1r0hnttor",
+        "type": "코인",
+        "account": "바이낸스",
+        "name": "BCH",
+        "currency": "USDT",
+        "qty": 5,
+        "price": 198.6,
+        "priceSource": "Binance",
+        "priceUpdatedAt": "2026. 6. 21. 오후 10:19:16"
+      },
+      {
+        "id": "mqntdrf8l73ri2",
+        "type": "주식",
+        "account": "카카오",
+        "name": "schd",
+        "currency": "USD",
+        "qty": 10,
+        "price": 30,
+        "costPrice": 25
+      }
+    ],
     "debts": [],
-    "snapshots": [],
-    "exchanges": [],
-    "updatedAt": "2026-06-21T12:42:15.130Z",
+    "snapshots": [
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 21.",
+        "assets": 136119210,
+        "debts": 0,
+        "netWorth": 136119210
+      }
+    ],
+    "exchanges": [
+      {
+        "id": "mqmkhf9a4jqdva",
+        "name": "Binance",
+        "apiKey": "X4on1PLL7S69mxuBVc2YquORYEBlH0RYLS1egh7lXcFOhXTwlJTHzw0Cs9uzxR9S",
+        "secret": "NWnhXQKfmUQS9js5Ar6doUn1DMaIzlteK30IBH5QcdSdFDbJ8gsdc4QJuitINzmY",
+        "passphrase": "61378004",
+        "workerUrl": "https://asset-manager-binance.questionbox00.workers.dev/binance/balances",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:09",
+        "lastPublicTest": "BTC/USDT 63,837.31 USDT · 2026. 6. 21. 오전 2:47:09"
+      },
+      {
+        "id": "mqmng434qbjlhx",
+        "name": "Upbit",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:12",
+        "lastPublicTest": "BTC/KRW 96,496,000 KRW · 2026. 6. 21. 오전 2:47:12"
+      },
+      {
+        "id": "mqmngb0zknj6or",
+        "name": "OKX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:15",
+        "lastPublicTest": "BTC/USDT 63,837.2 USDT · 2026. 6. 21. 오전 2:47:15"
+      },
+      {
+        "id": "mqmngcuhkt2bky",
+        "name": "Bybit",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:20",
+        "lastPublicTest": "BTC/USDT 63,830.7 USDT · 2026. 6. 21. 오전 2:47:20"
+      },
+      {
+        "id": "mqmngh4ayb7lpb",
+        "name": "Bitget",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:23",
+        "lastPublicTest": "BTC/USDT 63,825.01 USDT · 2026. 6. 21. 오전 2:47:23"
+      },
+      {
+        "id": "mqmngm9uvpslgf",
+        "name": "HTX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 3:08:59",
+        "lastPublicTest": "BTC/USDT 63,835.51 USDT · 2026. 6. 21. 오전 3:08:59"
+      },
+      {
+        "id": "mqmno8ku3lw27n",
+        "name": "Gate.io",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "",
+        "lastPublicTest": ""
+      },
+      {
+        "id": "mqmnoa8bpbeiga",
+        "name": "BingX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "",
+        "lastPublicTest": ""
+      }
+    ],
+    "insurances": [],
+    "version": "4.7.1",
+    "updatedAt": "2026-06-21T13:20:23.828Z",
     "monthlySnapshots": [],
     "dailySnapshots": []
   },
   "prefs": {
+    "goalAmount": 300000000000,
     "usdRate": 1531,
     "usdtRate": 1531,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "goalAmount": 0,
-    "fxUpdatedAt": "2026. 6. 21. 오후 9:43:28",
-    "fxAutoStatus": "수동 환율 저장 완료",
-    "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
+    "fxUpdatedAt": "2026. 6. 21. 오후 10:19:16",
+    "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API",
+    "priceUpdatedAt": "2026-06-21T13:19:16.321Z",
+    "priceAutoStatus": "시세 갱신 3개 완료",
     "autoGithubBackup": true,
-    "lastBackupAt": "2026-06-21T12:44:40.995Z",
+    "lastRestoreAt": "2026-06-21T10:09:27.735Z",
     "backupLogs": [
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T10:09:27.735Z",
+        "display": "2026. 6. 21. 오후 7:09:27"
+      },
+      {
+        "type": "수동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:49:16.662Z",
+        "display": "2026. 6. 21. 오후 6:49:16"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
-        "time": "2026-06-21T12:44:40.996Z",
-        "display": "2026. 6. 21. 오후 9:44:40"
+        "time": "2026-06-21T09:48:02.229Z",
+        "display": "2026. 6. 21. 오후 6:48:02"
+      },
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T09:47:10.498Z",
+        "display": "2026. 6. 21. 오후 6:47:10"
+      },
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:32:18.819Z",
+        "display": "2026. 6. 21. 오후 6:32:18"
+      },
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T09:32:11.369Z",
+        "display": "2026. 6. 21. 오후 6:32:11"
+      },
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T09:22:11.909Z",
+        "display": "2026. 6. 21. 오후 6:22:11"
+      },
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:02:51.865Z",
+        "display": "2026. 6. 21. 오후 6:02:51"
+      },
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:02:09.077Z",
+        "display": "2026. 6. 21. 오후 6:02:09"
+      },
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T08:59:38.506Z",
+        "display": "2026. 6. 21. 오후 5:59:38"
       }
-    ]
+    ],
+    "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
+    "lastBackupAt": "2026-06-21T09:49:16.662Z"
   },
-  "backupAt": "2026-06-21T12:44:43.309Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-21T13:20:27.370Z",
+  "backupMode": "auto"
 }
