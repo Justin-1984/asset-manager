@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-5';
+const STORAGE_KEY='asset-manager-v4-5-1';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -17,6 +17,71 @@ const exchangeCurrencyMap={
   '미국주식':'USD','미국':'USD','schwab':'USD','키움':'USD','토스증권':'USD','연금저축':'KRW','isa':'KRW','irp':'KRW',
   '항생':'HKD','hang seng':'HKD','hsbc':'HKD','홍콩':'HKD'
 };
+const koreanTickerNameMap={
+  '441640':'KODEX 미국S&P500TR',
+  '360750':'TIGER 미국S&P500',
+  '133690':'TIGER 미국나스닥100',
+  '379800':'KODEX 미국S&P500TR',
+  '379810':'KODEX 미국나스닥100TR',
+  '381180':'TIGER 미국필라델피아반도체나스닥',
+  '411060':'ACE 미국S&P500',
+  '367380':'ACE 미국나스닥100',
+  '069500':'KODEX 200',
+  '102110':'TIGER 200',
+  '091160':'KODEX 반도체',
+  '305720':'KODEX 2차전지산업',
+  '305540':'TIGER 2차전지테마',
+  '458730':'TIGER 미국배당다우존스',
+  '402970':'ACE 미국배당다우존스',
+  '458760':'TIGER 미국배당다우존스타겟커버드콜2호',
+  '458250':'KODEX 미국배당프리미엄액티브',
+  '449170':'TIGER 미국테크TOP10 INDXX'
+};
+const usTickerNameMap={
+  'SCHD':'Schwab U.S. Dividend Equity ETF',
+  'VOO':'Vanguard S&P 500 ETF',
+  'QQQ':'Invesco QQQ Trust',
+  'SPY':'SPDR S&P 500 ETF',
+  'VTI':'Vanguard Total Stock Market ETF',
+  'JEPI':'JPMorgan Equity Premium Income ETF',
+  'JEPQ':'JPMorgan Nasdaq Equity Premium Income ETF',
+  'AAPL':'Apple',
+  'MSFT':'Microsoft',
+  'NVDA':'NVIDIA',
+  'TSLA':'Tesla',
+  'GOOGL':'Alphabet',
+  'GOOG':'Alphabet',
+  'AMZN':'Amazon',
+  'META':'Meta Platforms',
+  'BRK.B':'Berkshire Hathaway',
+  'AVGO':'Broadcom'
+};
+const coinNameMap={
+  'BTC':'Bitcoin',
+  'ETH':'Ethereum',
+  'XRP':'XRP',
+  'SOL':'Solana',
+  'AVAX':'Avalanche',
+  'LINK':'Chainlink',
+  'BNB':'BNB',
+  'DOGE':'Dogecoin',
+  'ADA':'Cardano',
+  'DOT':'Polkadot'
+};
+function assetDisplayName(a){
+ const raw=String(a?.name||'').trim();
+ const upper=raw.toUpperCase();
+ const kr=extractKoreanTicker(raw);
+ if(kr&&koreanTickerNameMap[kr])return koreanTickerNameMap[kr];
+ if(a?.type==='주식'&&usTickerNameMap[upper])return usTickerNameMap[upper];
+ if(a?.type==='코인'&&coinNameMap[cleanCoinSymbol(raw)])return coinNameMap[cleanCoinSymbol(raw)];
+ return '';
+}
+function assetTitleHtml(a){
+ const alias=assetDisplayName(a);
+ const raw=esc(a.name);
+ return alias?`<div class="name">${esc(alias)}</div><div class="meta code">${raw}</div>`:`<div class="name">${raw}</div>`;
+}
 function guessCurrencyFromAccount(account){const v=String(account||'').trim().toLowerCase();if(!v)return '';for(const [k,c] of Object.entries(exchangeCurrencyMap)){if(v.includes(k.toLowerCase()))return c;}return '';}
 function exchangeNeedsPassphrase(name){return ['OKX','Bitget','Gate.io'].includes(String(name||''));}
 function maskKey(v){v=String(v||'');return v? v.slice(0,4)+'••••'+v.slice(-4):'미입력';}
@@ -27,8 +92,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.5'};}catch{}} return {version:'4.5',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.5';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.5.1'};}catch{}} return {version:'4.5.1',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.5.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -244,7 +309,7 @@ function render(){
  renderAssets();renderDebts();renderExchanges();renderSnapshots();renderMonthlySnapshots();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawMonthlyLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
 }
 function filteredAssets(){let rows=state.assets.filter(a=>assetFilter==='전체'||a.type===assetFilter);const q=assetSearch.trim().toLowerCase();if(q)rows=rows.filter(a=>[a.type,a.account,a.name,a.currency].some(v=>String(v||'').toLowerCase().includes(q)));return rows.sort((a,b)=>{if(assetSort==='amountAsc')return assetAmount(a)-assetAmount(b);if(assetSort==='nameAsc')return String(a.name).localeCompare(String(b.name),'ko');if(assetSort==='typeAsc')return String(a.type).localeCompare(String(b.type),'ko')||assetAmount(b)-assetAmount(a);return assetAmount(b)-assetAmount(a);});}
-function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}<div class="meta">${a.priceSource?`시세 ${esc(a.priceSource)} · ${esc(a.priceUpdatedAt||'')}`:''}</div></div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
+function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div>${assetTitleHtml(a)}<div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}<div class="meta">${a.priceSource?`시세 ${esc(a.priceSource)} · ${esc(a.priceUpdatedAt||'')}`:''}</div></div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
 function renderDebts(){$('debtList').innerHTML=state.debts.length?state.debts.map(d=>`<div class="item"><div><div class="name">${esc(d.name)}</div><div class="meta">${esc(d.type)} · ${esc(d.currency||'KRW')} ${d.rate?`· 금리 ${d.rate}%`:''}</div></div><div class="meta">부채 잔액</div><div class="amount">${money(debtAmount(d))}</div><button onclick="editDebt('${d.id}')">수정</button><button class="danger" onclick="removeDebt('${d.id}')">삭제</button></div>`).join(''):'<p class="note">등록된 부채가 없습니다.</p>';}
 function renderExchanges(){const el=$('exchangeList');if(!el)return;state.exchanges=state.exchanges||[];el.innerHTML=state.exchanges.length?state.exchanges.map(x=>{const test=x.lastPublicTest?`<br>시세 테스트: ${esc(x.lastPublicTest)}`:'';return `<div class="item"><div><div class="name">${esc(x.name)}</div><div class="meta">시세조회 기준 거래소 · API Key 없이 사용 가능<br>마지막 확인: ${esc(x.lastSync||'아직 없음')}${test}</div></div><div class="amount"><div class="profit plus">시세조회용</div><div class="meta">잔고는 수동 입력</div></div><button onclick="editExchange('${x.id}')">수정</button><button class="ghost" onclick="testExchange('${x.id}')">시세 테스트</button><button class="danger" onclick="removeExchange('${x.id}')">삭제</button></div>`}).join(''):'<p class="note">등록된 거래소가 없어도 코인 시세 자동조회는 작동합니다. 자산의 계좌/거래소명 기준으로 우선 조회합니다.</p>';}
 function renderSnapshots(){const el=$('snapshotList');if(!el)return;const rows=state.snapshots.slice(-5).reverse();el.innerHTML=rows.length?rows.map(s=>`<div><span>${esc(s.date)}</span><b>${money(s.netWorth)}</b><small>자산 ${moneyShort(s.assets)} · 부채 ${moneyShort(s.debts)}</small></div>`).join(''):'<p class="note">아직 저장된 스냅샷이 없습니다.</p>';}
@@ -529,4 +594,4 @@ if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(t
 if($('testMarketWorkerBtn'))$('testMarketWorkerBtn').onclick=()=>testMarketWorker();
 if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=45').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=451').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));

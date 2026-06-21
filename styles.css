@@ -23,3 +23,5 @@ button:disabled{opacity:.6;cursor:not-allowed}
 @media(max-width:560px){.exchange-warning{display:block}.bottom-nav button{font-size:11px;padding:10px 4px}}
 
 .mini-log{margin-top:12px}.mini-log div small{display:block;color:var(--muted);font-size:12px}.status-board em{display:block;margin-top:4px;color:var(--muted);font-style:normal;font-size:12px}
+
+.meta.code{font-weight:700;color:var(--muted);margin-top:2px;font-size:12px}

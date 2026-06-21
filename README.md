@@ -1,16 +1,15 @@
-# 자산 매니저 v4.5
+# 자산 매니저 v4.5.1
 
 ## 변경 사항
-- 한국 ETF/국내주식도 Market Worker 우선 조회
-- 6자리 한국 종목코드 자동 감지
-  - 예: 441640
-  - 예: 360750
-- 미국주식/ETF Worker 조회 유지
-- 한국 시세 조회 순서: Market Worker → Naver → Naver/Jina → Yahoo KS/KQ
-- 기존 코인 자동시세, 환율, 상태판, 백업 로그 유지
-
-## Worker 업데이트 필요
-Cloudflare Worker 코드를 v4.5용 코드로 교체 후 Deploy해야 한국 종목 조회가 됩니다.
+- 종목코드/티커 표시명 자동 표시
+  - 441640 → KODEX 미국S&P500TR
+  - 360750 → TIGER 미국S&P500
+  - 133690 → TIGER 미국나스닥100
+  - SCHD → Schwab U.S. Dividend Equity ETF
+  - VOO/QQQ/JEPI/JEPQ 등 주요 미국 ETF 표시명 추가
+  - BTC/ETH/XRP 등 주요 코인 표시명 추가
+- 실제 조회용 코드는 그대로 유지
+- 기존 v4.5 한국 ETF Worker 시세조회, 미국주식 Worker 시세조회, 코인 자동시세 유지
 
 ## 업데이트 확인 주소
-https://justin-1984.github.io/asset-manager/?v=45
+https://justin-1984.github.io/asset-manager/?v=451
