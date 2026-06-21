@@ -258,13 +258,19 @@
     "usdtRate": 1531,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "fxUpdatedAt": "2026. 6. 21. 오후 6:32:05",
+    "fxUpdatedAt": "2026. 6. 21. 오후 6:32:15",
     "fxAutoStatus": "수동 환율 저장 완료",
     "priceUpdatedAt": "2026-06-21T09:31:33.782Z",
     "priceAutoStatus": "시세 갱신 3개 완료",
     "autoGithubBackup": true,
-    "lastRestoreAt": "2026-06-21T09:22:11.909Z",
+    "lastRestoreAt": "2026-06-21T09:32:11.369Z",
     "backupLogs": [
+      {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-21T09:32:11.369Z",
+        "display": "2026. 6. 21. 오후 6:32:11"
+      },
       {
         "type": "복원",
         "msg": "성공",
@@ -299,6 +305,6 @@
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "lastBackupAt": "2026-06-21T09:02:51.865Z"
   },
-  "backupAt": "2026-06-21T09:32:08.822Z",
+  "backupAt": "2026-06-21T09:32:18.031Z",
   "backupMode": "auto"
 }
