@@ -21,7 +21,7 @@
         "price": 322,
         "costPrice": 0,
         "priceSource": "Upbit",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1487,
+        "price": 1.1486,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -44,7 +44,7 @@
         "qty": 5,
         "price": 198.1,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
       },
       {
         "id": "mqnl9fskpwgcj9",
@@ -56,7 +56,7 @@
         "price": 31.86,
         "costPrice": 20,
         "priceSource": "Finnhub",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:47:15"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:04"
       },
       {
         "id": "mqnlskqg1q0g6i",
@@ -271,7 +271,7 @@
       }
     ],
     "version": "4.5",
-    "updatedAt": "2026-06-21T09:47:58.072Z",
+    "updatedAt": "2026-06-21T09:48:06.659Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -282,11 +282,17 @@
     "audRate": 1073.91,
     "fxUpdatedAt": "2026. 6. 21. 오후 6:32:15",
     "fxAutoStatus": "수동 환율 저장 완료",
-    "priceUpdatedAt": "2026-06-21T09:47:15.947Z",
-    "priceAutoStatus": "시세 갱신 4개 완료",
+    "priceUpdatedAt": "2026-06-21T09:48:06.660Z",
+    "priceAutoStatus": "시세 갱신 4개 완료 · 실패 1개",
     "autoGithubBackup": true,
     "lastRestoreAt": "2026-06-21T09:47:10.498Z",
     "backupLogs": [
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:48:02.229Z",
+        "display": "2026. 6. 21. 오후 6:48:02"
+      },
       {
         "type": "복원",
         "msg": "성공",
@@ -337,8 +343,8 @@
       }
     ],
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
-    "lastBackupAt": "2026-06-21T09:32:18.819Z"
+    "lastBackupAt": "2026-06-21T09:48:02.228Z"
   },
-  "backupAt": "2026-06-21T09:48:01.357Z",
-  "backupMode": "auto"
+  "backupAt": "2026-06-21T09:49:15.703Z",
+  "backupMode": "manual"
 }
