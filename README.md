@@ -1,20 +1,12 @@
-# 자산 매니저 v4.0
+# 자산 매니저 v4.1
 
 ## 변경 사항
-- 부채 유형에 카드 결제예정액 추가
-- 카드 결제예정일/만기일 입력 추가
-- 대시보드에 카드 결제예정액 카드 추가
-- 부채 화면에 카드 결제예정액 합계 표시
-- 기존 v3.9.2의 수동 보유수량 + 자동 시세조회 + GitHub 자동백업 유지
+- 환율 API 교체: ExchangeRate API 우선, Frankfurter 보조
+- USDT/KRW는 가능하면 업비트 KRW-USDT 시세 별도 반영
+- 환율 조회 실패 시 기본값으로 되돌리지 않고 마지막 정상 환율 유지
+- 수동 환율 저장 유지
+- v4.0 카드 결제예정액/결제예정일 기능 유지
+- v3.9.2 수동 보유수량 + 자동 코인 시세조회 + GitHub 자동 백업 유지
 
 ## 업데이트 확인 주소
-https://justin-1984.github.io/asset-manager/?v=40
-
-## 업로드 파일
-GitHub에는 아래 6개 파일만 업로드하세요.
-- index.html
-- app.js
-- styles.css
-- manifest.json
-- sw.js
-- README.md
+https://justin-1984.github.io/asset-manager/?v=41
