@@ -18,10 +18,10 @@
         "name": "XLM",
         "currency": "USDT",
         "qty": 10000,
-        "price": 0.2135,
+        "price": 0.2136,
         "costPrice": 0,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:15:19"
+        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1474,
+        "price": 1.1489,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:15:19"
+        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -42,9 +42,9 @@
         "name": "BCH",
         "currency": "USDT",
         "qty": 5,
-        "price": 199.1,
+        "price": 199.2,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 4:15:19"
+        "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34"
       }
     ],
     "debts": [],
@@ -153,9 +153,9 @@
       },
       {
         "date": "2026. 6. 21.",
-        "assets": 136119210,
+        "assets": 139452210,
         "debts": 0,
-        "netWorth": 136119210
+        "netWorth": 139452210
       }
     ],
     "exchanges": [
@@ -248,21 +248,22 @@
         "lastPublicTest": ""
       }
     ],
-    "version": "4.1",
-    "updatedAt": "2026-06-21T07:15:19.907Z"
+    "version": "4.2",
+    "updatedAt": "2026-06-21T07:42:43.939Z",
+    "monthlySnapshots": []
   },
   "prefs": {
     "goalAmount": 300000000000,
     "usdRate": 1531,
-    "usdtRate": 1512,
+    "usdtRate": 1511,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "fxUpdatedAt": "2026. 6. 21. 오후 4:15:53",
-    "fxAutoStatus": "수동 환율 저장 완료",
-    "priceUpdatedAt": "2026. 6. 21. 오후 4:15:19",
+    "fxUpdatedAt": "2026. 6. 21. 오후 4:42:33",
+    "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API + Upbit USDT",
+    "priceUpdatedAt": "2026. 6. 21. 오후 4:42:34",
     "priceAutoStatus": "코인 시세 갱신 3개 완료",
     "autoGithubBackup": true
   },
-  "backupAt": "2026-06-21T07:16:05.026Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-21T07:42:47.254Z",
+  "backupMode": "auto"
 }
