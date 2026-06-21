@@ -53,8 +53,8 @@
         "name": "schd",
         "currency": "USD",
         "qty": 90,
-        "price": 28000,
-        "costPrice": 25000
+        "price": 280,
+        "costPrice": 250
       }
     ],
     "debts": [],
@@ -259,7 +259,7 @@
       }
     ],
     "version": "4.2",
-    "updatedAt": "2026-06-21T07:44:20.780Z",
+    "updatedAt": "2026-06-21T07:45:17.082Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -274,6 +274,6 @@
     "priceAutoStatus": "코인 시세 갱신 3개 완료",
     "autoGithubBackup": true
   },
-  "backupAt": "2026-06-21T07:44:24.102Z",
+  "backupAt": "2026-06-21T07:45:20.843Z",
   "backupMode": "auto"
 }
