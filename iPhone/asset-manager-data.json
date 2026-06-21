@@ -19,8 +19,14 @@
     "fxAutoStatus": "수동 환율 저장 완료",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "autoGithubBackup": true,
-    "lastBackupAt": "2026-06-21T13:12:39.466Z",
+    "lastBackupAt": "2026-06-21T13:12:46.633Z",
     "backupLogs": [
+      {
+        "type": "수동백업",
+        "msg": "성공",
+        "time": "2026-06-21T13:12:46.633Z",
+        "display": "2026. 6. 21. 오후 10:12:46"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
@@ -41,6 +47,6 @@
       }
     ]
   },
-  "backupAt": "2026-06-21T13:12:45.712Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-21T13:13:34.051Z",
+  "backupMode": "auto"
 }
