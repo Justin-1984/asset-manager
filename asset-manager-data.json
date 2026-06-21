@@ -45,6 +45,16 @@
         "price": 197.6,
         "priceSource": "Binance",
         "priceUpdatedAt": "2026. 6. 21. 오후 6:31:33"
+      },
+      {
+        "id": "mqnl9fskpwgcj9",
+        "type": "주식",
+        "account": "카카오",
+        "name": "schd",
+        "currency": "USD",
+        "qty": 50,
+        "price": 30,
+        "costPrice": 20
       }
     ],
     "debts": [],
@@ -249,7 +259,7 @@
       }
     ],
     "version": "4.4.2",
-    "updatedAt": "2026-06-21T09:31:33.782Z",
+    "updatedAt": "2026-06-21T09:33:05.205Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -265,6 +275,12 @@
     "autoGithubBackup": true,
     "lastRestoreAt": "2026-06-21T09:32:11.369Z",
     "backupLogs": [
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:32:18.819Z",
+        "display": "2026. 6. 21. 오후 6:32:18"
+      },
       {
         "type": "복원",
         "msg": "성공",
@@ -303,8 +319,8 @@
       }
     ],
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
-    "lastBackupAt": "2026-06-21T09:02:51.865Z"
+    "lastBackupAt": "2026-06-21T09:32:18.819Z"
   },
-  "backupAt": "2026-06-21T09:32:18.031Z",
+  "backupAt": "2026-06-21T09:33:08.529Z",
   "backupMode": "auto"
 }
