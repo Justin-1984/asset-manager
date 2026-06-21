@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-3';
+const STORAGE_KEY='asset-manager-v4-3-1';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -27,8 +27,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.3'};}catch{}} return {version:'4.3',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.3';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.3.1'};}catch{}} return {version:'4.3.1',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.3.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -326,31 +326,63 @@ async function fetchStooqPrice(symbol){
  if(!close)throw new Error('Stooq 가격 파싱 실패');
  return close;
 }
+async function fetchNaverRealtimePrice(code){
+ const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
+ const url=`https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:${code}`;
+ const r=await timeout(9000,fetch(url,{cache:'no-store'}));
+ if(!r.ok)throw new Error('Naver HTTP '+r.status);
+ const j=await r.json();
+ const item=j.result?.areas?.[0]?.datas?.[0];
+ const price=Number(String(item?.nv||item?.closePrice||'').replace(/,/g,''));
+ if(!price)throw new Error('Naver 가격 파싱 실패');
+ return price;
+}
+async function fetchNaverViaJinaPrice(code){
+ const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('요청 시간 초과')),ms))]);
+ const url=`https://r.jina.ai/http://finance.naver.com/item/main.naver?code=${code}`;
+ const r=await timeout(12000,fetch(url,{cache:'no-store'}));
+ if(!r.ok)throw new Error('Jina/Naver HTTP '+r.status);
+ const txt=await r.text();
+ const clean=txt.replace(/\s+/g,' ');
+ const candidates=[
+  /현재가\s*([0-9,]{3,})/,
+  /종가\s*([0-9,]{3,})/,
+  /([0-9]{1,3}(?:,[0-9]{3})+)\s*원/
+ ];
+ for(const rgx of candidates){
+  const m=clean.match(rgx);
+  if(m){
+   const price=Number(m[1].replace(/,/g,''));
+   if(price>0)return price;
+  }
+ }
+ throw new Error('Jina/Naver 가격 파싱 실패');
+}
 async function fetchStockPriceForAsset(asset){
  const raw=normalizeStockSymbol(asset.name);
  const cur=String(asset.currency||'').toUpperCase();
  const acct=String(asset.account||'').toLowerCase();
 
- // 한국 ETF/주식: 자산명에 6자리 종목코드 입력 권장. 예: 360750
+ // 한국 ETF/국내주식: 6자리 종목코드를 자산명에 넣는 방식이 가장 안정적입니다. 예: 441640
  const krCode=extractKoreanTicker(asset.name);
  if(cur==='KRW'||/isa|irp|연금|한국|국내|kodex|tiger|ace|kbstar|sol/.test(acct+raw)||krCode){
   const code=krCode||raw;
-  if(!/^\d{6}$/.test(code))throw new Error('한국 ETF는 6자리 종목코드를 자산명에 넣어주세요. 예: 360750');
-  try{return {price:await fetchYahooChart(`${code}.KS`),currency:'KRW',source:'Yahoo KR'};}catch(e1){
-   try{return {price:await fetchYahooChart(`${code}.KQ`),currency:'KRW',source:'Yahoo KQ'};}catch(e2){
-    throw new Error(`${code} 한국 시세 조회 실패`);
-   }
-  }
+  if(!/^\d{6}$/.test(code))throw new Error('한국 ETF는 6자리 종목코드를 자산명에 넣어주세요. 예: 441640');
+  const errors=[];
+  try{return {price:await fetchNaverRealtimePrice(code),currency:'KRW',source:'Naver'}}catch(e){errors.push('Naver')}
+  try{return {price:await fetchNaverViaJinaPrice(code),currency:'KRW',source:'Naver/Jina'}}catch(e){errors.push('Naver/Jina')}
+  try{return {price:await fetchYahooChart(`${code}.KS`),currency:'KRW',source:'Yahoo KS'}}catch(e){errors.push('Yahoo KS')}
+  try{return {price:await fetchYahooChart(`${code}.KQ`),currency:'KRW',source:'Yahoo KQ'}}catch(e){errors.push('Yahoo KQ')}
+  throw new Error(`${code} 한국 시세 조회 실패 (${errors.join(' → ')})`);
  }
 
- // 미국주식/ETF: SCHD, VOO, QQQ 같은 티커
+ // 미국주식/ETF: SCHD, VOO, QQQ 등. Stooq를 우선 사용하고 실패하면 Yahoo를 시도합니다.
  const symbol=raw.replace(/[^A-Z.]/g,'');
  if(!symbol)throw new Error('미국주식 티커 없음');
- try{return {price:await fetchYahooChart(symbol),currency:'USD',source:'Yahoo US'};}catch(e1){
-  try{return {price:await fetchStooqPrice(symbol.toLowerCase()+'.us'),currency:'USD',source:'Stooq US'};}catch(e2){
-   throw new Error(`${symbol} 미국 시세 조회 실패`);
-  }
- }
+ const errors=[];
+ try{return {price:await fetchStooqPrice(symbol.toLowerCase()+'.us'),currency:'USD',source:'Stooq US'}}catch(e){errors.push('Stooq')}
+ try{return {price:await fetchYahooChart(symbol),currency:'USD',source:'Yahoo US'}}catch(e){errors.push('Yahoo')}
+ throw new Error(`${symbol} 미국 시세 조회 실패 (${errors.join(' → ')})`);
 }
 async function fetchMarketPriceForAsset(asset){
  if(asset.type==='코인')return fetchCryptoPriceForAsset(asset);
@@ -458,4 +490,4 @@ $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},nu
 if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(true);
 if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=43').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=431').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
