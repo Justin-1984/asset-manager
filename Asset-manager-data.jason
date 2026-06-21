@@ -1,0 +1,65 @@
+{
+  "state": {
+    "assets": [
+      {
+        "id": "mqmha83cx11rd4",
+        "type": "코인",
+        "account": "업비트",
+        "name": "스텔라",
+        "currency": "KRW",
+        "qty": 10000,
+        "price": 200
+      },
+      {
+        "id": "mqmhar8ufalrjk",
+        "type": "은행",
+        "account": "제일",
+        "name": "원화",
+        "currency": "KRW",
+        "qty": 15000000,
+        "price": 1
+      }
+    ],
+    "debts": [],
+    "snapshots": [
+      {
+        "date": "2026. 6. 20.",
+        "assets": 17000000,
+        "debts": 0,
+        "netWorth": 17000000
+      }
+    ],
+    "exchanges": [],
+    "version": "4.6",
+    "updatedAt": "2026-06-20T14:55:35.361Z",
+    "monthlySnapshots": [],
+    "dailySnapshots": []
+  },
+  "prefs": {
+    "usdRate": 1531,
+    "usdtRate": 1531,
+    "hkdRate": 195.34,
+    "audRate": 1073.91,
+    "goalAmount": 0,
+    "fxUpdatedAt": "2026. 6. 21. 오후 9:40:12",
+    "fxAutoStatus": "수동 환율 저장 완료",
+    "backupLogs": [
+      {
+        "type": "복원",
+        "msg": "실패: {\n  \"message\": \"Not Found\",\n  \"documentation_url\": \"https://docs.github.com/rest/repos/contents#get-repository-content\",\n  \"status\": \"404\"\n}\n",
+        "time": "2026-06-21T12:38:25.682Z",
+        "display": "2026. 6. 21. 오후 9:38:25"
+      },
+      {
+        "type": "복원",
+        "msg": "실패: GitHub 설정을 먼저 저장하세요.",
+        "time": "2026-06-21T12:36:46.407Z",
+        "display": "2026. 6. 21. 오후 9:36:46"
+      }
+    ],
+    "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
+    "autoGithubBackup": true
+  },
+  "backupAt": "2026-06-21T12:40:15.819Z",
+  "backupMode": "auto"
+}
