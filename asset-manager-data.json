@@ -1,0 +1,267 @@
+{
+  "state": {
+    "assets": [
+      {
+        "id": "mqmgya1k2ym3bh",
+        "type": "은행",
+        "account": "제일은행",
+        "name": "원화",
+        "currency": "KRW",
+        "qty": 100000000,
+        "price": 1,
+        "costPrice": 1
+      },
+      {
+        "id": "mqmgyvj2gwdhdo",
+        "type": "코인",
+        "account": "업비트",
+        "name": "XLM",
+        "currency": "USDT",
+        "qty": 10000,
+        "price": 0.2137,
+        "costPrice": 0,
+        "priceSource": "Binance",
+        "priceUpdatedAt": "2026. 6. 21. 오후 3:57:34"
+      },
+      {
+        "id": "mqmhora59nopij",
+        "type": "코인",
+        "account": "바이낸스",
+        "name": "XRP",
+        "currency": "USDT",
+        "qty": 20000,
+        "price": 1.1472,
+        "costPrice": 0.5,
+        "priceSource": "Binance",
+        "priceUpdatedAt": "2026. 6. 21. 오후 3:57:34"
+      },
+      {
+        "id": "mqmik1r0hnttor",
+        "type": "코인",
+        "account": "바이낸스",
+        "name": "BCH",
+        "currency": "USDT",
+        "qty": 5,
+        "price": 199.2,
+        "priceSource": "Binance",
+        "priceUpdatedAt": "2026. 6. 21. 오후 3:57:34"
+      }
+    ],
+    "debts": [],
+    "snapshots": [
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 20.",
+        "assets": 102000000,
+        "debts": 0,
+        "netWorth": 102000000
+      },
+      {
+        "date": "2026. 6. 21.",
+        "assets": 136119210,
+        "debts": 0,
+        "netWorth": 136119210
+      }
+    ],
+    "exchanges": [
+      {
+        "id": "mqmkhf9a4jqdva",
+        "name": "Binance",
+        "apiKey": "X4on1PLL7S69mxuBVc2YquORYEBlH0RYLS1egh7lXcFOhXTwlJTHzw0Cs9uzxR9S",
+        "secret": "NWnhXQKfmUQS9js5Ar6doUn1DMaIzlteK30IBH5QcdSdFDbJ8gsdc4QJuitINzmY",
+        "passphrase": "61378004",
+        "workerUrl": "https://asset-manager-binance.questionbox00.workers.dev/binance/balances",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:09",
+        "lastPublicTest": "BTC/USDT 63,837.31 USDT · 2026. 6. 21. 오전 2:47:09"
+      },
+      {
+        "id": "mqmng434qbjlhx",
+        "name": "Upbit",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:12",
+        "lastPublicTest": "BTC/KRW 96,496,000 KRW · 2026. 6. 21. 오전 2:47:12"
+      },
+      {
+        "id": "mqmngb0zknj6or",
+        "name": "OKX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:15",
+        "lastPublicTest": "BTC/USDT 63,837.2 USDT · 2026. 6. 21. 오전 2:47:15"
+      },
+      {
+        "id": "mqmngcuhkt2bky",
+        "name": "Bybit",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:20",
+        "lastPublicTest": "BTC/USDT 63,830.7 USDT · 2026. 6. 21. 오전 2:47:20"
+      },
+      {
+        "id": "mqmngh4ayb7lpb",
+        "name": "Bitget",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 2:47:23",
+        "lastPublicTest": "BTC/USDT 63,825.01 USDT · 2026. 6. 21. 오전 2:47:23"
+      },
+      {
+        "id": "mqmngm9uvpslgf",
+        "name": "HTX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "2026. 6. 21. 오전 3:08:59",
+        "lastPublicTest": "BTC/USDT 63,835.51 USDT · 2026. 6. 21. 오전 3:08:59"
+      },
+      {
+        "id": "mqmno8ku3lw27n",
+        "name": "Gate.io",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "",
+        "lastPublicTest": ""
+      },
+      {
+        "id": "mqmnoa8bpbeiga",
+        "name": "BingX",
+        "apiKey": "",
+        "secret": "",
+        "passphrase": "",
+        "workerUrl": "",
+        "readOnly": true,
+        "lastSync": "",
+        "lastPublicTest": ""
+      }
+    ],
+    "version": "4.0",
+    "updatedAt": "2026-06-21T06:57:34.692Z"
+  },
+  "prefs": {
+    "goalAmount": 0,
+    "usdRate": 1380,
+    "usdtRate": 1380,
+    "hkdRate": 195,
+    "audRate": 1080,
+    "fxUpdatedAt": "2026. 6. 21. 오전 12:26:31",
+    "fxAutoStatus": "자동 환율 조회 실패 · 마지막 저장 환율 사용",
+    "priceUpdatedAt": "2026. 6. 21. 오후 3:57:34",
+    "priceAutoStatus": "코인 시세 갱신 3개 완료"
+  },
+  "backupAt": "2026-06-21T07:05:40.867Z",
+  "backupMode": "manual"
+}
