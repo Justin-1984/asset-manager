@@ -1,11 +1,12 @@
 {
   "state": {
-    "version": "4.6",
+    "version": "4.7.1",
     "assets": [],
     "debts": [],
     "snapshots": [],
     "exchanges": [],
-    "updatedAt": "2026-06-21T12:42:15.130Z",
+    "insurances": [],
+    "updatedAt": "2026-06-21T13:16:43.891Z",
     "monthlySnapshots": [],
     "dailySnapshots": []
   },
@@ -15,12 +16,18 @@
     "hkdRate": 195.34,
     "audRate": 1073.91,
     "goalAmount": 0,
-    "fxUpdatedAt": "2026. 6. 21. 오후 9:43:28",
-    "fxAutoStatus": "수동 환율 저장 완료",
+    "fxUpdatedAt": "2026. 6. 21. 오후 10:16:44",
+    "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "autoGithubBackup": true,
-    "lastBackupAt": "2026-06-21T13:13:34.867Z",
+    "lastBackupAt": "2026-06-21T13:13:37.321Z",
     "backupLogs": [
+      {
+        "type": "수동백업",
+        "msg": "성공",
+        "time": "2026-06-21T13:13:37.321Z",
+        "display": "2026. 6. 21. 오후 10:13:37"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
@@ -53,6 +60,6 @@
       }
     ]
   },
-  "backupAt": "2026-06-21T13:13:36.505Z",
+  "backupAt": "2026-06-21T13:17:16.061Z",
   "backupMode": "manual"
 }
