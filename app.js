@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-1';
+const STORAGE_KEY='asset-manager-v4-2';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -27,8 +27,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.1'};}catch{}} return {version:'4.1',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.2'};}catch{}} return {version:'4.2',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.2';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -119,12 +119,91 @@ function byCrypto(){return groupBy(state.assets.filter(a=>a.type==='코인'),a=>
 function byAccount(){return groupBy(state.assets,a=>a.account,assetAmount)}
 function byCurrency(){return groupBy(state.assets,a=>(a.currency||'KRW').toUpperCase(),assetAmount)}
 function barData(){if(barMode==='type')return {title:'자산군별 자산',data:byType()};if(barMode==='currency')return {title:'통화별 자산',data:byCurrency()};return {title:'계좌/거래소별 자산',data:byAccount()};}
+function monthKey(date=new Date()){
+ const y=date.getFullYear();
+ const m=String(date.getMonth()+1).padStart(2,'0');
+ return `${y}-${m}`;
+}
+function monthLabel(key){
+ const [y,m]=String(key).split('-');
+ return `${y}.${m}`;
+}
+function getMonthlySnapshots(){
+ state.monthlySnapshots=state.monthlySnapshots||[];
+ return state.monthlySnapshots;
+}
+function saveMonthlySnapshot(auto=false){
+ state.monthlySnapshots=state.monthlySnapshots||[];
+ const key=monthKey();
+ const snap={
+  month:key,
+  date:new Date().toLocaleDateString('ko-KR'),
+  assets:totalAssets(),
+  debts:totalDebts(),
+  netWorth:netWorth(),
+  profit:totalProfit(),
+  investCost:totalInvestCost(),
+  auto:!!auto,
+  savedAt:new Date().toISOString()
+ };
+ const idx=state.monthlySnapshots.findIndex(s=>s.month===key);
+ if(idx>=0) state.monthlySnapshots[idx]=snap;
+ else state.monthlySnapshots.push(snap);
+ state.monthlySnapshots=state.monthlySnapshots.slice(-60);
+ return snap;
+}
+function ensureMonthlySnapshot(){
+ const today=new Date();
+ const key=monthKey(today);
+ const list=getMonthlySnapshots();
+ const existing=list.find(s=>s.month===key);
+ const lastAutoKey=prefs.lastAutoMonthlySnapshot||'';
+ if(!existing || lastAutoKey!==key){
+  saveMonthlySnapshot(true);
+  prefs.lastAutoMonthlySnapshot=key;
+  localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+ }
+}
+function monthlyChange(){
+ const rows=getMonthlySnapshots().slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+ if(rows.length<2) return {amount:0,pct:0,prev:null,last:rows[rows.length-1]||null};
+ const last=rows[rows.length-1], prev=rows[rows.length-2];
+ const amount=(Number(last.netWorth)||0)-(Number(prev.netWorth)||0);
+ return {amount,pct:prev.netWorth?amount/Math.abs(prev.netWorth)*100:0,prev,last};
+}
+function renderMonthlySnapshots(){
+ const el=$('monthlySnapshotList');
+ if(!el)return;
+ const rows=getMonthlySnapshots().slice().sort((a,b)=>String(b.month).localeCompare(String(a.month))).slice(0,6);
+ el.innerHTML=rows.length?rows.map(s=>`<div><span>${esc(monthLabel(s.month))}</span><b>${money(s.netWorth)}</b><small>자산 ${moneyShort(s.assets)} · 부채 ${moneyShort(s.debts)}${s.auto?' · 자동':''}</small></div>`).join(''):'<p class="note">아직 월별 스냅샷이 없습니다.</p>';
+}
+function drawMonthlyLine(){
+ const canvas=$('monthlyLine');
+ if(!canvas)return;
+ const {ctx,w,h}=setupCanvas('monthlyLine',720,280);
+ const data=getMonthlySnapshots().slice().sort((a,b)=>String(a.month).localeCompare(String(b.month))).slice(-12);
+ ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line');
+ ctx.beginPath();ctx.moveTo(40,20);ctx.lineTo(40,h-40);ctx.lineTo(w-20,h-40);ctx.stroke();
+ if(data.length<2){
+  ctx.fillStyle=textColor();ctx.font='14px sans-serif';ctx.textAlign='center';
+  ctx.fillText('월별 스냅샷 2개 이상부터 추이가 표시됩니다.',w/2,h/2);
+  return;
+ }
+ const vals=data.map(d=>Number(d.netWorth)||0),min=Math.min(...vals),max=Math.max(...vals),pad=(max-min)||1;
+ ctx.strokeStyle='#0f766e';ctx.lineWidth=3;ctx.beginPath();
+ data.forEach((d,i)=>{const x=40+i*((w-70)/(data.length-1)),y=(h-40)-(((Number(d.netWorth)||0)-min)/pad)*(h-70);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});
+ ctx.stroke();
+ data.forEach((d,i)=>{const x=40+i*((w-70)/(data.length-1)),y=(h-40)-(((Number(d.netWorth)||0)-min)/pad)*(h-70);ctx.fillStyle='#0f766e';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();if(i===data.length-1){ctx.fillStyle=textColor();ctx.font='700 12px sans-serif';ctx.textAlign='right';ctx.fillText(moneyShort(d.netWorth),Math.min(w-22,x+58),Math.max(18,y-10));}});
+ ctx.fillStyle=textColor();ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(money(max),45,22);ctx.fillText(money(min),45,h-45);
+}
 function render(){
  refreshFxBoard();
  $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());if($('totalInvestCost'))$('totalInvestCost').textContent=money(totalInvestCost());if($('totalProfit')){$('totalProfit').textContent=signedMoney(totalProfit());$('totalProfit').className=profitClass(totalProfit());}if($('totalProfitPct')){$('totalProfitPct').textContent=signedPct(totalProfitPct());$('totalProfitPct').className=profitClass(totalProfit());}
  const last=state.snapshots[state.snapshots.length-1];const change=last?netWorth()-last.netWorth:0;$('monthChange').textContent=money(change);if($('monthChangePct'))$('monthChangePct').textContent=last&&last.netWorth?((change/Math.abs(last.netWorth))*100).toFixed(1)+'%':'0%';
  const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
- renderAssets();renderDebts();renderExchanges();renderSnapshots();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
+ const mc=monthlyChange();if($('monthlyChange')){$('monthlyChange').textContent=signedMoney(mc.amount);$('monthlyChange').className=profitClass(mc.amount);}if($('monthlyChangePct')){$('monthlyChangePct').textContent=signedPct(mc.pct);$('monthlyChangePct').className=profitClass(mc.amount);}
+ renderAssets();renderDebts();renderExchanges();renderSnapshots();renderMonthlySnapshots();drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawMonthlyLine();drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();
 }
 function filteredAssets(){let rows=state.assets.filter(a=>assetFilter==='전체'||a.type===assetFilter);const q=assetSearch.trim().toLowerCase();if(q)rows=rows.filter(a=>[a.type,a.account,a.name,a.currency].some(v=>String(v||'').toLowerCase().includes(q)));return rows.sort((a,b)=>{if(assetSort==='amountAsc')return assetAmount(a)-assetAmount(b);if(assetSort==='nameAsc')return String(a.name).localeCompare(String(b.name),'ko');if(assetSort==='typeAsc')return String(a.type).localeCompare(String(b.type),'ko')||assetAmount(b)-assetAmount(a);return assetAmount(b)-assetAmount(a);});}
 function renderAssets(){const rows=filteredAssets();$('assetList').innerHTML=rows.length?rows.map(a=>{const p=assetProfit(a),pct=assetProfitPct(a);const profitHtml=isInvestAsset(a)&&Number(a.costPrice)>0?`<div class="${profitClass(p)}">${signedMoney(p)} (${signedPct(pct)})</div>`:`<div class="meta">손익 미입력</div>`;return `<div class="item"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.type)} · ${esc(a.account||'미지정')}</div></div><div class="meta">현재 ${num(a.qty)} × ${num(a.price)} ${esc(a.currency||'KRW')}<br>${Number(a.costPrice)>0?`평단 ${num(a.costPrice)} ${esc(a.currency||'KRW')}`:`평단 미입력`} · 환율 ${num(fx(a.currency))}</div><div class="amount">${money(assetAmount(a))}${profitHtml}<div class="meta">${a.priceSource?`시세 ${esc(a.priceSource)} · ${esc(a.priceUpdatedAt||'')}`:''}</div></div><button onclick="editAsset('${a.id}')">수정</button><button class="danger" onclick="removeAsset('${a.id}')">삭제</button></div>`}).join(''):`<p class="note">표시할 자산이 없습니다. 검색어나 필터를 확인하세요.</p>`;}
@@ -224,6 +303,8 @@ document.querySelectorAll('[data-asset-filter]').forEach(b=>b.onclick=()=>{docum
 if($('assetSearch'))$('assetSearch').oninput=e=>{assetSearch=e.target.value;renderAssets();};if($('assetSort'))$('assetSort').onchange=e=>{assetSort=e.target.value;renderAssets();};
 document.querySelectorAll('[data-bar-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bar-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');barMode=b.dataset.barMode;drawBar();});
 $('themeToggle').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('asset-manager-theme',document.body.classList.contains('dark')?'dark':'light');render();};if(localStorage.getItem('asset-manager-theme')==='dark')document.body.classList.add('dark');
+if($('monthlySnapshotBtn'))$('monthlySnapshotBtn').onclick=()=>{saveMonthlySnapshot(false);save();setStatus('월별 스냅샷 저장 완료');};
+if($('clearMonthlySnapshotsBtn'))$('clearMonthlySnapshotsBtn').onclick=()=>{if(confirm('월별 순자산 추이를 초기화할까요?')){state.monthlySnapshots=[];save();}};
 $('snapshotBtn').onclick=()=>{const today=new Date().toLocaleDateString('ko-KR');const snap={date:today,assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()};const same=state.snapshots.findIndex(s=>s.date===today);if(same>=0)state.snapshots[same]=snap;else state.snapshots.push(snap);save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
 ['goalAmount','usdRate','usdtRate','hkdRate','audRate'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={...prefs,goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,autoGithubBackup:!!$('autoGithubBackup')?.checked,fxUpdatedAt:new Date().toLocaleString('ko-KR'),fxAutoStatus:'수동 환율 저장 완료'};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표/자동백업 설정 저장 완료');scheduleAutoGithubBackup();};
 ['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});if($('autoGithubBackup'))$('autoGithubBackup').checked=!!prefs.autoGithubBackup;$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');scheduleAutoGithubBackup();};function setStatus(m){$('syncStatus').textContent=m;}
@@ -259,4 +340,4 @@ $('restoreBtn').onclick=async()=>{try{setStatus('복원 중...');const r=await g
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asset-manager-backup.json';a.click();URL.revokeObjectURL(a.href);};
 if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(true);
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=41').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=42').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));

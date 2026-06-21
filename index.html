@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v4.1</title>
-  <link rel="manifest" href="manifest.json?v=41" />
-  <link rel="stylesheet" href="styles.css?v=41" />
+  <title>자산 매니저 v4.2</title>
+  <link rel="manifest" href="manifest.json?v=42" />
+  <link rel="stylesheet" href="styles.css?v=42" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v4.1</p>
+      <p>통합 순자산 대시보드 v4.2</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -26,6 +26,7 @@
         <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
         <article class="summary"><span>투자원금</span><strong id="totalInvestCost">₩0</strong><em>코인/주식 기준</em></article>
         <article class="summary"><span>총수익</span><strong id="totalProfit">₩0</strong><em id="totalProfitPct">0%</em></article>
+        <article class="summary"><span>월별 순자산 변화</span><strong id="monthlyChange">₩0</strong><em id="monthlyChangePct">0%</em></article>
       </div>
 
       <div class="card fx-card">
@@ -49,6 +50,19 @@
         <canvas id="netLine" width="720" height="280"></canvas>
         <p class="note">스냅샷을 저장하면 월별/일별 순자산 변화가 쌓입니다.</p>
         <div id="snapshotList" class="snapshot-list"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <h2>월별 순자산 추이</h2>
+          <div class="head-actions">
+            <button id="monthlySnapshotBtn" class="ghost small">이번달 스냅샷 저장</button>
+            <button id="clearMonthlySnapshotsBtn" class="danger small">월별 초기화</button>
+          </div>
+        </div>
+        <canvas id="monthlyLine" width="720" height="280"></canvas>
+        <p class="note">앱 실행 시 이번 달 순자산을 자동 저장합니다. 같은 달 데이터는 최신 값으로 갱신됩니다.</p>
+        <div id="monthlySnapshotList" class="snapshot-list"></div>
       </div>
     </section>
 
@@ -172,6 +186,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>
