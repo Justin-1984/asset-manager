@@ -253,15 +253,16 @@
   },
   "prefs": {
     "goalAmount": 0,
-    "usdRate": 1380,
+    "usdRate": 1390,
     "usdtRate": 1380,
     "hkdRate": 195,
     "audRate": 1080,
-    "fxUpdatedAt": "2026. 6. 21. 오전 12:26:31",
-    "fxAutoStatus": "자동 환율 조회 실패 · 마지막 저장 환율 사용",
+    "fxUpdatedAt": "2026. 6. 21. 오후 4:05:58",
+    "fxAutoStatus": "수동 환율 저장 완료",
     "priceUpdatedAt": "2026. 6. 21. 오후 3:57:34",
-    "priceAutoStatus": "코인 시세 갱신 3개 완료"
+    "priceAutoStatus": "코인 시세 갱신 3개 완료",
+    "autoGithubBackup": true
   },
-  "backupAt": "2026-06-21T07:05:40.867Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-21T07:06:02.074Z",
+  "backupMode": "auto"
 }
