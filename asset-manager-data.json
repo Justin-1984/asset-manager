@@ -21,7 +21,7 @@
         "price": 322,
         "costPrice": 0,
         "priceSource": "Upbit",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:56:16"
       },
       {
         "id": "mqmhora59nopij",
@@ -30,10 +30,10 @@
         "name": "XRP",
         "currency": "USDT",
         "qty": 20000,
-        "price": 1.1486,
+        "price": 1.1489,
         "costPrice": 0.5,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:56:16"
       },
       {
         "id": "mqmik1r0hnttor",
@@ -42,9 +42,9 @@
         "name": "BCH",
         "currency": "USDT",
         "qty": 5,
-        "price": 198.1,
+        "price": 198.4,
         "priceSource": "Binance",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:03"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:56:16"
       },
       {
         "id": "mqnl9fskpwgcj9",
@@ -56,7 +56,7 @@
         "price": 31.86,
         "costPrice": 20,
         "priceSource": "Finnhub",
-        "priceUpdatedAt": "2026. 6. 21. 오후 6:48:04"
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:56:17"
       },
       {
         "id": "mqnlskqg1q0g6i",
@@ -65,8 +65,10 @@
         "name": "441640",
         "currency": "KRW",
         "qty": 10,
-        "price": 10800,
-        "costPrice": 10100
+        "price": 13455,
+        "costPrice": 10100,
+        "priceSource": "Naver",
+        "priceUpdatedAt": "2026. 6. 21. 오후 6:56:17"
       }
     ],
     "debts": [],
@@ -271,7 +273,7 @@
       }
     ],
     "version": "4.5",
-    "updatedAt": "2026-06-21T09:48:06.659Z",
+    "updatedAt": "2026-06-21T09:56:17.886Z",
     "monthlySnapshots": []
   },
   "prefs": {
@@ -282,11 +284,17 @@
     "audRate": 1073.91,
     "fxUpdatedAt": "2026. 6. 21. 오후 6:32:15",
     "fxAutoStatus": "수동 환율 저장 완료",
-    "priceUpdatedAt": "2026-06-21T09:48:06.660Z",
-    "priceAutoStatus": "시세 갱신 4개 완료 · 실패 1개",
+    "priceUpdatedAt": "2026-06-21T09:56:17.886Z",
+    "priceAutoStatus": "시세 갱신 5개 완료",
     "autoGithubBackup": true,
     "lastRestoreAt": "2026-06-21T09:47:10.498Z",
     "backupLogs": [
+      {
+        "type": "수동백업",
+        "msg": "성공",
+        "time": "2026-06-21T09:49:16.662Z",
+        "display": "2026. 6. 21. 오후 6:49:16"
+      },
       {
         "type": "자동백업",
         "msg": "성공",
@@ -343,8 +351,8 @@
       }
     ],
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
-    "lastBackupAt": "2026-06-21T09:48:02.228Z"
+    "lastBackupAt": "2026-06-21T09:49:16.662Z"
   },
-  "backupAt": "2026-06-21T09:49:15.703Z",
+  "backupAt": "2026-06-21T09:57:31.937Z",
   "backupMode": "manual"
 }
