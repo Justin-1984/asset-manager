@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v3.9.2</title>
+  <title>자산 매니저 v4.0</title>
   <link rel="manifest" href="manifest.json?v=391" />
   <link rel="stylesheet" href="styles.css?v=391" />
   <meta name="theme-color" content="#111827" />
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v3.9.2</p>
+      <p>통합 순자산 대시보드 v4.0</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -23,6 +23,7 @@
         <article class="summary main"><span>순자산</span><strong id="netWorth">₩0</strong><em id="goalText">목표 없음</em></article>
         <article class="summary"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
         <article class="summary"><span>총부채</span><strong id="totalLiabilities">₩0</strong></article>
+        <article class="summary"><span>카드 결제예정액</span><strong id="cardDueTotal">₩0</strong><em id="cardDueSoon">예정 없음</em></article>
         <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
         <article class="summary"><span>투자원금</span><strong id="totalInvestCost">₩0</strong><em>코인/주식 기준</em></article>
         <article class="summary"><span>총수익</span><strong id="totalProfit">₩0</strong><em id="totalProfitPct">0%</em></article>
@@ -84,8 +85,10 @@
           <input id="debtCurrency" placeholder="통화 KRW/HKD/USD" value="KRW" />
           <input id="debtAmount" type="number" step="any" placeholder="잔액" required />
           <input id="debtRate" type="number" step="any" placeholder="금리(선택)" />
+          <input id="debtDueDate" type="date" placeholder="결제예정일/만기일 선택" />
           <button id="debtSubmitBtn" type="submit">저장</button><button id="debtCancelBtn" type="button" class="ghost hidden">취소</button>
         </form>
+        <div id="cardDebtSummary" class="preview">카드 결제예정액: ₩0</div>
         <div id="debtList" class="list"></div>
       </div>
     </section>
@@ -101,7 +104,7 @@
     <section id="exchanges" class="view">
       <div class="card">
         <div class="card-head"><h2>거래소 연결 관리</h2><button id="addExchangeBtn">+ 거래소 연결 추가</button></div>
-        <p class="note">v3.9.2는 잔고 API 대신 수동 보유수량 + 공개 시세 자동조회 방식으로 안정화했습니다.</p>
+        <p class="note">v4.0은 수동 보유수량 + 자동 시세조회에 카드 결제예정액 관리를 추가했습니다.</p>
         <form id="exchangeForm" class="form hidden">
           <select id="exchangeName">
             <option>Binance</option><option>Upbit</option><option>OKX</option><option>Bybit</option><option>Bitget</option><option>Gate.io</option><option>HTX</option><option>BingX</option>
@@ -142,7 +145,7 @@
           <div><span>미국주식 · 미국 ETF</span><strong>USD</strong></div>
           <div><span>홍콩 은행 · 홍콩 모기지</span><strong>HKD</strong></div>
         </div>
-        <p class="note">v3.9.2는 환율 자동조회, 수익률 계산, 보유 코인 공개 시세 자동조회 방식을 포함합니다.</p>
+        <p class="note">v4.0은 환율 자동조회, 수익률 계산, 보유 코인 공개 시세조회, 카드 결제예정액 관리를 포함합니다.</p>
       </div>
       <div class="card">
         <h2>백업 / 복원</h2>
@@ -172,6 +175,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=391"></script>
+  <script src="app.js?v=40"></script>
 </body>
 </html>
