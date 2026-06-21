@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-4-1';
+const STORAGE_KEY='asset-manager-v4-4-2';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -27,8 +27,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.4.1'};}catch{}} return {version:'4.4.1',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.4.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[]},...s,version:'4.4.2'};}catch{}} return {version:'4.4.2',assets:[],debts:[],snapshots:[],exchanges:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.4.2';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -355,18 +355,29 @@ async function fetchNaverViaJinaPrice(code){
  throw new Error('Jina/Naver 가격 파싱 실패');
 }
 
-async function fetchMarketWorkerPrice(symbol){
- let worker=(prefs.marketWorkerUrl||'').trim().replace(/\/$/,'');
+function normalizeWorkerUrl(raw){
+ let worker=String(raw||'').trim();
  if(!worker)throw new Error('미국주식 시세 Worker URL 미설정');
  if(worker.includes('justin-1984.github.io'))throw new Error('Worker URL이 자산매니저 주소입니다. workers.dev 주소를 넣어주세요.');
+ if(worker.includes('dash.cloudflare.com'))throw new Error('Cloudflare 편집 화면 주소가 아니라 workers.dev 주소를 넣어주세요.');
+ try{
+  const u=new URL(worker);
+  if(!u.hostname.includes('workers.dev'))throw new Error('workers.dev 주소가 아닙니다');
+  return u.origin;
+ }catch(e){
+  throw new Error('Worker URL 형식 오류: '+worker);
+ }
+}
+async function fetchMarketWorkerPrice(symbol){
+ const worker=normalizeWorkerUrl(prefs.marketWorkerUrl);
  const timeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Worker 요청 시간 초과')),ms))]);
  const reqUrl=worker+'/?symbol='+encodeURIComponent(symbol);
  const r=await timeout(10000,fetch(reqUrl,{cache:'no-store'}));
- if(!r.ok)throw new Error('Worker HTTP '+r.status);
  const text=await r.text();
+ if(!r.ok)throw new Error('Worker HTTP '+r.status+' · '+reqUrl+' · '+text.slice(0,80));
  let j;
  try{j=JSON.parse(text);}catch(e){throw new Error('Worker 응답이 JSON이 아닙니다: '+text.slice(0,80));}
- if(!j.ok||!Number(j.price))throw new Error(j.error||'Worker 가격 없음');
+ if(!j.ok||!Number(j.price))throw new Error((j.error||'Worker 가격 없음')+' · '+reqUrl);
  return {price:Number(j.price),source:j.source||'Market Worker'};
 }
 async function fetchStockPriceForAsset(asset){
@@ -466,7 +477,7 @@ $('themeToggle').onclick=()=>{document.body.classList.toggle('dark');localStorag
 if($('monthlySnapshotBtn'))$('monthlySnapshotBtn').onclick=()=>{saveMonthlySnapshot(false);save();setStatus('월별 스냅샷 저장 완료');};
 if($('clearMonthlySnapshotsBtn'))$('clearMonthlySnapshotsBtn').onclick=()=>{if(confirm('월별 순자산 추이를 초기화할까요?')){state.monthlySnapshots=[];save();}};
 $('snapshotBtn').onclick=()=>{const today=new Date().toLocaleDateString('ko-KR');const snap={date:today,assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()};const same=state.snapshots.findIndex(s=>s.date===today);if(same>=0)state.snapshots[same]=snap;else state.snapshots.push(snap);save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
-['goalAmount','usdRate','usdtRate','hkdRate','audRate','marketWorkerUrl'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={...prefs,goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,marketWorkerUrl:$('marketWorkerUrl')?.value.trim()||prefs.marketWorkerUrl||'',autoGithubBackup:!!$('autoGithubBackup')?.checked,fxUpdatedAt:new Date().toLocaleString('ko-KR'),fxAutoStatus:'수동 환율 저장 완료'};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표/시세 Worker/자동백업 설정 저장 완료');scheduleAutoGithubBackup();};
+['goalAmount','usdRate','usdtRate','hkdRate','audRate','marketWorkerUrl'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={...prefs,goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,marketWorkerUrl:(()=>{try{return normalizeWorkerUrl($('marketWorkerUrl')?.value||prefs.marketWorkerUrl||'')}catch(e){return $('marketWorkerUrl')?.value.trim()||prefs.marketWorkerUrl||''}})(),autoGithubBackup:!!$('autoGithubBackup')?.checked,fxUpdatedAt:new Date().toLocaleString('ko-KR'),fxAutoStatus:'수동 환율 저장 완료'};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표/시세 Worker/자동백업 설정 저장 완료');scheduleAutoGithubBackup();};
 ['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});if($('autoGithubBackup'))$('autoGithubBackup').checked=!!prefs.autoGithubBackup;$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');scheduleAutoGithubBackup();};function setStatus(m){$('syncStatus').textContent=m;}
 async function gh(method,body){settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');const{ghOwner,ghRepo,ghPath,ghToken}=settings;if(!ghOwner||!ghRepo||!ghPath||!ghToken)throw new Error('GitHub 설정을 먼저 저장하세요.');const url=`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${encodeURIComponent(ghPath).replaceAll('%2F','/')}`;const headers={Authorization:`Bearer ${ghToken}`,Accept:'application/vnd.github+json'};return method==='GET'?fetch(url,{headers}):fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});}
 let autoBackupTimer=null, autoBackupBusy=false;
@@ -503,10 +514,11 @@ $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({state,prefs},nu
 async function testMarketWorker(){
  const el=$('marketWorkerStatus');
  try{
-  if(el)el.textContent='SCHD Worker 테스트 중...';
+  const normalized=normalizeWorkerUrl($('marketWorkerUrl')?.value||prefs.marketWorkerUrl);
+  if(el)el.textContent='SCHD Worker 테스트 중... · '+normalized;
   const t=await fetchMarketWorkerPrice('SCHD');
-  if(el)el.textContent=`Worker 정상 · SCHD ${num(t.price)} USD · ${t.source}`;
-  alert(`Worker 정상\nSCHD: ${num(t.price)} USD\n출처: ${t.source}`);
+  if(el)el.textContent=`Worker 정상 · SCHD ${num(t.price)} USD · ${t.source} · ${normalized}`;
+  alert(`Worker 정상\nSCHD: ${num(t.price)} USD\n출처: ${t.source}\nURL: ${normalized}`);
  }catch(e){
   if(el)el.textContent='Worker 테스트 실패: '+e.message;
   alert('Worker 테스트 실패\n'+e.message);
@@ -516,4 +528,4 @@ if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(t
 if($('testMarketWorkerBtn'))$('testMarketWorkerBtn').onclick=()=>testMarketWorker();
 if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=441').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=442').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
