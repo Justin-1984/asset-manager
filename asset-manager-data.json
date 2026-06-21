@@ -18,8 +18,17 @@
     "fxUpdatedAt": "2026. 6. 21. 오후 9:43:28",
     "fxAutoStatus": "수동 환율 저장 완료",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
-    "autoGithubBackup": true
+    "autoGithubBackup": true,
+    "lastBackupAt": "2026-06-21T12:44:40.995Z",
+    "backupLogs": [
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-21T12:44:40.996Z",
+        "display": "2026. 6. 21. 오후 9:44:40"
+      }
+    ]
   },
-  "backupAt": "2026-06-21T12:44:40.164Z",
-  "backupMode": "auto"
+  "backupAt": "2026-06-21T12:44:43.309Z",
+  "backupMode": "manual"
 }
