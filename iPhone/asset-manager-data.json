@@ -1,12 +1,23 @@
 {
   "state": {
     "version": "4.7.1",
-    "assets": [],
+    "assets": [
+      {
+        "id": "mqox7tbmximjgd",
+        "type": "코인",
+        "account": "업비트",
+        "name": "Xlm",
+        "currency": "KRW",
+        "qty": 10,
+        "price": 150,
+        "costPrice": 200
+      }
+    ],
     "debts": [],
     "snapshots": [],
     "exchanges": [],
     "insurances": [],
-    "updatedAt": "2026-06-21T13:16:43.891Z",
+    "updatedAt": "2026-06-22T07:55:30.995Z",
     "monthlySnapshots": [],
     "dailySnapshots": []
   },
@@ -16,12 +27,18 @@
     "hkdRate": 195.34,
     "audRate": 1073.91,
     "goalAmount": 0,
-    "fxUpdatedAt": "2026. 6. 21. 오후 10:16:44",
+    "fxUpdatedAt": "2026. 6. 22. 오후 4:54:33",
     "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "autoGithubBackup": true,
-    "lastBackupAt": "2026-06-21T13:13:37.321Z",
+    "lastBackupAt": "2026-06-21T13:17:16.856Z",
     "backupLogs": [
+      {
+        "type": "수동백업",
+        "msg": "성공",
+        "time": "2026-06-21T13:17:16.857Z",
+        "display": "2026. 6. 21. 오후 10:17:16"
+      },
       {
         "type": "수동백업",
         "msg": "성공",
@@ -60,6 +77,6 @@
       }
     ]
   },
-  "backupAt": "2026-06-21T13:17:16.061Z",
-  "backupMode": "manual"
+  "backupAt": "2026-06-22T07:55:34.671Z",
+  "backupMode": "auto"
 }
