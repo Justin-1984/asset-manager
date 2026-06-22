@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v4.7.1</title>
-  <link rel="manifest" href="manifest.json?v=471" />
-  <link rel="stylesheet" href="styles.css?v=471" />
+  <title>자산 매니저 v4.8</title>
+  <link rel="manifest" href="manifest.json?v=48" />
+  <link rel="stylesheet" href="styles.css?v=48" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v4.7.1</p>
+      <p>통합 순자산 대시보드 v4.8</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -205,6 +205,7 @@
           <button id="testMarketWorkerBtn" type="button" class="ghost">SCHD Worker 테스트</button>
           <p id="marketWorkerStatus" class="status"></p>
           <label class="checkline"><input id="autoGithubBackup" type="checkbox" /> 변경 후 GitHub 자동 백업 사용</label>
+          <label class="checkline"><input id="autoGithubSync" type="checkbox" /> 앱 실행 시 GitHub 최신 백업 확인</label>
           <button id="savePrefs">수동 환율/목표/시세 Worker/자동백업 저장</button>
           <p id="autoBackupStatus" class="status"></p>
           <p id="fxAutoStatus" class="status">앱 실행 시 자동 환율조회 · 실패 시 마지막 정상 환율 유지</p>
@@ -231,6 +232,8 @@
           <button id="restoreBtn" type="button">GitHub 복원</button>
           <button id="exportBtn" type="button">파일로 내보내기</button>
           <button id="clearCacheBtn" type="button" class="ghost">앱 캐시 정리</button>
+          <button id="syncCheckBtn" type="button" class="ghost">동기화 확인</button>
+          <button id="forceUpdateBtn" type="button" class="ghost">강제 업데이트</button>
           <label class="fileBtn">파일에서 가져오기<input id="importFile" type="file" accept="application/json" hidden /></label>
         </div>
         <p id="syncStatus" class="status"></p>
@@ -248,6 +251,6 @@
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=471"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>

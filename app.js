@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-7-1';
+const STORAGE_KEY='asset-manager-v4-8';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -104,8 +104,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'4.7.1'};}catch{}} return {version:'4.7.1',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.7.1';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'4.8'};}catch{}} return {version:'4.8',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='4.8';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -678,8 +678,8 @@ if($('clearDailySnapshotsBtn'))$('clearDailySnapshotsBtn').onclick=()=>{if(confi
 if($('monthlySnapshotBtn'))$('monthlySnapshotBtn').onclick=()=>{saveMonthlySnapshot(false);save();setStatus('월별 스냅샷 저장 완료');};
 if($('clearMonthlySnapshotsBtn'))$('clearMonthlySnapshotsBtn').onclick=()=>{if(confirm('월별 순자산 추이를 초기화할까요?')){state.monthlySnapshots=[];save();}};
 $('snapshotBtn').onclick=()=>{const today=new Date().toLocaleDateString('ko-KR');const snap={date:today,assets:totalAssets(),debts:totalDebts(),netWorth:netWorth()};const same=state.snapshots.findIndex(s=>s.date===today);if(same>=0)state.snapshots[same]=snap;else state.snapshots.push(snap);save();};$('clearSnapshotsBtn').onclick=()=>{if(confirm('순자산 추이를 초기화할까요?')){state.snapshots=[];save();}};
-['goalAmount','usdRate','usdtRate','hkdRate','audRate','marketWorkerUrl'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={...prefs,goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,marketWorkerUrl:(()=>{try{return normalizeWorkerUrl($('marketWorkerUrl')?.value||prefs.marketWorkerUrl||'')}catch(e){return $('marketWorkerUrl')?.value.trim()||prefs.marketWorkerUrl||''}})(),autoGithubBackup:!!$('autoGithubBackup')?.checked,fxUpdatedAt:new Date().toLocaleString('ko-KR'),fxAutoStatus:'수동 환율 저장 완료'};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표/시세 Worker/자동백업 설정 저장 완료');scheduleAutoGithubBackup();};
-['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});if($('autoGithubBackup'))$('autoGithubBackup').checked=!!prefs.autoGithubBackup;$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');scheduleAutoGithubBackup();};function setStatus(m){$('syncStatus').textContent=m;}
+['goalAmount','usdRate','usdtRate','hkdRate','audRate','marketWorkerUrl'].forEach(id=>{if($(id))$(id).value=prefs[id]||''});$('savePrefs').onclick=()=>{prefs={...prefs,goalAmount:Number($('goalAmount').value)||0,usdRate:Number($('usdRate').value)||1380,usdtRate:Number($('usdtRate').value)||Number($('usdRate').value)||1380,hkdRate:Number($('hkdRate').value)||195,audRate:Number($('audRate').value)||1080,marketWorkerUrl:(()=>{try{return normalizeWorkerUrl($('marketWorkerUrl')?.value||prefs.marketWorkerUrl||'')}catch(e){return $('marketWorkerUrl')?.value.trim()||prefs.marketWorkerUrl||''}})(),autoGithubBackup:!!$('autoGithubBackup')?.checked,autoGithubSync:!!$('autoGithubSync')?.checked,fxUpdatedAt:new Date().toLocaleString('ko-KR'),fxAutoStatus:'수동 환율 저장 완료'};localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));render();setStatus('환율/목표/시세 Worker/자동백업 설정 저장 완료');scheduleAutoGithubBackup();};
+['ghOwner','ghRepo','ghPath','ghToken'].forEach(id=>{if(settings[id])$(id).value=settings[id]});if($('autoGithubBackup'))$('autoGithubBackup').checked=!!prefs.autoGithubBackup;if($('autoGithubSync'))$('autoGithubSync').checked=!!prefs.autoGithubSync;$('saveSettings').onclick=()=>{settings={ghOwner:$('ghOwner').value.trim(),ghRepo:$('ghRepo').value.trim(),ghPath:$('ghPath').value.trim()||'asset-manager-data.json',ghToken:$('ghToken').value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));setStatus('GitHub 설정 저장 완료');scheduleAutoGithubBackup();};function setStatus(m){$('syncStatus').textContent=m;}
 async function gh(method,body){settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');const{ghOwner,ghRepo,ghPath,ghToken}=settings;if(!ghOwner||!ghRepo||!ghPath||!ghToken)throw new Error('GitHub 설정을 먼저 저장하세요.');const url=`https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${encodeURIComponent(ghPath).replaceAll('%2F','/')}`;const headers={Authorization:`Bearer ${ghToken}`,Accept:'application/vnd.github+json'};return method==='GET'?fetch(url,{headers}):fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});}
 let autoBackupTimer=null, autoBackupBusy=false;
 function hasGithubSettings(){settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');return !!(settings.ghOwner&&settings.ghRepo&&settings.ghPath&&settings.ghToken);}
@@ -698,7 +698,7 @@ async function doGithubBackup(auto=false){
   autoBackupBusy=true;
   if(auto){updateAutoBackupStatus('자동 백업 중...');}else setStatus('백업 중...');
   let sha;const r=await gh('GET');if(r.ok)sha=(await r.json()).sha;
-  const payload={state,prefs,backupAt:new Date().toISOString(),backupMode:auto?'auto':'manual'};
+  const payload={state,prefs,backupAt:new Date().toISOString(),updatedAt:state.updatedAt||new Date().toISOString(),backupMode:auto?'auto':'manual',device:navigator.userAgent.slice(0,80)};
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   const res=await gh('PUT',{message:`asset-manager ${auto?'auto ':''}backup ${new Date().toISOString()}`,content,sha});
   if(!res.ok)throw new Error(await res.text());
@@ -729,6 +729,41 @@ if($('refreshPricesBtn'))$('refreshPricesBtn').onclick=()=>refreshCryptoPrices(t
 if($('testMarketWorkerBtn'))$('testMarketWorkerBtn').onclick=()=>testMarketWorker();
 if($('refreshAllDataBtn'))$('refreshAllDataBtn').onclick=async()=>{await autoUpdateFx(true);await refreshCryptoPrices(true);};
 $('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result);state=p.state||p;prefs=p.prefs||prefs;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));setStatus('파일 가져오기 완료');render();}catch(err){setStatus('가져오기 실패: '+err.message)}};reader.readAsText(f);};
+async function checkGithubSync(auto=false){
+ try{
+  if(!hasGithubSettings())throw new Error('GitHub 설정 필요');
+  if(!auto)setStatus('동기화 확인 중...');
+  const r=await gh('GET');if(!r.ok)throw new Error(await r.text());
+  const j=await r.json();
+  const payload=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+  const remoteState=payload.state||payload;
+  const remoteUpdated=Date.parse(remoteState.updatedAt||payload.updatedAt||payload.backupAt||0);
+  const localUpdated=Date.parse(state.updatedAt||0);
+  if(remoteUpdated>localUpdated+1000){
+   if(auto || confirm('GitHub에 더 최신 백업이 있습니다. 복원할까요?')){
+    state=remoteState;
+    prefs={...prefs,...(payload.prefs||{})};
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+    prefs.lastRestoreAt=new Date().toISOString();
+    addBackupLog('자동동기화','최신 백업 복원');
+    localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
+    setStatus('GitHub 최신 백업 복원 완료');
+    requestRender();
+    return;
+   }
+  }
+  setStatus('동기화 확인 완료 · 현재 데이터가 최신입니다');
+ }catch(e){
+  if(!auto)setStatus('동기화 확인 실패: '+e.message);
+ }
+}
+function forceUpdate(){
+ const base=location.origin+location.pathname;
+ location.href=base+'?v=48&t='+Date.now();
+}
+if($('syncCheckBtn'))$('syncCheckBtn').onclick=()=>checkGithubSync(false);
+if($('forceUpdateBtn'))$('forceUpdateBtn').onclick=()=>forceUpdate();
 async function clearAppCache(){
  try{
   if('serviceWorker' in navigator){
@@ -744,4 +779,4 @@ async function clearAppCache(){
  }catch(e){setStatus('캐시 정리 실패: '+e.message);}
 }
 if($('clearCacheBtn'))$('clearCacheBtn').onclick=()=>clearAppCache();
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=471').catch(()=>{});updateAssetPreview();render();autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=48').catch(()=>{});updateAssetPreview();render();if(prefs.autoGithubSync)checkGithubSync(true);autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));

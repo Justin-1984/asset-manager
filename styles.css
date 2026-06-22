@@ -33,3 +33,17 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .perf-row span{display:block;text-align:right;font-weight:800}
 
 .mini-summary{margin:12px 0}.mini-summary .summary{min-height:auto}
+
+/* v4.8 compact action buttons */
+.item{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:12px;align-items:center}
+.item>.amount{grid-column:auto}
+.item>button{min-height:44px;padding:10px 12px;border-radius:14px;font-size:14px}
+.item>button:nth-last-child(2){grid-column:1 / 2}
+.item>button:last-child{grid-column:2 / 3}
+@media (max-width:720px){
+  .item{grid-template-columns:1fr 1fr}
+  .item>div:first-child,.item>.meta,.item>.amount{grid-column:1 / -1}
+  .item>button{width:100%;min-height:44px;padding:10px 8px}
+  .item>button:nth-last-child(2){grid-column:1 / 2}
+  .item>button:last-child{grid-column:2 / 3}
+}
