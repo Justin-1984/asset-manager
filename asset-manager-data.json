@@ -15,14 +15,23 @@
     "usdtRate": 1531,
     "hkdRate": 195.34,
     "audRate": 1073.91,
-    "goalAmount": 0,
-    "fxUpdatedAt": "2026. 6. 23. 오전 7:27:37",
+    "goalAmount": 300000000000,
+    "fxUpdatedAt": "2026. 6. 23. 오전 7:29:42",
     "fxAutoStatus": "수동 환율 저장 완료",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "autoGithubBackup": true,
-    "autoGithubSync": true
+    "autoGithubSync": true,
+    "lastBackupAt": "2026-06-22T22:28:47.348Z",
+    "backupLogs": [
+      {
+        "type": "자동백업",
+        "msg": "성공",
+        "time": "2026-06-22T22:28:47.349Z",
+        "display": "2026. 6. 23. 오전 7:28:47"
+      }
+    ]
   },
-  "backupAt": "2026-06-22T22:28:46.362Z",
+  "backupAt": "2026-06-22T22:29:46.257Z",
   "updatedAt": "2026-06-22T22:26:25.869Z",
   "backupMode": "auto",
   "device": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
