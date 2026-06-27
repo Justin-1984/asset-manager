@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-13-5-asset-ui-polish-20260628';
+const CACHE_NAME = 'asset-manager-v6-13-6-asset-type-card-fix-20260628';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

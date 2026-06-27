@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.13.5-asset-ui-polish';
+const APP_VERSION = 'v6.13.6-asset-type-card-fix';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -120,7 +120,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-5-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-6-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -245,16 +245,25 @@ function assetCostKrw(a){
   const cur = (a.costCurrency || 'KRW').toUpperCase();
   return cost * fx(cur);
 }
+function isGoldAsset(a){
+  const t=String(a?.type||'').toLowerCase().replace(/\s+/g,'');
+  // 현금/예금 같은 단어에 포함된 '금'은 금 투자자산으로 보지 않습니다.
+  return t === '금' || t === '골드' || t === 'gold' || t.includes('금투자') || t.includes('금현물') || t.includes('골드');
+}
+function isCashAsset(a){
+  const t=String(a?.type||'').toLowerCase().replace(/\s+/g,'');
+  return t.includes('현금') || t.includes('은행') || t.includes('예금') || t.includes('적금') || t.includes('cash') || t.includes('bank');
+}
 function isInvestmentAsset(a){
   const t=String(a?.type||'').toLowerCase();
-  return t.includes('코인') || t.includes('미국주식') || t.includes('미국 주식') || t.includes('미국 etf') || t.includes('etf') || t.includes('한국 etf') || t.includes('주식') || t.includes('금');
+  return t.includes('코인') || t.includes('미국주식') || t.includes('미국 주식') || t.includes('미국 etf') || t.includes('etf') || t.includes('한국 etf') || t.includes('주식') || isGoldAsset(a);
 }
 function formatAssetQty(a){
   const qty=num(a.amount);
   if(!qty) return '-';
   const t=String(a.type||'');
   const symbol=String(a.symbol||'').trim().toUpperCase();
-  const unit = t.includes('코인') ? (symbol || '개') : t.includes('금') ? 'g/개' : '주';
+  const unit = t.includes('코인') ? (symbol || '개') : isGoldAsset(a) ? 'g' : '주';
   const digits = t.includes('코인') ? 8 : qty%1 ? 4 : 0;
   return `${qty.toLocaleString('ko-KR',{maximumFractionDigits:digits})}${unit}`;
 }
@@ -300,6 +309,21 @@ function assetDetailHtml(a){
   ];
   return `<div class="asset-detail-grid">${rows.map(([k,v])=>`<span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b>`).join('')}</div>`;
 }
+function nonInvestmentStatsHtml(a){
+  if(isCashAsset(a)){
+    const cur=String(a.currency||'KRW').toUpperCase();
+    const raw=num(a.amount || a.value || a.krwValue || 0);
+    const krw=assetValue(a);
+    const rows=[
+      ['잔액', cur==='KRW' ? money(krw) : formatForeignMoney(raw, cur)],
+      ['원화 환산', money(krw)],
+      ['적용 환율', cur==='KRW' ? '-' : money(fx(cur))]
+    ];
+    return `<div class="asset-stat-grid simple-asset-grid">${rows.map(([k,v])=>`<div><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`).join('')}</div>`;
+  }
+  const rows=[['현재가치', money(assetValue(a))]];
+  return `<div class="asset-stat-grid simple-asset-grid">${rows.map(([k,v])=>`<div><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`).join('')}</div>`;
+}
 
 function normalizedAssetGroupKey(a){
   if(!isInvestmentAsset(a)) return 'single:' + (a.id || uid());
@@ -309,7 +333,7 @@ function normalizedAssetGroupKey(a){
   if(type.includes('한국 etf') && code) symbol=code;
   if(!symbol) symbol=cleanSymbol(a.name || displayAssetName(a));
   if(!symbol) return 'single:' + (a.id || uid());
-  const family = type.includes('코인') ? 'crypto' : type.includes('한국 etf') ? 'kr-etf' : type.includes('금') ? 'gold' : (type.includes('주식') || type.includes('etf')) ? 'stock-etf' : type;
+  const family = type.includes('코인') ? 'crypto' : type.includes('한국 etf') ? 'kr-etf' : isGoldAsset(a) ? 'gold' : (type.includes('주식') || type.includes('etf')) ? 'stock-etf' : type;
   return family + ':' + symbol;
 }
 function groupDashboardAssets(){
@@ -381,7 +405,7 @@ function renderSingleAssetCard(a){
   const el=document.createElement('article');
   el.className='card asset-card-v2';
   const meta=`${escapeHtml(a.type||'자산')} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${escapeHtml(a.country||a.account||'-')} · ${escapeHtml(a.currency||'KRW')}`;
-  el.innerHTML=`<div class="asset-card-head"><div class="asset-title"><strong>${escapeHtml(displayAssetName(a))}</strong><p>${meta}</p></div><div class="asset-value"><b>${money(g.value)}</b><small class="${g.profit>=0?'positive':'negative'}">${escapeHtml(signedMoney(g.profit))} (${g.rate>=0?'+':''}${g.rate.toFixed(2)}%)</small></div></div>${isInvestmentAsset(a)?assetGroupStatsHtml(g):assetDetailHtml(a)}<div class="asset-card-actions"><button class="edit" type="button" data-edit-asset="${escapeHtml(a.id)}">수정</button><button class="danger" type="button" data-delete-asset="${escapeHtml(a.id)}">삭제</button></div>`;
+  el.innerHTML=`<div class="asset-card-head"><div class="asset-title"><strong>${escapeHtml(displayAssetName(a))}</strong><p>${meta}</p></div><div class="asset-value"><b>${money(g.value)}</b><small class="${g.profit>=0?'positive':'negative'}">${escapeHtml(signedMoney(g.profit))} (${g.rate>=0?'+':''}${g.rate.toFixed(2)}%)</small></div></div>${isInvestmentAsset(a)?assetGroupStatsHtml(g):nonInvestmentStatsHtml(a)}<div class="asset-card-actions"><button class="edit" type="button" data-edit-asset="${escapeHtml(a.id)}">수정</button><button class="danger" type="button" data-delete-asset="${escapeHtml(a.id)}">삭제</button></div>`;
   bindAssetCardActions(el);
   return el;
 }
@@ -1244,7 +1268,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-5-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-6-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
