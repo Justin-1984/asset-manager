@@ -87,7 +87,7 @@ body.dark .head-actions button.primary,body[data-theme="dark"] .head-actions but
 .dash-asset-row strong{text-align:right;white-space:nowrap;font-size:14px}
 @media(max-width:520px){.dashboard-head{align-items:center}.dashboard-head .head-actions{width:auto!important;display:flex!important;grid-template-columns:none!important}.dashboard-head .head-actions button{min-width:126px;padding:10px 12px}.dash-asset-row{grid-template-columns:1fr}.dash-asset-row strong{text-align:left}}
 
-/* v6.13.3 asset tab grouping */
+/* v6.13.4 asset tab grouping */
 .asset-group-card .row-side small{display:block;margin-top:6px;color:var(--muted);font-weight:800;text-align:right}
 .asset-group-summary{margin-top:12px}
 .asset-group-breakdown{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}

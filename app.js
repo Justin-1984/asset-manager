@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.13.3-asset-tab-grouping';
+const APP_VERSION = 'v6.13.4-transaction-edit-delete';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -120,7 +120,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-3-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-4-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -900,10 +900,53 @@ function findOrCreateAssetForTransaction(tx){
   }
   return asset;
 }
+function snapshotAsset(a){
+  if(!a) return null;
+  return {id:a.id, amount:num(a.amount), price:num(a.price), cost:num(a.cost), costCurrency:(a.costCurrency||'KRW').toUpperCase(), currency:(a.currency||'KRW').toUpperCase(), priceUpdatedAt:a.priceUpdatedAt||''};
+}
+function restoreAssetSnapshot(snap){
+  if(!snap || !snap.id) return false;
+  const a=state.assets.find(x=>x.id===snap.id);
+  if(!a) return false;
+  a.amount = num(snap.amount);
+  a.price = num(snap.price);
+  a.cost = num(snap.cost);
+  a.costCurrency = (snap.costCurrency||'KRW').toUpperCase();
+  a.currency = (snap.currency||a.currency||'KRW').toUpperCase();
+  a.priceUpdatedAt = new Date().toISOString();
+  return true;
+}
+function approximateReverseTransaction(tx){
+  if(!tx || tx.type==='배당' || tx.type==='수수료') return false;
+  const asset = tx.assetId ? state.assets.find(a=>a.id===tx.assetId) : null;
+  if(!asset) return false;
+  const type=tx.type, qty=num(tx.qty), price=num(tx.price), fee=num(tx.fee);
+  const cur=(tx.currency||asset.currency||'KRW').toUpperCase();
+  const effectivePrice = price || ((type==='입금'||type==='출금'||type==='이자') ? 1 : 0);
+  const txCost=(qty*effectivePrice+fee)*fx(cur);
+  if(type==='매수' || type==='입금' || type==='이자'){
+    asset.amount=Math.max(0, num(asset.amount)-qty);
+    if(type!=='이자') asset.cost=Math.max(0, assetCostKrw(asset)-txCost);
+    asset.costCurrency='KRW';
+  }else if(type==='매도' || type==='출금'){
+    asset.amount=num(asset.amount)+qty;
+    asset.cost=Math.max(0, assetCostKrw(asset)+txCost);
+    asset.costCurrency='KRW';
+  }
+  asset.priceUpdatedAt = new Date().toISOString();
+  return true;
+}
+function reverseTransactionFromAsset(tx){
+  if(!tx) return false;
+  if(tx.assetBeforeState && restoreAssetSnapshot(tx.assetBeforeState)) return true;
+  return approximateReverseTransaction(tx);
+}
 function applyTransactionToAsset(tx){
   const type=tx.type;
-  if(type==='배당' || type==='수수료') return;
+  if(type==='배당' || type==='수수료') return null;
   const asset=findOrCreateAssetForTransaction(tx);
+  tx.assetId = asset.id;
+  const before=snapshotAsset(asset);
   const qty=num(tx.qty);
   const price=num(tx.price);
   const fee=num(tx.fee);
@@ -933,29 +976,78 @@ function applyTransactionToAsset(tx){
     asset.costCurrency = 'KRW';
   }
   asset.priceUpdatedAt = new Date().toISOString();
+  tx.assetBeforeState = before;
+  tx.assetAfterState = snapshotAsset(asset);
+  return asset;
 }
-function addTransaction(e){
-  if(e) e.preventDefault();
-  const form=$('transactionForm'); if(!form) return;
+let editingTransactionId = null;
+function transactionFromForm(){
+  const form=$('transactionForm'); if(!form) return null;
   const f=Object.fromEntries(new FormData(form));
   const txType=f.type||'매수';
-  const tx={id:uid(), date:f.date || new Date().toISOString().slice(0,10), type:txType, assetId:f.assetId||'', assetName:f.assetName||'', symbol:f.symbol||'', assetType:f.assetType||'미국주식', currency:(f.currency||'KRW').toUpperCase(), qty:num(f.qty), price:num(f.price) || ((txType==='입금'||txType==='출금'||txType==='이자'||txType==='배당') ? 1 : 0), fee:num(f.fee), memo:f.memo||'', createdAt:new Date().toISOString()};
+  const tx={id:editingTransactionId||uid(), date:f.date || new Date().toISOString().slice(0,10), type:txType, assetId:f.assetId||'', assetName:f.assetName||'', symbol:f.symbol||'', assetType:f.assetType||'미국주식', currency:(f.currency||'KRW').toUpperCase(), qty:num(f.qty), price:num(f.price) || ((txType==='입금'||txType==='출금'||txType==='이자'||txType==='배당') ? 1 : 0), fee:num(f.fee), memo:f.memo||'', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
   tx.totalKrw = transactionKrwTotal(tx);
-  if((tx.type==='매수'||tx.type==='매도'||tx.type==='입금'||tx.type==='출금'||tx.type==='이자'||tx.type==='배당') && (!tx.qty || tx.qty<0)){ log('거래 수량/금액을 확인하세요.'); return; }
-  if((tx.type==='매수'||tx.type==='매도') && !tx.price){ log('거래 단가를 확인하세요.'); return; }
-  applyTransactionToAsset(tx);
-  state.transactions.unshift(tx);
+  return tx;
+}
+function resetTransactionForm(){
+  const form=$('transactionForm'); if(!form) return;
   form.reset();
   form.elements.date.value = new Date().toISOString().slice(0,10);
   form.elements.currency.value = 'KRW';
-  autoBackup('거래내역 추가');
+  editingTransactionId=null;
+  const btn=$('txSaveBtn'); if(btn) btn.textContent='거래 저장 및 자산 반영';
+  const cancel=$('txCancelBtn'); if(cancel) cancel.classList.add('hidden');
+  updateTransactionPreview();
+}
+function addTransaction(e){
+  if(e) e.preventDefault();
+  const tx=transactionFromForm(); if(!tx) return;
+  if((tx.type==='매수'||tx.type==='매도'||tx.type==='입금'||tx.type==='출금'||tx.type==='이자'||tx.type==='배당') && (!tx.qty || tx.qty<0)){ log('거래 수량/금액을 확인하세요.'); return; }
+  if((tx.type==='매수'||tx.type==='매도') && !tx.price){ log('거래 단가를 확인하세요.'); return; }
+  if(editingTransactionId){
+    const old=state.transactions.find(t=>t.id===editingTransactionId);
+    if(old) reverseTransactionFromAsset(old);
+    applyTransactionToAsset(tx);
+    state.transactions = state.transactions.filter(t=>t.id!==editingTransactionId);
+    state.transactions.unshift({...old, ...tx});
+    autoBackup('거래내역 수정');
+    log('거래내역 수정 및 자산 재반영 완료');
+  }else{
+    applyTransactionToAsset(tx);
+    state.transactions.unshift(tx);
+    autoBackup('거래내역 추가');
+    log('거래내역 저장 및 자산 반영 완료');
+  }
+  resetTransactionForm();
   render();
-  log('거래내역 저장 및 자산 반영 완료');
+}
+function editTransaction(id){
+  const tx=state.transactions.find(t=>t.id===id); if(!tx) return;
+  const form=$('transactionForm'); if(!form) return;
+  editingTransactionId=id;
+  form.elements.date.value=tx.date||new Date().toISOString().slice(0,10);
+  form.elements.type.value=tx.type||'매수';
+  form.elements.assetId.value=tx.assetId||'';
+  form.elements.assetName.value=tx.assetName||'';
+  form.elements.symbol.value=tx.symbol||'';
+  form.elements.assetType.value=tx.assetType||'미국주식';
+  form.elements.currency.value=(tx.currency||'KRW').toUpperCase();
+  form.elements.qty.value=tx.qty||'';
+  form.elements.price.value=tx.price||'';
+  form.elements.fee.value=tx.fee||0;
+  form.elements.memo.value=tx.memo||'';
+  const btn=$('txSaveBtn'); if(btn) btn.textContent='거래 수정 및 자산 재반영';
+  const cancel=$('txCancelBtn'); if(cancel) cancel.classList.remove('hidden');
+  document.getElementById('transactions')?.scrollIntoView({behavior:'smooth', block:'start'});
+  updateTransactionPreview();
 }
 function deleteTransaction(id){
-  if(!confirm('거래내역을 삭제할까요? 이미 반영된 자산 수량/원금은 자동으로 되돌리지 않습니다. 필요하면 자산에서 수정하세요.')) return;
+  const tx=state.transactions.find(t=>t.id===id);
+  if(!tx) return;
+  if(!confirm('거래내역을 삭제하고 해당 거래의 자산 반영분을 되돌릴까요?')) return;
+  reverseTransactionFromAsset(tx);
   state.transactions=state.transactions.filter(t=>t.id!==id);
-  autoBackup('거래내역 삭제'); render(); log('거래내역 삭제 완료');
+  autoBackup('거래내역 삭제 및 자산 되돌림'); render(); log('거래내역 삭제 및 자산 되돌림 완료');
 }
 function renderTransactions(){
   renderTransactionAssetOptions();
@@ -1142,7 +1234,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-3-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-4-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
@@ -1256,6 +1348,7 @@ window.addEventListener('load',()=>{
   safeBind('testMarketWorkerBtn', testMarketWorker);
   const txForm=$('transactionForm'); if(txForm) txForm.addEventListener('submit', addTransaction);
   const txSel=$('txAssetSelect'); if(txSel) txSel.addEventListener('change', fillTransactionFromAsset);
+  safeBind('txCancelBtn', resetTransactionForm);
   ['txType','txCurrency','txQty','txPrice','txFee'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTransactionPreview); if(el) el.addEventListener('change', updateTransactionPreview); });
   safeBind('avgCalcBtn', calculateAverageBuy);
   safeBind('avgResetBtn', resetAverageCalculator);
