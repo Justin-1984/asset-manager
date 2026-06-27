@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.13.2-dashboard-grouping';
+const APP_VERSION = 'v6.13.3-asset-tab-grouping';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -120,7 +120,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-2-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-3-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -338,6 +338,51 @@ function dashboardAssetGroupHtml(g, index){
   const detail = g.count>1 ? `<small>${escapeHtml(g.items.map(a=>`${a.country||a.account||a.currency||'-'} ${formatAssetQty(a)} ${money(assetValue(a))}`).join(' / '))}</small>` : '';
   const sub = `${escapeHtml(g.type)} · ${escapeHtml(g.currencyText)}${g.placeText ? ' · '+escapeHtml(g.placeText) : ''}`;
   return `<div class="dash-asset-row"><div><b>${index+1}. ${escapeHtml(g.name)}</b><span>${sub} ${merged}</span>${detail}</div><strong>${money(g.value)}</strong></div>`;
+}
+
+function assetGroupDetailHtml(g){
+  const first=g.items[0] || {};
+  const qty=g.amount;
+  const avgKrw = qty>0 ? g.cost/qty : 0;
+  const valueKrw = g.value;
+  const priceKrw = qty>0 ? valueKrw/qty : 0;
+  const sameCurrency = g.currencies && g.currencies.size===1;
+  const cur = sameCurrency ? ([...g.currencies][0] || first.currency || 'KRW') : 'KRW';
+  const rate = fx(cur)||1;
+  const avgDisplay = qty>0 ? formatForeignMoney(avgKrw/rate, cur) : '-';
+  const priceDisplay = qty>0 ? formatForeignMoney(priceKrw/rate, cur) : '-';
+  const qtyUnit = formatAssetQty({...first, amount:qty});
+  const rows=[
+    ['총 보유수량', qtyUnit],
+    ['통합 평균단가', avgDisplay],
+    ['통합 현재가', priceDisplay],
+    ['총 투자원금', g.cost>0 ? money(g.cost) : '-'],
+    ['통합 평가손익', `${signedMoney(g.profit)} (${g.rate>=0?'+':''}${g.rate.toFixed(2)}%)`]
+  ];
+  const summary = `<div class="asset-detail-grid asset-group-summary">${rows.map(([k,v])=>`<span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b>`).join('')}</div>`;
+  const holdings = g.count>1 ? `<details class="asset-group-breakdown" open><summary>계좌/거래소별 보유내역 ${g.count}개</summary>${g.items.map(a=>{
+    const place=escapeHtml(a.country || a.account || a.currency || '-');
+    const sub=`${escapeHtml(a.type||'-')} · ${escapeHtml(a.symbol||'')} · ${escapeHtml(a.currency||'KRW')}`;
+    return `<div class="asset-holding-row"><div><b>${escapeHtml(displayAssetName(a))}</b><span>${place} · ${sub}</span><small>${escapeHtml(formatAssetQty(a))} · 원금 ${escapeHtml(money(assetCostKrw(a)))} · 손익 ${escapeHtml(signedMoney(assetValue(a)-assetCostKrw(a)))}</small></div><div class="row-actions"><button class="edit" type="button" data-edit-asset="${escapeHtml(a.id)}">수정</button><button class="danger" type="button" data-delete-asset="${escapeHtml(a.id)}">삭제</button></div></div>`;
+  }).join('')}</details>` : '';
+  return summary + holdings;
+}
+function renderGroupedAssetCard(g){
+  if(g.count===1){
+    const a=g.items[0];
+    return itemRow(displayAssetName(a), `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }, assetDetailHtml(a));
+  }
+  const el=document.createElement('article');
+  el.className='row card asset-group-card';
+  const sub=`${escapeHtml(g.type)} · ${escapeHtml(g.currencyText)}${g.placeText ? ' · '+escapeHtml(g.placeText) : ''} · ${g.count}개 계좌/거래소 통합`;
+  el.innerHTML=`<div class="row-main"><strong>${escapeHtml(g.name)}</strong><p>${sub}</p>${assetGroupDetailHtml(g)}</div><div class="row-side"><b>${money(g.value)}</b><small>${escapeHtml(signedMoney(g.profit))} (${g.rate>=0?'+':''}${g.rate.toFixed(2)}%)</small></div>`;
+  el.querySelectorAll('[data-edit-asset]').forEach(btn=>{
+    btn.onclick=()=>{ const a=state.assets.find(x=>x.id===btn.dataset.editAsset); if(a) startEdit('assets', a); };
+  });
+  el.querySelectorAll('[data-delete-asset]').forEach(btn=>{
+    btn.onclick=()=>{ const id=btn.dataset.deleteAsset; const a=state.assets.find(x=>x.id===id); if(a && confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==id); autoBackup('자산 삭제'); render();} };
+  });
+  return el;
 }
 
 function investmentProfit(){
@@ -773,7 +818,7 @@ function displayAssetName(a){
 }
 function renderLists(){
   const assetList=$('assetList'); assetList.innerHTML='';
-  state.assets.forEach(a=>assetList.appendChild(itemRow(displayAssetName(a), `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }, assetDetailHtml(a)))); 
+  groupDashboardAssets().sort((a,b)=>b.value-a.value).forEach(g=>assetList.appendChild(renderGroupedAssetCard(g)));
   if(!state.assets.length) assetList.innerHTML='<div class="empty">등록된 자산이 없습니다.</div>';
   const debtList=$('debtList'); debtList.innerHTML='';
   state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>startEdit('debts', d), ()=>{ if(confirm('이 부채를 삭제할까요?')){state.debts=state.debts.filter(x=>x.id!==d.id); autoBackup('부채 삭제'); render();} }))); 
@@ -1097,7 +1142,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-2-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-13-3-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }

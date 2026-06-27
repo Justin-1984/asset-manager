@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-13-2-dashboard-grouping-20260628';
+const CACHE_NAME = 'asset-manager-v6-13-3-asset-tab-grouping-20260628';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

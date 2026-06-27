@@ -86,3 +86,15 @@ body.dark .head-actions button.primary,body[data-theme="dark"] .head-actions but
 .dash-asset-row small{display:block;color:var(--muted);font-size:11px;margin-top:4px;line-height:1.35;word-break:break-word}
 .dash-asset-row strong{text-align:right;white-space:nowrap;font-size:14px}
 @media(max-width:520px){.dashboard-head{align-items:center}.dashboard-head .head-actions{width:auto!important;display:flex!important;grid-template-columns:none!important}.dashboard-head .head-actions button{min-width:126px;padding:10px 12px}.dash-asset-row{grid-template-columns:1fr}.dash-asset-row strong{text-align:left}}
+
+/* v6.13.3 asset tab grouping */
+.asset-group-card .row-side small{display:block;margin-top:6px;color:var(--muted);font-weight:800;text-align:right}
+.asset-group-summary{margin-top:12px}
+.asset-group-breakdown{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.asset-group-breakdown summary{cursor:pointer;color:var(--muted);font-weight:900;margin-bottom:8px}
+.asset-holding-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 0;border-top:1px solid rgba(148,163,184,.12)}
+.asset-holding-row:first-of-type{border-top:0}
+.asset-holding-row b{display:block;font-size:13px}
+.asset-holding-row span,.asset-holding-row small{display:block;color:var(--muted);font-size:12px;font-weight:800;margin-top:2px}
+.asset-holding-row .row-actions{display:flex;gap:6px;flex-shrink:0}
+@media(max-width:520px){.asset-holding-row{align-items:flex-start}.asset-holding-row .row-actions{flex-direction:column}.asset-group-card .row-side small{text-align:left}}
