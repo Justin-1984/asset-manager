@@ -1,20 +1,23 @@
-const APP_VERSION = 'v6.9.2-exchange-etf-fix';
+const APP_VERSION = 'v6.9.5-stable-worker-fx';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
 const MARKET_LOG_KEY = 'assetManagerPWA_v6_marketLog';
-const FX_CACHE_KEY = 'assetManagerPWA_v6_fxCache';
-const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
+const LEGACY_KEYS = ['asset-manager-v4-5-1','asset-manager-v4-5','asset-manager-v4-4','asset-manager-v4','asset-manager-v3-9','assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const MARKET_REFRESH_MINUTES = 15;
 const tabs = [['dashboard','대시보드'],['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
 const fxDefaults = { KRW:1, USD:1380, USDT:1380, HKD:195, AUD:1080 };
 let state = loadState();
+(function applyLegacyPrefsOnce(){ const p=getLegacyPrefs(); if(p){ if(!state.settings) state.settings={}; if(!state.settings.marketWorkerUrl && p.marketWorkerUrl) state.settings.marketWorkerUrl=p.marketWorkerUrl; if(goodRate("USD",p.usdRate)) state.fx.USD=Number(p.usdRate); if(goodRate("USDT",p.usdtRate)) state.fx.USDT=Number(p.usdtRate); if(goodRate("HKD",p.hkdRate)) state.fx.HKD=Number(p.hkdRate); if(goodRate("AUD",p.audRate)) state.fx.AUD=Number(p.audRate); } })();
 
 const $ = id => document.getElementById(id);
 function uid(){ return (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()+Math.random()); }
 function num(v){ return Number(v)||0; }
 function money(v){ return '₩' + Math.round(num(v)).toLocaleString('ko-KR'); }
 function fx(cur){ return state.fx[(cur||'KRW').toUpperCase()] || 1; }
+function getLegacyPrefs(){ try{return JSON.parse(localStorage.getItem('asset-manager-prefs')||'{}');}catch(e){return {};} }
+function goodRate(cur,val){ val=Number(val); const range={USD:[900,2500],USDT:[900,2500],HKD:[100,300],AUD:[600,1400]}; const r=range[cur]; return !!(r && val>=r[0] && val<=r[1]); }
+function setFxRate(cur,val){ if(goodRate(cur,val)) state.fx[cur]=Math.round(Number(val)*100)/100; }
 function safeSettings(){
   if(!state.settings || typeof state.settings !== 'object') state.settings = {};
   if(!Array.isArray(state.settings.hiddenTabs)) state.settings.hiddenTabs = [];
@@ -27,34 +30,16 @@ function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.d
 function getPriceCache(){ try{return JSON.parse(localStorage.getItem(PRICE_CACHE_KEY)||'{}');}catch(e){return {};} }
 function setPriceCache(cache){ try{localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache||{}));}catch(e){} }
 function marketLog(entry){ try{ const list=JSON.parse(localStorage.getItem(MARKET_LOG_KEY)||'[]'); list.unshift({time:new Date().toISOString(), ...entry}); localStorage.setItem(MARKET_LOG_KEY, JSON.stringify(list.slice(0,80))); }catch(e){} }
-function assetValue(a){ return num(a.value) || num(a.krwValue) || (num(a.amount)||1) * (num(a.price)||0) * fx(a.currency); }
+function assetValue(a){
+  const cur=(a.currency||'KRW').toUpperCase();
+  const amount = num(a.amount)||1;
+  const price = num(a.price);
+  // v6.9.5: 현재평가액은 항상 현재단가 × 현재환율로 계산합니다.
+  // 기존 value/krwValue는 예전 환율로 저장된 stale 값일 수 있으므로 price가 없을 때만 fallback으로 사용합니다.
+  if(price>0) return amount * price * fx(cur);
+  return num(a.value) || num(a.krwValue) || 0;
+}
 function debtValue(d){ return num(d.value) || num(d.krwValue) || num(d.balance) * fx(d.currency); }
-function buyFx(a){
-  const cur = (a.costCurrency || a.currency || 'KRW').toUpperCase();
-  if(cur === 'KRW') return 1;
-  return num(a.buyFx) || fxDefaults[cur] || fx(cur);
-}
-function assetCostKrw(a){
-  const cost = num(a.cost);
-  const cur = (a.costCurrency || a.currency || 'KRW').toUpperCase();
-  return cur === 'KRW' ? cost : cost * buyFx(a);
-}
-function normalizeFxValue(cur, val){
-  const n = Number(val);
-  const ranges = {USD:[900,2500], USDT:[900,2500], HKD:[100,350], AUD:[600,1400], KRW:[1,1]};
-  const r = ranges[cur];
-  if(!Number.isFinite(n) || n <= 0) return null;
-  if(r && (n < r[0] || n > r[1])) return null;
-  return n;
-}
-function setFxSafe(cur, val){
-  const n = normalizeFxValue(cur, val);
-  if(n){ state.fx[cur]=n; return true; }
-  marketLog({symbol:cur, source:'fx', ok:false, message:'비정상 환율 차단: '+val});
-  return false;
-}
-function getFxCache(){ try{return JSON.parse(localStorage.getItem(FX_CACHE_KEY)||'{}');}catch(e){return {};} }
-function setFxCache(cache){ try{localStorage.setItem(FX_CACHE_KEY, JSON.stringify(cache||{}));}catch(e){} }
 
 function save(){
   state.version = APP_VERSION;
@@ -156,11 +141,11 @@ function normalizeState(raw, source='unknown'){
     version: APP_VERSION,
     migratedFrom: source,
     fx: {...fxDefaults, ...(old.fx||old.exchangeRates||{})},
-    assets: normalizeArray(old.assets || old.assetList).map(a=>{ const cur=(a.currency||'KRW').toUpperCase(); const costCur=(a.costCurrency||a.purchaseCurrency||cur).toUpperCase(); return {id:a.id||uid(), name:a.name||a.title||'이름없음', type:a.type||a.category||'자산', country:a.country||'', currency:cur, amount:a.amount??a.quantity??1, price:a.price??a.currentPrice??a.value??0, cost:a.cost??a.principal??0, costCurrency:costCur, buyFx:a.buyFx??a.purchaseFx??a.buyRate??(costCur==='KRW'?1:(old.fx?.[costCur]||fxDefaults[costCur]||1)), value:a.value, krwValue:a.krwValue}; }),
+    assets: normalizeArray(old.assets || old.assetList).map(a=>({id:a.id||uid(), name:a.name||a.title||'이름없음', type:a.type||a.category||'자산', country:a.country||a.account||'', account:a.account||'', currency:(a.currency||'KRW').toUpperCase(), amount:a.amount??a.quantity??a.qty??1, price:a.price??a.currentPrice??0, cost:a.cost??a.costPrice??a.principal??0, value:a.value, krwValue:a.krwValue, priceSource:a.priceSource||'', priceUpdatedAt:a.priceUpdatedAt||''})),
     debts: normalizeArray(old.debts || old.debtList).map(d=>({id:d.id||uid(), name:d.name||d.title||'부채', type:d.type||'일반 부채', currency:(d.currency||'KRW').toUpperCase(), balance:d.balance??d.amount??d.value??0, rate:d.rate||0, monthly:d.monthly||0, value:d.value, krwValue:d.krwValue})),
     insurance: normalizeArray(old.insurance || old.insurances || old.policies).map(i=>({id:i.id||uid(), company:i.company||i.insurer||'', product:i.product||i.name||'', type:i.type||'', premium:i.premium||0, payday:i.payday||'', refund:i.refund||0, includeRefund:!!i.includeRefund, memo:i.memo||''})),
     snapshots: normalizeArray(old.snapshots),
-    settings: { hiddenTabs: [], theme: 'light', finnhubToken: old.finnhubToken || '', ...(old.settings||{}) }
+    settings: { hiddenTabs: [], theme: 'light', finnhubToken: old.finnhubToken || '', marketWorkerUrl: old.marketWorkerUrl || old.settings?.marketWorkerUrl || '', ...(old.settings||{}) }
   };
 }
 function looksLikeAssetData(obj){ return obj && typeof obj==='object' && (Array.isArray(obj.assets)||Array.isArray(obj.assetList)||Array.isArray(obj.debts)||Array.isArray(obj.insurance)||Array.isArray(obj.insurances)); }
@@ -247,7 +232,7 @@ function changeSince(days){
   return t.net - num(base.net);
 }
 function investmentProfit(){
-  const cost = state.assets.reduce((sum,a)=>sum+assetCostKrw(a),0);
+  const cost = state.assets.reduce((sum,a)=>sum+num(a.cost)*fx(a.currency),0);
   const value = state.assets.reduce((sum,a)=>sum+assetValue(a),0);
   const profit = value - cost;
   const rate = cost>0 ? profit/cost*100 : 0;
@@ -328,41 +313,40 @@ async function fetchText(url, timeout=8000){
 }
 async function updateFxRates(){
   const needed = getNeededCurrencies();
-  if(!needed.length) return '환율 필요 없음';
-  if(!state.fx) state.fx = {...fxDefaults};
-  let updated = 0;
-  const cache = getFxCache();
-  const applyUsdRates = (rates, source) => {
-    if(!rates || !rates.KRW) return 0;
-    let cnt = 0;
-    const usd = Number(rates.KRW);
-    if(setFxSafe('USD', usd)){ cnt++; }
-    if(setFxSafe('USDT', usd)){ cnt++; }
-    if(rates.HKD) { const hkd = usd / Number(rates.HKD); if(setFxSafe('HKD', hkd)) cnt++; }
-    if(rates.AUD) { const aud = usd / Number(rates.AUD); if(setFxSafe('AUD', aud)) cnt++; }
-    if(cnt){ cache.last = {at:new Date().toISOString(), source, fx:{...state.fx}}; setFxCache(cache); }
-    return cnt;
-  };
+  if(!needed.length && !state.assets.length && !state.debts.length) return '환율 필요 없음';
+  const legacy = getLegacyPrefs();
   try{
-    const data = await fetchJson('https://open.er-api.com/v6/latest/USD', 7000);
-    updated = applyUsdRates(data && data.rates, 'open.er-api');
-    if(updated) return '환율 갱신 완료';
-  }catch(e){ marketLog({symbol:'FX', source:'open.er-api', ok:false, message:String(e.message||e)}); }
-  try{
-    const data = await fetchJson('https://api.frankfurter.app/latest?from=USD&to=KRW,HKD,AUD', 7000);
-    updated = applyUsdRates(data && data.rates, 'frankfurter');
-    if(updated) return '환율 갱신 완료';
-  }catch(e){ marketLog({symbol:'FX', source:'frankfurter', ok:false, message:String(e.message||e)}); }
-  try{
-    const data = await fetchJson('https://api.exchangerate.host/latest?base=USD&symbols=KRW,HKD,AUD', 7000);
-    updated = applyUsdRates(data && data.rates, 'exchangerate.host');
-    if(updated) return '환율 갱신 완료';
-  }catch(e){ marketLog({symbol:'FX', source:'exchangerate.host', ok:false, message:String(e.message||e)}); }
-  if(cache.last && cache.last.fx){
-    ['USD','USDT','HKD','AUD'].forEach(c=>{ if(normalizeFxValue(c, cache.last.fx[c])) state.fx[c]=cache.last.fx[c]; });
-    return '환율 갱신 실패 · 최근 정상 환율 유지';
+    const j = await fetchJson('https://open.er-api.com/v6/latest/USD', 9000);
+    const r = j.rates || {};
+    const usd = Number(r.KRW), hkdPerUsd = Number(r.HKD), audPerUsd = Number(r.AUD);
+    if(!usd || !hkdPerUsd || !audPerUsd) throw new Error('ER API 데이터 부족');
+    setFxRate('USD', usd);
+    setFxRate('USDT', usd); // USDT는 USD 환율 기준으로 유지
+    setFxRate('HKD', usd / hkdPerUsd);
+    setFxRate('AUD', usd / audPerUsd);
+    state.settings.fxUpdatedAt = new Date().toISOString();
+    return `환율 갱신 완료(ER) USD ${state.fx.USD} / HKD ${state.fx.HKD} / AUD ${state.fx.AUD}`;
+  }catch(primaryErr){
+    try{
+      const j = await fetchJson('https://api.frankfurter.app/latest?from=USD&to=KRW,HKD,AUD', 9000);
+      const r = j.rates || {};
+      const usd = Number(r.KRW), hkdPerUsd = Number(r.HKD), audPerUsd = Number(r.AUD);
+      if(!usd || !hkdPerUsd || !audPerUsd) throw new Error('Frankfurter 데이터 부족');
+      setFxRate('USD', usd);
+      setFxRate('USDT', usd);
+      setFxRate('HKD', usd / hkdPerUsd);
+      setFxRate('AUD', usd / audPerUsd);
+      state.settings.fxUpdatedAt = new Date().toISOString();
+      return `환율 갱신 완료(Frankfurter) USD ${state.fx.USD} / HKD ${state.fx.HKD} / AUD ${state.fx.AUD}`;
+    }catch(e){
+      // v4.5.1에서 저장했던 환율이 있으면 마지막 정상값으로 복원
+      if(goodRate('USD', legacy.usdRate)) setFxRate('USD', legacy.usdRate);
+      if(goodRate('USDT', legacy.usdtRate)) setFxRate('USDT', legacy.usdtRate);
+      if(goodRate('HKD', legacy.hkdRate)) setFxRate('HKD', legacy.hkdRate);
+      if(goodRate('AUD', legacy.audRate)) setFxRate('AUD', legacy.audRate);
+      return '환율 갱신 실패 · 마지막 정상 환율 유지';
+    }
   }
-  return '환율 갱신 실패 · 기존 환율 유지';
 }
 function cleanSymbol(name){
   return String(name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$|USD$|KRW$/,'');
@@ -377,31 +361,59 @@ async function fetchCryptoUsd(symbol){
   try{ const id=cryptoNameMap[s]; if(id){ const j=await fetchJson(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(j[id]?.usd) return Number(j[id].usd); } }catch(e){}
   throw new Error('crypto price failed');
 }
-async function fetchStockUsd(symbol){
-  const raw = cleanSymbol(symbol);
-  const s = raw.toUpperCase();
-  if(!s) throw new Error('symbol');
-  const token = state.settings?.finnhubToken || '';
-  if(token){
-    try{
-      const j = await fetchJson(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(s)}&token=${encodeURIComponent(token)}`, 7000);
-      const p = Number(j.c || j.pc);
-      if(p>0){ marketLog({symbol:s, source:'finnhub', ok:true, message:'시세 갱신'}); return p; }
-    }catch(e){ marketLog({symbol:s, source:'finnhub', ok:false, message:String(e.message||e)}); }
+function normalizeWorkerUrl(raw){
+  let worker=String(raw||'').trim();
+  const legacy=getLegacyPrefs();
+  if(!worker && legacy.marketWorkerUrl) worker=String(legacy.marketWorkerUrl).trim();
+  if(!worker) throw new Error('미국주식/ETF Worker URL 미설정');
+  if(worker.includes('justin-1984.github.io')) throw new Error('Worker URL이 앱 주소입니다. workers.dev 주소를 넣어주세요.');
+  if(worker.includes('dash.cloudflare.com')) throw new Error('Cloudflare 편집 주소가 아니라 workers.dev 주소를 넣어주세요.');
+  try{
+    const u=new URL(worker);
+    if(!u.hostname.includes('workers.dev')) throw new Error('workers.dev 주소가 아닙니다');
+    return u.origin;
+  }catch(e){ throw new Error('Worker URL 형식 오류: '+worker); }
+}
+async function fetchMarketWorkerPrice(symbol){
+  const worker=normalizeWorkerUrl(state.settings?.marketWorkerUrl);
+  const reqUrl=worker+'/?symbol='+encodeURIComponent(symbol);
+  const txt=await fetchText(reqUrl, 10000);
+  let j;
+  try{ j=JSON.parse(txt); }catch(e){ throw new Error('Worker 응답 JSON 아님: '+txt.slice(0,80)); }
+  if(!j.ok || !Number(j.price)) throw new Error((j.error||'Worker 가격 없음')+' · '+reqUrl);
+  return {price:Number(j.price), source:j.source||'Market Worker', currency:j.currency||''};
+}
+async function fetchYahooChart(symbol){
+  const urls=[
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1m`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`
+  ];
+  for(const url of urls){
+    const j=await fetchJson(url, 9000);
+    const result=j.chart?.result?.[0];
+    const meta=result?.meta||{};
+    const price=Number(meta.regularMarketPrice || meta.previousClose || meta.chartPreviousClose);
+    if(price>0) return price;
   }
-  try{
-    const j = await fetchJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1d&interval=1d`, 7000);
-    const p = Number(j.chart?.result?.[0]?.meta?.regularMarketPrice || j.chart?.result?.[0]?.meta?.previousClose);
-    if(p>0){ marketLog({symbol:s, source:'yahoo', ok:true, message:'시세 갱신'}); return p; }
-  }catch(e){ marketLog({symbol:s, source:'yahoo', ok:false, message:String(e.message||e)}); }
-  try{
-    const txt = await fetchText(`https://stooq.com/q/l/?s=${s.toLowerCase()}.us&f=sd2t2ohlcv&h&e=csv`, 7000);
-    const line = txt.trim().split('\n')[1] || '';
-    const parts = line.split(',');
-    const close = Number(parts[6]);
-    if(close>0){ marketLog({symbol:s, source:'stooq', ok:true, message:'시세 갱신'}); return close; }
-  }catch(e){ marketLog({symbol:s, source:'stooq', ok:false, message:String(e.message||e)}); }
-  throw new Error('stock price failed');
+  throw new Error('Yahoo 가격 없음');
+}
+async function fetchStooqPrice(symbol){
+  const txt=await fetchText(`https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`, 9000);
+  const line=txt.trim().split('\n')[1]||'';
+  const parts=line.split(',');
+  const close=Number(parts[6]);
+  if(close>0) return close;
+  throw new Error('Stooq 가격 파싱 실패');
+}
+async function fetchStockUsd(symbol){
+  const raw = cleanSymbol(symbol).replace(/[^A-Z0-9.]/g,'');
+  if(!raw) throw new Error('symbol');
+  const errors=[];
+  // v6.9.5: v4.5.1에서 성공했던 Worker(Finnhub) 방식을 최우선으로 복원
+  try{ const w=await fetchMarketWorkerPrice(raw); return Number(w.price); }catch(e){ errors.push('Worker:'+e.message); }
+  try{ return await fetchStooqPrice(raw.toLowerCase()+'.us'); }catch(e){ errors.push('Stooq:'+e.message); }
+  try{ return await fetchYahooChart(raw); }catch(e){ errors.push('Yahoo:'+e.message); }
+  throw new Error(`${raw} 미국 ETF/주식 시세 실패 (${errors.join(' → ')})`);
 }
 async function updateAssetMarketPrices(){
   let updated = 0, skipped = 0, failed = 0, cached = 0;
@@ -472,10 +484,10 @@ function showTab(id){
   if(id==='analysis') renderAnalysis();
   if(id==='dashboard') renderDashboard();
 }
-function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); save(); }
+function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent='v6.9.2'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent='v6.9.5'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -537,7 +549,7 @@ function upsert(kind, data){
 function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function renderLists(){
   const assetList=$('assetList'); assetList.innerHTML='';
-  state.assets.forEach(a=>assetList.appendChild(itemRow(a.name, `${a.type} · ${a.country||'-'} · 현재 ${a.currency} · 매입 ${a.costCurrency||a.currency}${(a.costCurrency||a.currency||'KRW').toUpperCase()!=='KRW' ? ' @'+Math.round(buyFx(a)).toLocaleString('ko-KR') : ''}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }))); 
+  state.assets.forEach(a=>assetList.appendChild(itemRow(a.name, `${a.type} · ${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }))); 
   if(!state.assets.length) assetList.innerHTML='<div class="empty">등록된 자산이 없습니다.</div>';
   const debtList=$('debtList'); debtList.innerHTML='';
   state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>startEdit('debts', d), ()=>{ if(confirm('이 부채를 삭제할까요?')){state.debts=state.debts.filter(x=>x.id!==d.id); autoBackup('부채 삭제'); render();} }))); 
@@ -581,9 +593,38 @@ function toggleTheme(){
   log(state.settings.theme === 'dark' ? '다크모드 적용 완료' : '라이트모드 적용 완료');
 }
 
+
+function renderMarketSettings(){
+  const ids=['USD','USDT','HKD','AUD'];
+  ids.forEach(cur=>{ const el=$('fx'+cur); if(el && document.activeElement!==el) el.value = state.fx[cur] || fxDefaults[cur]; });
+  const w=$('marketWorkerUrl'); if(w && document.activeElement!==w) w.value = state.settings?.marketWorkerUrl || getLegacyPrefs().marketWorkerUrl || '';
+  const note=$('fxRateStatus');
+  if(note) note.textContent = `현재환율 USD ${state.fx.USD||'-'} · USDT ${state.fx.USDT||'-'} · HKD ${state.fx.HKD||'-'} · AUD ${state.fx.AUD||'-'}`;
+}
+function saveMarketSettings(){
+  ['USD','USDT','HKD','AUD'].forEach(cur=>{ const el=$('fx'+cur); if(el && Number(el.value)>0) state.fx[cur]=Number(el.value); });
+  if(!state.settings) state.settings={};
+  const w=$('marketWorkerUrl'); if(w) state.settings.marketWorkerUrl=w.value.trim();
+  save(); render(); log('환율/Worker 설정 저장 완료');
+}
+async function testMarketWorker(){
+  const el=$('marketWorkerStatus');
+  try{
+    if(!state.settings) state.settings={};
+    const w=$('marketWorkerUrl'); if(w) state.settings.marketWorkerUrl=w.value.trim();
+    if(el) el.textContent='SCHD Worker 테스트 중...';
+    const t=await fetchMarketWorkerPrice('SCHD');
+    if(el) el.textContent=`Worker 정상 · SCHD ${t.price} USD · ${t.source}`;
+    log(`Worker 정상 · SCHD ${t.price} USD · ${t.source}`);
+  }catch(e){
+    if(el) el.textContent='Worker 테스트 실패: '+e.message;
+    log('Worker 테스트 실패: '+e.message);
+  }
+}
+
 function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
-  assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); f.currency=(f.currency||'KRW').toUpperCase(); f.costCurrency=(f.costCurrency||f.currency||'KRW').toUpperCase(); if(f.costCurrency==='KRW') f.buyFx=1; upsert('assets', f); render(); };
+  assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('assets', f); render(); };
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
@@ -663,7 +704,8 @@ window.addEventListener('load',()=>{
   safeBind('restoreMenusBtn', restoreMenus);
   safeBind('recoverLastGoodBtn', recoverLastGoodBackup);
   safeBind('themeToggleBtn', toggleTheme);
-  const tokenInput=$('finnhubTokenInput'); if(tokenInput){ tokenInput.value=state.settings?.finnhubToken||''; tokenInput.addEventListener('change',()=>{ state.settings.finnhubToken=tokenInput.value.trim(); save(); log('Finnhub 토큰 저장 완료'); }); }
+  safeBind('saveMarketSettingsBtn', saveMarketSettings);
+  safeBind('testMarketWorkerBtn', testMarketWorker);
   startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));
