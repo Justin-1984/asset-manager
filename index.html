@@ -45,13 +45,16 @@
     <section id="assets" class="panel">
       <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
       <form id="assetForm" class="form hidden">
-        <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금" required /></label>
+        <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금, 069500" required /></label>
+        <label class="field"><span>종목코드 / 티커</span><input name="symbol" placeholder="예: SCHD / BTC / 069500" /></label>
         <label class="field"><span>자산 종류</span><select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select></label>
         <label class="field"><span>국가 / 거래소 / 계좌</span><input name="country" placeholder="예: 한국, 미국, OKX" /></label>
         <label class="field"><span>통화</span><input name="currency" placeholder="KRW / USD / HKD / AUD / USDT" value="KRW" /></label>
         <label class="field"><span>수량</span><input name="amount" type="number" step="0.0001" placeholder="보유 수량" value="1" /></label>
         <label class="field"><span>현재 단가</span><input name="price" type="number" step="0.01" placeholder="현재 단가" required /></label>
-        <label class="field"><span>매입 원금</span><input name="cost" type="number" step="0.01" placeholder="총 매입 원금" /></label>
+        <div class="button-grid wide"><button id="lookupKrEtfBtn" type="button">한국 ETF 이름/시세 조회</button></div>
+        <p id="krEtfLookupStatus" class="muted wide">한국 ETF는 6자리 코드만 입력해도 이름과 현재가를 조회합니다.</p>
+        <label class="field"><span>매입 원금(KRW)</span><input name="cost" type="number" step="0.01" placeholder="원화 총 매입원금" /></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>
@@ -111,7 +114,7 @@
 
       <div class="card backup-card">
         <h3>환율 / 미국 ETF 시세 설정</h3>
-        <p class="muted">v4.5.1에서 성공했던 Worker(Finnhub) 방식을 우선 사용합니다. 환율은 자동 갱신 실패 시 마지막 정상값을 유지합니다.</p>
+        <p class="muted">v4.5.1에서 성공했던 Worker(Finnhub) 방식을 우선 사용합니다. 매입원금은 KRW 기준으로 고정하고, 외화 보유액/현재평가액에만 현재환율을 반영합니다. 외화 현금은 통화 선택 후 수량=보유 외화, 현재 단가=1로 입력하세요.</p>
         <div class="form always">
           <label class="field"><span>USD/KRW</span><input id="fxUSD" type="number" step="0.01" placeholder="예: 1380" /></label>
           <label class="field"><span>USDT/KRW</span><input id="fxUSDT" type="number" step="0.01" placeholder="예: 1380" /></label>
