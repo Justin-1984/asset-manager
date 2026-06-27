@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.1</title>
+  <title>자산 매니저 v6.2</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.1</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.2</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -26,13 +26,13 @@
     <section id="assets" class="panel active">
       <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
       <form id="assetForm" class="form hidden">
-        <input name="name" placeholder="자산명" required />
-        <select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select>
-        <input name="country" placeholder="국가" />
-        <input name="currency" placeholder="통화 KRW/USD/HKD/AUD/USDT" value="KRW" />
-        <input name="amount" type="number" step="0.0001" placeholder="수량" value="1" />
-        <input name="price" type="number" step="0.01" placeholder="현재 단가" required />
-        <input name="cost" type="number" step="0.01" placeholder="매입 원금" />
+        <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금" required /></label>
+        <label class="field"><span>자산 종류</span><select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select></label>
+        <label class="field"><span>국가 / 거래소 / 계좌</span><input name="country" placeholder="예: 한국, 미국, OKX" /></label>
+        <label class="field"><span>통화</span><input name="currency" placeholder="KRW / USD / HKD / AUD / USDT" value="KRW" /></label>
+        <label class="field"><span>수량</span><input name="amount" type="number" step="0.0001" placeholder="보유 수량" value="1" /></label>
+        <label class="field"><span>현재 단가</span><input name="price" type="number" step="0.01" placeholder="현재 단가" required /></label>
+        <label class="field"><span>매입 원금</span><input name="cost" type="number" step="0.01" placeholder="총 매입 원금" /></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>
@@ -42,12 +42,12 @@
     <section id="debts" class="panel">
       <div class="section-head"><h2>부채</h2><button class="primary" data-open="debtForm" data-title="debts">부채 추가</button></div>
       <form id="debtForm" class="form hidden">
-        <input name="name" placeholder="부채명" required />
-        <select name="type"><option>일반 부채</option><option>홍콩 모기지</option><option>카드 결제 예정금</option></select>
-        <input name="currency" placeholder="통화" value="KRW" />
-        <input name="balance" type="number" step="0.01" placeholder="잔액" required />
-        <input name="rate" type="number" step="0.01" placeholder="연이율 %" />
-        <input name="monthly" type="number" step="0.01" placeholder="월 상환액" />
+        <label class="field"><span>부채명</span><input name="name" placeholder="예: 홍콩 모기지" required /></label>
+        <label class="field"><span>부채 종류</span><select name="type"><option>일반 부채</option><option>홍콩 모기지</option><option>카드 결제 예정금</option></select></label>
+        <label class="field"><span>통화</span><input name="currency" placeholder="KRW / HKD / USD" value="KRW" /></label>
+        <label class="field"><span>잔액</span><input name="balance" type="number" step="0.01" placeholder="남은 원금 또는 결제 예정금" required /></label>
+        <label class="field"><span>연이율 %</span><input name="rate" type="number" step="0.01" placeholder="예: 4.25" /></label>
+        <label class="field"><span>월 상환액</span><input name="monthly" type="number" step="0.01" placeholder="월 납부액" /></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="debts">수정 취소</button>
       </form>
@@ -57,14 +57,14 @@
     <section id="insurance" class="panel">
       <div class="section-head"><h2>보험</h2><button class="primary" data-open="insuranceForm" data-title="insurance">보험 추가</button></div>
       <form id="insuranceForm" class="form hidden">
-        <input name="company" placeholder="보험사" required />
-        <input name="product" placeholder="상품명" required />
-        <input name="type" placeholder="보험종류" />
-        <input name="premium" type="number" placeholder="월보험료" />
-        <input name="payday" type="number" placeholder="납입일" />
-        <input name="refund" type="number" placeholder="해지환급금" />
+        <label class="field"><span>보험사</span><input name="company" placeholder="예: 삼성생명" required /></label>
+        <label class="field"><span>상품명</span><input name="product" placeholder="보험 상품명" required /></label>
+        <label class="field"><span>보험 종류</span><input name="type" placeholder="예: 실손, 종신, 자동차" /></label>
+        <label class="field"><span>월보험료</span><input name="premium" type="number" placeholder="매월 보험료" /></label>
+        <label class="field"><span>납입일</span><input name="payday" type="number" placeholder="매월 납입일" /></label>
+        <label class="field"><span>해지환급금</span><input name="refund" type="number" placeholder="현재 해지환급금" /></label>
         <label class="check"><input name="includeRefund" type="checkbox" /> 해지환급금 자산 포함</label>
-        <textarea name="memo" placeholder="메모"></textarea>
+        <label class="field wide"><span>메모</span><textarea name="memo" placeholder="보장내용, 특이사항 등"></textarea></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="insurance">수정 취소</button>
       </form>
@@ -72,7 +72,7 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.1 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.2 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
