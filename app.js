@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.2-field-labels-darkmode-fix';
+const APP_VERSION = 'v6.2-darkmode-button-fix';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const tabs = [['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
@@ -182,14 +182,22 @@ function renderBars(id,obj){
 }
 
 function applyTheme(){
-  const theme = state.settings?.theme || 'light';
+  if(!state.settings) state.settings = {};
+  const theme = state.settings.theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.classList.toggle('dark', theme === 'dark');
   document.body.classList.toggle('dark', theme === 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+  document.body.setAttribute('data-theme', theme);
   const btn = $('themeToggleBtn');
-  if(btn) btn.textContent = theme === 'dark' ? '라이트모드' : '다크모드';
+  if(btn){
+    btn.textContent = theme === 'dark' ? '라이트모드' : '다크모드';
+    btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  }
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute('content', theme === 'dark' ? '#0b1220' : '#111827');
 }
 function toggleTheme(){
+  if(!state.settings) state.settings = {};
   state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
   applyTheme();
   save();
@@ -210,8 +218,34 @@ function forceMigrate(){ const found=findLegacyState(); if(found){ state=found.s
 function resetDemo(){ state.assets = state.assets.filter(a=>!(a.name||'').startsWith('예시 ')); render(); log('예시 데이터 제거 완료'); }
 
 window.addEventListener('load',()=>{
-  initTabs(); bindForms(); render(); log(`로드 완료 · 데이터 출처: ${state.migratedFrom || 'unknown'}`);
-  snapshotBtn.onclick=takeSnapshot; refreshAnalysis.onclick=renderAnalysis; backupBtn.onclick=backup; restoreInput.onchange=e=>e.target.files[0]&&restore(e.target.files[0]); syncCheckBtn.onclick=()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'); clearCacheBtn.onclick=async()=>{ if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.'); }; forceMigrateBtn.onclick=forceMigrate; resetDemoBtn.onclick=resetDemo; if($('themeToggleBtn')) themeToggleBtn.onclick=toggleTheme;
-  document.querySelectorAll('[data-cancel]').forEach(btn=>btn.onclick=()=>resetEdit(btn.dataset.cancel));
+  initTabs();
+  bindForms();
+  applyTheme();
+  render();
+  log(`로드 완료 · 데이터 출처: ${state.migratedFrom || 'unknown'}`);
+
+  const safeBind = (id, handler, event='click') => {
+    const el = $(id);
+    if(el) el.addEventListener(event, handler);
+  };
+
+  safeBind('snapshotBtn', takeSnapshot);
+  safeBind('refreshAnalysis', renderAnalysis);
+  safeBind('backupBtn', backup);
+  const restoreEl = $('restoreInput');
+  if(restoreEl) restoreEl.addEventListener('change', e=>e.target.files[0]&&restore(e.target.files[0]));
+  safeBind('syncCheckBtn', ()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'));
+  safeBind('clearCacheBtn', async()=>{
+    if('caches' in window){
+      const ks=await caches.keys();
+      await Promise.all(ks.map(k=>caches.delete(k)));
+    }
+    log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.');
+  });
+  safeBind('forceMigrateBtn', forceMigrate);
+  safeBind('resetDemoBtn', resetDemo);
+  safeBind('themeToggleBtn', toggleTheme);
+
+  document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 });
