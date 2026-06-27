@@ -3,297 +3,94 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v5.4</title>
-  <link rel="manifest" href="manifest.json?v=54" />
-  <link rel="stylesheet" href="styles.css?v=54" />
   <meta name="theme-color" content="#111827" />
+  <title>자산 매니저 v6.0</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
+  <header class="app-header">
     <div>
-      <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v5.4</p>
+      <p class="eyebrow">PWA Asset Manager</p>
+      <h1>자산 매니저 <span id="versionBadge">v6.0</span></h1>
     </div>
-    <button id="themeToggle" class="ghost">다크모드</button>
+    <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
 
   <main>
-    <section id="dashboard" class="view active">
-      <div class="summary-grid">
-        <article class="summary main"><span>순자산</span><strong id="netWorth">₩0</strong><em id="goalText">목표 없음</em></article>
-        <article class="summary"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
-        <article class="summary"><span>총부채</span><strong id="totalLiabilities">₩0</strong></article>
-        <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
-        <article class="summary"><span>투자원금</span><strong id="totalInvestCost">₩0</strong><em>코인/주식 기준</em></article>
-        <article class="summary"><span>총수익</span><strong id="totalProfit">₩0</strong><em id="totalProfitPct">0%</em></article>
-        <article class="summary"><span>예상 연배당</span><strong id="expectedDividendAnnualHome">₩0</strong><em>추정</em></article>
-        <article class="summary"><span>월별 순자산 변화</span><strong id="monthlyChange">₩0</strong><em id="monthlyChangePct">0%</em></article>
-        <article class="summary"><span>전일 대비 순자산</span><strong id="dailyChange">₩0</strong><em id="dailyChangePct">0%</em></article>
-      </div>
-
-      <div class="card fx-card">
-        <div class="card-head"><h2>환율 기준</h2><div class="head-actions"><small id="fxUpdatedAtText">아직 갱신 기록 없음</small><button id="refreshFxBtn" class="ghost small">환율 갱신</button></div></div>
-        <div class="fx-grid">
-          <div><span>USD/KRW</span><b id="usdRateView">₩0</b></div>
-          <div><span>USDT/KRW</span><b id="usdtRateView">₩0</b></div>
-          <div><span>HKD/KRW</span><b id="hkdRateView">₩0</b></div>
-          <div><span>AUD/KRW</span><b id="audRateView">₩0</b></div>
-        </div>
-      </div>
-
-      <div class="card status-board">
-        <div class="card-head"><h2>데이터 상태</h2><button id="refreshAllDataBtn" class="ghost small" type="button">환율+시세 갱신</button></div>
-        <div class="fx-grid">
-          <div><span>마지막 시세 갱신</span><b id="lastPriceUpdateText">기록 없음</b><em id="priceFreshness">-</em></div>
-          <div><span>마지막 환율 갱신</span><b id="lastFxUpdateText">기록 없음</b><em id="fxFreshness">-</em></div>
-          <div><span>마지막 GitHub 백업</span><b id="lastBackupText">기록 없음</b><em id="backupFreshness">-</em></div>
-          <div><span>마지막 GitHub 복원</span><b id="lastRestoreText">기록 없음</b><em id="restoreFreshness">-</em></div>
-        </div>
-        <div id="backupLogList" class="snapshot-list mini-log"></div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-head"><h2>자산군 비중</h2><button id="snapshotBtn">오늘 스냅샷 저장</button></div>
-        <canvas id="assetPie" width="320" height="320"></canvas>
-        <div id="assetLegend" class="legend"></div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-head"><h2>순자산 추이</h2><button id="clearSnapshotsBtn" class="danger">추이 초기화</button></div>
-        <canvas id="netLine" width="720" height="280"></canvas>
-        <p class="note">스냅샷을 저장하면 월별/일별 순자산 변화가 쌓입니다.</p>
-        <div id="snapshotList" class="snapshot-list"></div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-head">
-          <h2>월별 순자산 추이</h2>
-          <div class="head-actions">
-            <button id="monthlySnapshotBtn" class="ghost small">이번달 스냅샷 저장</button>
-            <button id="clearMonthlySnapshotsBtn" class="danger small">월별 초기화</button>
-          </div>
-        </div>
-        <canvas id="monthlyLine" width="720" height="280"></canvas>
-        <p class="note">앱 실행 시 이번 달 순자산을 자동 저장합니다. 같은 달 데이터는 최신 값으로 갱신됩니다.</p>
-        <div id="monthlySnapshotList" class="snapshot-list"></div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="card-head">
-          <h2>일별 순자산 추이</h2>
-          <div class="head-actions">
-            <button id="dailySnapshotBtn" class="ghost small">오늘 스냅샷 저장</button>
-            <button id="clearDailySnapshotsBtn" class="danger small">일별 초기화</button>
-          </div>
-        </div>
-        <canvas id="dailyLine" width="720" height="260"></canvas>
-        <p class="note">앱 실행 시 오늘 순자산을 자동 저장합니다. 같은 날 데이터는 최신 값으로 갱신됩니다.</p>
-        <div id="dailySnapshotList" class="snapshot-list"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><h2>계좌/거래소별 수익률</h2></div>
-        <div id="accountPerformanceList" class="performance-list"></div>
-      </div>
+    <section class="summary-grid">
+      <article class="card stat"><span>총자산</span><strong id="totalAssets">₩0</strong></article>
+      <article class="card stat"><span>총부채</span><strong id="totalDebts">₩0</strong></article>
+      <article class="card stat"><span>순자산</span><strong id="netWorth">₩0</strong></article>
+      <article class="card stat"><span>위험도</span><strong id="riskLevel">-</strong></article>
     </section>
 
-    <section id="assets" class="view">
-      <div class="card">
-        <div class="card-head"><h2>자산 입력</h2><div class="head-actions"><button id="refreshPricesBtn" class="ghost small" type="button">전체 시세 갱신</button><button id="addAssetBtn">+ 자산 추가</button></div></div><p id="priceAutoStatus" class="status">앱 실행 시 보유 코인/미국주식/한국ETF 시세를 자동으로 조회합니다. 미국주식은 설정의 Worker URL을 우선 사용합니다. 미국주식은 설정의 Worker URL을 우선 사용합니다.</p>
-        <form id="assetForm" class="form hidden">
-          <select id="assetType">
-            <option>코인</option><option>주식</option><option>은행</option><option>현금</option><option>부동산</option><option>자동차</option><option>금</option><option>기타</option>
-          </select>
-          <input id="assetAccount" placeholder="거래소/은행/증권사/계좌명 예: 업비트, 바이낸스, 연금저축" />
-          <input id="assetName" placeholder="자산명 예: BTC, SCHD, 441640, HKD 예금" required />
-          <input id="assetCurrency" placeholder="통화 KRW/USD/HKD/USDT" value="KRW" />
-          <div id="currencyHint" class="mini-hint">기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT</div>
-          <input id="assetQty" type="number" step="any" placeholder="수량" value="1" required />
-          <input id="assetPrice" type="number" step="any" placeholder="현재가 또는 평가 단가" required />
-          <input id="assetCostPrice" type="number" step="any" placeholder="평균매수가/평균단가 선택 입력" />
-          <div id="assetPreview" class="preview">평가액 미리보기: ₩0</div>
-          <button id="assetSubmitBtn" type="submit">저장</button><button id="assetCancelBtn" type="button" class="ghost hidden">취소</button>
-        </form>
-        <div class="toolbar"><input id="assetSearch" placeholder="자산 검색: BTC, 업비트, 연금저축" /><select id="assetSort"><option value="amountDesc">금액 높은순</option><option value="amountAsc">금액 낮은순</option><option value="nameAsc">이름순</option><option value="typeAsc">자산군순</option></select></div>
-        <div class="filters"><button data-asset-filter="전체" class="active">전체</button><button data-asset-filter="코인">코인</button><button data-asset-filter="주식">주식</button><button data-asset-filter="은행">은행</button><button data-asset-filter="현금">현금</button><button data-asset-filter="부동산">부동산</button><button data-asset-filter="자동차">자동차</button><button data-asset-filter="금">금</button><button data-asset-filter="기타">기타</button></div>
-        <div id="assetList" class="list"></div>
-      </div>
+    <nav id="tabBar" class="tab-bar"></nav>
+
+    <section id="assets" class="panel active">
+      <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm">자산 추가</button></div>
+      <form id="assetForm" class="form hidden">
+        <input name="name" placeholder="자산명 예: BTC, SCHD, 아파트" required />
+        <select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select>
+        <input name="country" placeholder="국가 예: 미국, 한국, 글로벌" />
+        <input name="currency" placeholder="통화 KRW/USD/HKD/AUD/USDT" value="KRW" />
+        <input name="amount" type="number" step="0.0001" placeholder="수량" value="1" />
+        <input name="price" type="number" step="0.01" placeholder="현재 단가" required />
+        <input name="cost" type="number" step="0.01" placeholder="매입 원금(선택)" />
+        <button class="primary" type="submit">저장</button>
+      </form>
+      <div id="assetList" class="list"></div>
     </section>
 
-    <section id="debts" class="view">
-      <div class="card">
-        <div class="card-head"><h2>부채 입력</h2><button id="addDebtBtn">+ 부채 추가</button></div>
-        <form id="debtForm" class="form hidden">
-          <select id="debtType"><option>홍콩 모기지</option><option>주택담보대출</option><option>차량할부</option><option>신용대출</option><option>카드 결제예정액</option><option>기타부채</option></select>
-          <input id="debtName" placeholder="부채명 예: HKD 모기지" required />
-          <input id="debtCurrency" placeholder="통화 KRW/HKD/USD" value="KRW" />
-          <input id="debtAmount" type="number" step="any" placeholder="잔액" required />
-          <input id="debtRate" type="number" step="any" placeholder="금리(선택)" />
-          <button id="debtSubmitBtn" type="submit">저장</button><button id="debtCancelBtn" type="button" class="ghost hidden">취소</button>
-        </form>
-        <div id="debtList" class="list"></div>
-      </div>
+    <section id="debts" class="panel">
+      <div class="section-head"><h2>부채</h2><button class="primary" data-open="debtForm">부채 추가</button></div>
+      <form id="debtForm" class="form hidden">
+        <input name="name" placeholder="부채명" required />
+        <select name="type"><option>일반 부채</option><option>홍콩 모기지</option><option>카드 결제 예정금</option></select>
+        <input name="currency" placeholder="통화" value="KRW" />
+        <input name="balance" type="number" step="0.01" placeholder="잔액" required />
+        <input name="rate" type="number" step="0.01" placeholder="연이율 %" />
+        <input name="monthly" type="number" step="0.01" placeholder="월 상환액" />
+        <button class="primary" type="submit">저장</button>
+      </form>
+      <div id="debtList" class="list"></div>
     </section>
 
-    <section id="graphs" class="view">
-      <div class="grid-2">
-        <div class="card chart-card"><h2>코인별 비중</h2><canvas id="cryptoPie" width="320" height="320"></canvas><div id="cryptoLegend" class="legend"></div></div>
-        <div class="card chart-card"><div class="card-head"><h2 id="barTitle">계좌/거래소별 자산</h2><div class="segmented"><button data-bar-mode="account" class="active">계좌별</button><button data-bar-mode="type">자산군별</button><button data-bar-mode="currency">통화별</button></div></div><canvas id="accountBar" width="720" height="360"></canvas></div>
-      </div>
+    <section id="insurance" class="panel">
+      <div class="section-head"><h2>보험</h2><button class="primary" data-open="insuranceForm">보험 추가</button></div>
+      <form id="insuranceForm" class="form hidden">
+        <input name="company" placeholder="보험사" required />
+        <input name="product" placeholder="상품명" required />
+        <input name="type" placeholder="보험종류" />
+        <input name="premium" type="number" placeholder="월보험료" />
+        <input name="payday" type="number" placeholder="납입일" />
+        <input name="refund" type="number" placeholder="해지환급금" />
+        <label class="check"><input name="includeRefund" type="checkbox" /> 해지환급금 자산 포함</label>
+        <textarea name="memo" placeholder="메모"></textarea>
+        <button class="primary" type="submit">저장</button>
+      </form>
+      <div id="insuranceList" class="list"></div>
     </section>
 
-
-    <section id="exchanges" class="view">
-      <div class="card">
-        <div class="card-head"><h2>거래소 연결 관리</h2><button id="addExchangeBtn">+ 거래소 연결 추가</button></div>
-        <p class="note">v4.1는 잔고 API 대신 수동 보유수량 + 공개 시세 자동조회 방식으로 안정화했습니다.</p>
-        <form id="exchangeForm" class="form hidden">
-          <select id="exchangeName">
-            <option>Binance</option><option>Upbit</option><option>OKX</option><option>Bybit</option><option>Bitget</option><option>Gate.io</option><option>HTX</option><option>BingX</option>
-          </select>
-          <input id="exchangeApiKey" placeholder="API Key" autocomplete="off" />
-          <input id="exchangeSecret" placeholder="Secret Key" type="password" autocomplete="off" />
-          <input id="exchangePassphrase" placeholder="Passphrase / UID 필요한 거래소만 입력" autocomplete="off" />
-          <input id="exchangeWorkerUrl" placeholder="선택사항 · 현재는 사용하지 않음" autocomplete="off" />
-          <label class="checkline"><input id="exchangeReadOnly" type="checkbox" checked /> 조회 전용 권한만 사용했습니다</label>
-          <button id="exchangeSubmitBtn" type="submit">저장</button><button id="exchangeCancelBtn" type="button" class="ghost hidden">취소</button>
-        </form>
-        <div class="exchange-warning">
-          <b>API 권한 원칙</b>
-          <span>조회 권한만 ON · 거래 권한 OFF · 출금 권한 OFF</span>
-        </div>
-        <div id="exchangeList" class="list"></div>
-      </div>
+    <section id="analysis" class="panel">
+      <div class="section-head"><h2>v6.0 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div id="analysisCards" class="analysis-grid"></div>
+      <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
+      <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
     </section>
 
-
-    <section id="insurance" class="view">
-      <div class="card">
-        <div class="card-head"><h2>보험 관리</h2><button id="addInsuranceBtn">+ 보험 추가</button></div>
-        <p class="note">해지환급금이 있는 보험은 자산에 포함할 수 있고, 순수 보장성 보험은 월 보험료/보장금액 관리용으로 사용할 수 있습니다.</p>
-        <div class="summary-grid mini-summary">
-          <article class="summary"><span>총 월 보험료</span><strong id="insuranceMonthlyPremiumTotal">₩0</strong></article>
-          <article class="summary"><span>총 해지환급금</span><strong id="insuranceRefundTotal">₩0</strong></article>
-          <article class="summary"><span>총 보장금액</span><strong id="insuranceCoverageTotal">₩0</strong></article>
-        </div>
-        <form id="insuranceForm" class="form hidden">
-          <input id="insuranceCompany" placeholder="보험사 예: 삼성생명, 현대해상" />
-          <input id="insuranceName" placeholder="상품명" required />
-          <select id="insuranceType"><option>종신/저축성</option><option>실손</option><option>암보험</option><option>건강보험</option><option>자동차보험</option><option>연금보험</option><option>기타보험</option></select>
-          <input id="insuranceCurrency" placeholder="통화 KRW/USD/HKD" value="KRW" />
-          <input id="insuranceMonthlyPremium" type="number" step="any" placeholder="월 보험료" />
-          <input id="insurancePayDate" placeholder="납입일 예: 매월 25일" />
-          <input id="insuranceRefundValue" type="number" step="any" placeholder="해지환급금/적립금" />
-          <input id="insuranceCoverageAmount" type="number" step="any" placeholder="보장금액" />
-          <label class="checkline"><input id="insuranceIncludeAsset" type="checkbox" /> 해지환급금을 자산에 포함</label>
-          <input id="insuranceMemo" placeholder="메모" />
-          <button id="insuranceSubmitBtn" type="submit">저장</button><button id="insuranceCancelBtn" type="button" class="ghost hidden">취소</button>
-        </form>
-        <div id="insuranceList" class="list"></div>
+    <section id="settings" class="panel">
+      <h2>설정 / 백업</h2>
+      <div class="button-grid">
+        <button id="backupBtn">백업 다운로드</button>
+        <label class="file-btn">복원<input id="restoreInput" type="file" accept="application/json" hidden /></label>
+        <button id="syncCheckBtn">동기화 확인</button>
+        <button id="clearCacheBtn">캐시삭제</button>
       </div>
-    </section>
-
-
-    <section id="analysis" class="view">
-      <div class="card">
-        <div class="card-head"><h2>자산 분석</h2></div>
-        <div id="insightList" class="insight-list"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>목표 달성률</h2></div>
-        <div class="goal-progress"><span id="goalProgressBar"></span></div>
-        <p id="goalProgressText" class="status">목표 없음</p>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>상위 자산</h2></div>
-        <div id="topAssetList" class="performance-list"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>자산 배분 분석</h2></div>
-        <div id="allocationAnalysisList" class="performance-list"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>예상 배당</h2></div>
-        <div class="summary-grid mini-summary">
-          <article class="summary"><span>예상 연배당</span><strong id="expectedDividendAnnual">₩0</strong></article>
-          <article class="summary"><span>예상 월평균</span><strong id="expectedDividendMonthly">₩0</strong></article>
-        </div>
-        <div id="dividendList" class="performance-list"></div>
-        <p class="note">배당률은 주요 ETF/종목 기본값 기준의 추정치입니다. 실제 배당은 변동될 수 있습니다.</p>
-      </div>
-    </section>
-
-    <section id="settings" class="view">
-      <div class="card">
-        <h2>목표 / 환율</h2>
-        <div class="form always fx-form">
-          <label><span>순자산 목표</span><input id="goalAmount" type="number" placeholder="KRW 예: 1000000000" /></label>
-          <label><span>USD/KRW</span><input id="usdRate" type="number" placeholder="미국 달러 1달러당 원화" value="1380" /></label>
-          <label><span>USDT/KRW</span><input id="usdtRate" type="number" placeholder="테더 1USDT당 원화" value="1380" /></label>
-          <label><span>HKD/KRW</span><input id="hkdRate" type="number" placeholder="홍콩달러 1달러당 원화" value="195" /></label>
-          <label><span>AUD/KRW</span><input id="audRate" type="number" placeholder="호주달러 1달러당 원화" value="1080" /></label>
-          <label><span>미국주식 시세 Worker URL</span><input id="marketWorkerUrl" placeholder="https://asset-manager-market-worker.questionbox00.workers.dev" /></label>
-          <button id="testMarketWorkerBtn" type="button" class="ghost">SCHD Worker 테스트</button>
-          <p id="marketWorkerStatus" class="status"></p>
-          <label class="checkline"><input id="autoGithubBackup" type="checkbox" /> 변경 후 GitHub 자동 백업 사용</label>
-          <label class="checkline"><input id="autoGithubSync" type="checkbox" /> 앱 실행 시 GitHub 최신 백업 확인</label>
-          <button id="savePrefs">수동 환율/목표/시세 Worker/자동백업 저장</button>
-          <p id="autoBackupStatus" class="status"></p>
-          <p id="fxAutoStatus" class="status">앱 실행 시 자동 환율조회 · 실패 시 마지막 정상 환율 유지</p>
-        </div>
-        <div class="exchange-guide">
-          <b>거래소 기본통화</b>
-          <div><span>업비트 · 빗썸 · 코인원</span><strong>KRW</strong></div>
-          <div><span>바이낸스 · OKX · Bybit · Bitget · MEXC · Gate.io · BingX · HTX</span><strong>USDT</strong></div>
-          <div><span>미국주식 · 미국 ETF</span><strong>USD</strong></div>
-          <div><span>홍콩 은행 · 홍콩 모기지</span><strong>HKD</strong></div>
-        </div>
-        <p class="note">v4.1는 환율 자동조회, 수익률 계산, 보유 코인 공개 시세 자동조회 방식을 포함합니다.</p>
-      </div>
-
-      <div class="card">
-        <h2>메뉴 순서 / 표시 설정</h2>
-        <p class="note">하단 큰 메뉴의 순서와 표시 여부를 조정할 수 있습니다.</p>
-        <div id="menuManager" class="menu-manager"></div>
-        <div class="form always">
-          <button id="saveMenuOrderBtn" type="button">메뉴 설정 저장</button>
-          <button id="resetMenuOrderBtn" type="button" class="ghost">메뉴 기본값 복원</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>백업 / 복원</h2>
-        <p class="note">GitHub 저장소가 Public이어도 실제 자산 데이터는 기본적으로 기기 안에만 저장됩니다. 아래 백업을 누를 때만 지정한 JSON 파일로 올라갑니다.</p>
-        <div class="form always">
-          <input id="ghOwner" placeholder="GitHub 아이디 예: Justin-1984" />
-          <input id="ghRepo" placeholder="저장소명 예: asset-manager" />
-          <input id="ghPath" placeholder="백업 파일명 예: asset-manager-data.json" />
-          <input id="ghToken" placeholder="GitHub Token" type="password" />
-          <button id="saveSettings">GitHub 설정 저장</button>
-          <button id="backupBtn" type="button">GitHub 백업</button>
-          <button id="restoreBtn" type="button">GitHub 복원</button>
-          <button id="exportBtn" type="button">파일로 내보내기</button>
-          <button id="clearCacheBtn" type="button" class="ghost">앱 캐시 정리</button>
-          <button id="syncCheckBtn" type="button" class="ghost">동기화 확인</button>
-          <button id="forceUpdateBtn" type="button" class="ghost">강제 업데이트</button>
-          <label class="fileBtn">파일에서 가져오기<input id="importFile" type="file" accept="application/json" hidden /></label>
-        </div>
-        <p id="syncStatus" class="status"></p>
-      </div>
+      <pre id="logBox" class="log"></pre>
     </section>
   </main>
 
-  <nav class="bottom-nav">
-    <button data-tab="dashboard" class="active">홈</button>
-    <button data-tab="assets">자산</button>
-    <button data-tab="debts">부채</button>
-    <button data-tab="graphs">그래프</button>
-    <button data-tab="analysis">분석</button>
-    <button data-tab="exchanges">거래소</button>
-    <button data-tab="insurance">보험</button>
-    <button data-tab="settings">설정</button>
-  </nav>
-
-  <script src="app.js?v=54"></script>
+  <script src="app.js"></script>
 </body>
 </html>
