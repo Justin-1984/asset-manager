@@ -1,3 +1,11 @@
+# AssetManager PWA v6.9.2 exchange ETF fix
+
+- 환율 안정화: open.er-api → Frankfurter → exchangerate.host → 최근 정상 환율 유지
+- 비정상 환율 범위 차단
+- 미국 ETF/주식 안정화: Finnhub 토큰 우선 → Yahoo → Stooq → 최근 성공 시세 유지
+- 매입금액 통화와 매입 당시 환율 필드 추가
+- 매입원가는 현재환율로 변하지 않고, 현재평가액만 현재환율로 계산
+
 # AssetManager PWA v6.9.1 Stable Recovery
 
 - v6.6 정상판 기준 복구

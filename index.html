@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.6</title>
+  <title>자산 매니저 v6.9.2</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.6</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.9.2</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -51,7 +51,9 @@
         <label class="field"><span>통화</span><input name="currency" placeholder="KRW / USD / HKD / AUD / USDT" value="KRW" /></label>
         <label class="field"><span>수량</span><input name="amount" type="number" step="0.0001" placeholder="보유 수량" value="1" /></label>
         <label class="field"><span>현재 단가</span><input name="price" type="number" step="0.01" placeholder="현재 단가" required /></label>
-        <label class="field"><span>매입 원금</span><input name="cost" type="number" step="0.01" placeholder="총 매입 원금" /></label>
+        <label class="field"><span>총 매입금액</span><input name="cost" type="number" step="0.01" placeholder="예: 10000" /></label>
+        <label class="field"><span>매입금액 통화</span><input name="costCurrency" placeholder="KRW / USD / HKD / AUD / USDT" /></label>
+        <label class="field"><span>매입 당시 환율</span><input name="buyFx" type="number" step="0.01" placeholder="외화 1단위당 원화, KRW면 1" /></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>
@@ -104,6 +106,7 @@
         <div><strong>화면 모드</strong><p>라이트/다크 모드를 전환합니다.</p></div>
         <button id="themeToggleBtn" class="theme-toggle" type="button">다크모드</button>
       </div>
+      <div class="card backup-card"><h3>시세 API 설정</h3><p class="muted">Finnhub 토큰이 있으면 미국주식/ETF는 Finnhub를 먼저 사용하고, 실패하면 Yahoo/Stooq와 최근 성공 시세를 사용합니다.</p><label class="field wide"><span>Finnhub API Token</span><input id="finnhubTokenInput" placeholder="선택 입력" /></label></div>
       <div class="backup-status-card" id="marketStatusCard">
         <div class="backup-dot ok"></div>
         <div><strong>자동 시세/환율 갱신</strong><p id="marketStatusText">앱 실행 시 자동 갱신하고, 실행 중에는 15분마다 갱신합니다.</p></div>
