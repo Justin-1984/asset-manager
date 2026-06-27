@@ -31,3 +31,6 @@ body.dark .theme-toggle{background:#020617;color:#f9fafb;border-color:var(--line
 html[data-theme="dark"],body[data-theme="dark"]{--bg:#0b1220;--card:#111827;--text:#f9fafb;--muted:#9ca3af;--line:#243041;--primary:#f9fafb;--accent:#38bdf8;--danger:#f87171;background:var(--bg);color:var(--text);}
 html[data-theme="dark"] body{background:var(--bg);color:var(--text);}
 body.dark main, body[data-theme="dark"] main{background:var(--bg);}
+
+.button-grid .primary{background:#2563eb;color:white;border-color:#2563eb;}
+.dark .button-grid .primary{background:#3b82f6;color:white;border-color:#3b82f6;}
