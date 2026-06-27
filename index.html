@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>자산 매니저 v4.8</title>
-  <link rel="manifest" href="manifest.json?v=48" />
-  <link rel="stylesheet" href="styles.css?v=48" />
+  <title>자산 매니저 v5.3</title>
+  <link rel="manifest" href="manifest.json?v=53" />
+  <link rel="stylesheet" href="styles.css?v=53" />
   <meta name="theme-color" content="#111827" />
 </head>
 <body>
   <header class="topbar">
     <div>
       <h1>자산 매니저</h1>
-      <p>통합 순자산 대시보드 v4.8</p>
+      <p>통합 순자산 대시보드 v5.3</p>
     </div>
     <button id="themeToggle" class="ghost">다크모드</button>
   </header>
@@ -26,6 +26,7 @@
         <article class="summary"><span>이번달 변동</span><strong id="monthChange">₩0</strong><em id="monthChangePct">0%</em></article>
         <article class="summary"><span>투자원금</span><strong id="totalInvestCost">₩0</strong><em>코인/주식 기준</em></article>
         <article class="summary"><span>총수익</span><strong id="totalProfit">₩0</strong><em id="totalProfitPct">0%</em></article>
+        <article class="summary"><span>예상 연배당</span><strong id="expectedDividendAnnualHome">₩0</strong><em>추정</em></article>
         <article class="summary"><span>월별 순자산 변화</span><strong id="monthlyChange">₩0</strong><em id="monthlyChangePct">0%</em></article>
         <article class="summary"><span>전일 대비 순자산</span><strong id="dailyChange">₩0</strong><em id="dailyChangePct">0%</em></article>
       </div>
@@ -192,6 +193,36 @@
       </div>
     </section>
 
+
+    <section id="analysis" class="view">
+      <div class="card">
+        <div class="card-head"><h2>자산 분석</h2></div>
+        <div id="insightList" class="insight-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>목표 달성률</h2></div>
+        <div class="goal-progress"><span id="goalProgressBar"></span></div>
+        <p id="goalProgressText" class="status">목표 없음</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>상위 자산</h2></div>
+        <div id="topAssetList" class="performance-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>자산 배분 분석</h2></div>
+        <div id="allocationAnalysisList" class="performance-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>예상 배당</h2></div>
+        <div class="summary-grid mini-summary">
+          <article class="summary"><span>예상 연배당</span><strong id="expectedDividendAnnual">₩0</strong></article>
+          <article class="summary"><span>예상 월평균</span><strong id="expectedDividendMonthly">₩0</strong></article>
+        </div>
+        <div id="dividendList" class="performance-list"></div>
+        <p class="note">배당률은 주요 ETF/종목 기본값 기준의 추정치입니다. 실제 배당은 변동될 수 있습니다.</p>
+      </div>
+    </section>
+
     <section id="settings" class="view">
       <div class="card">
         <h2>목표 / 환율</h2>
@@ -246,11 +277,12 @@
     <button data-tab="assets">자산</button>
     <button data-tab="debts">부채</button>
     <button data-tab="graphs">그래프</button>
+    <button data-tab="analysis">분석</button>
     <button data-tab="exchanges">거래소</button>
     <button data-tab="insurance">보험</button>
     <button data-tab="settings">설정</button>
   </nav>
 
-  <script src="app.js?v=48"></script>
+  <script src="app.js?v=53"></script>
 </body>
 </html>

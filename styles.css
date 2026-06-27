@@ -47,3 +47,8 @@ button:disabled{opacity:.6;cursor:not-allowed}
   .item>button:nth-last-child(2){grid-column:1 / 2}
   .item>button:last-child{grid-column:2 / 3}
 }
+
+.insight-list{display:flex;flex-direction:column;gap:10px}
+.insight-item{padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08);line-height:1.5}
+.goal-progress{height:18px;background:rgba(148,163,184,.18);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.goal-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:999px;transition:width .35s ease}

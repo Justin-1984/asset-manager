@@ -1,5 +1,5 @@
-const CACHE='asset-manager-v4-8';
-const ASSETS=['./?v=48','./index.html?v=48','./styles.css?v=48','./app.js?v=48','./manifest.json?v=48'];
+const CACHE='asset-manager-v5-3';
+const ASSETS=['./?v=53','./index.html?v=53','./styles.css?v=53','./app.js?v=53','./manifest.json?v=53'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();

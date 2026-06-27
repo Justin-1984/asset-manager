@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v4-8';
+const STORAGE_KEY='asset-manager-v5-3';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -104,8 +104,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'4.8'};}catch{}} return {version:'4.8',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='4.8';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'5.3'};}catch{}} return {version:'5.3',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='5.3';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -418,6 +418,73 @@ function resetInsuranceForm(){editingInsuranceId=null;if(!$('insuranceForm'))ret
 window.editInsurance=id=>{const i=(state.insurances||[]).find(x=>x.id===id);if(!i)return;editingInsuranceId=id;$('insuranceForm').classList.remove('hidden');$('insuranceSubmitBtn').textContent='수정 저장';$('insuranceCancelBtn').classList.remove('hidden');$('insuranceCompany').value=i.company||'';$('insuranceName').value=i.name||'';$('insuranceType').value=i.type||'종신/저축성';$('insuranceCurrency').value=i.currency||'KRW';$('insuranceMonthlyPremium').value=i.monthlyPremium||'';$('insurancePayDate').value=i.payDate||'';$('insuranceRefundValue').value=i.refundValue||'';$('insuranceCoverageAmount').value=i.coverageAmount||'';$('insuranceIncludeAsset').checked=!!i.includeAsset;$('insuranceMemo').value=i.memo||'';window.scrollTo({top:$('insurance').offsetTop,behavior:'smooth'});};
 window.removeInsurance=id=>{if(confirm('이 보험을 삭제할까요?')){state.insurances=(state.insurances||[]).filter(i=>i.id!==id);save();}};
 
+function topAssets(limit=5){
+ return state.assets.slice().map(a=>({name:a.name,display:assetDisplayName(a)||a.name,type:a.type,account:a.account||'미지정',amount:assetAmount(a),profit:assetProfit(a),pct:assetProfitPct(a)})).sort((a,b)=>b.amount-a.amount).slice(0,limit);
+}
+function bestWorstAssets(){
+ const rows=state.assets.filter(a=>isInvestAsset(a)&&Number(a.costPrice)>0).map(a=>({name:a.name,display:assetDisplayName(a)||a.name,type:a.type,amount:assetAmount(a),profit:assetProfit(a),pct:assetProfitPct(a)}));
+ return {best:rows.slice().sort((a,b)=>b.profit-a.profit)[0], worst:rows.slice().sort((a,b)=>a.profit-b.profit)[0]};
+}
+function allocationRows(){
+ const total=totalAssets()||1;
+ const rows=[
+  ...Object.entries(byType()).map(([name,value])=>({group:'자산군',name,value,share:value/total*100})),
+  ...Object.entries(byCurrency()).map(([name,value])=>({group:'통화',name,value,share:value/total*100}))
+ ];
+ return rows.sort((a,b)=>b.value-a.value);
+}
+const dividendYieldMap={'SCHD':3.5,'VOO':1.25,'SPY':1.25,'VTI':1.35,'QQQ':0.6,'JEPI':7.0,'JEPQ':8.5,'DGRO':2.3,'VYM':2.8,'HDV':3.5,'AAPL':0.5,'MSFT':0.7,'NVDA':0.03,'AVGO':1.5,'KO':3.0,'PEP':3.0,'O':5.5};
+function dividendYieldForAsset(a){
+ const s=String(a.name||'').toUpperCase().trim();
+ return Number(a.dividendYield)||dividendYieldMap[s]||0;
+}
+function dividendRows(){
+ return state.assets.filter(a=>a.type==='주식').map(a=>{
+  const y=dividendYieldForAsset(a);
+  const amount=assetAmount(a);
+  const annual=amount*y/100;
+  return {name:a.name,display:assetDisplayName(a)||a.name,amount,yield:y,annual,monthly:annual/12,currency:a.currency||'KRW'};
+ }).filter(x=>x.yield>0).sort((a,b)=>b.annual-a.annual);
+}
+function dividendAnnualTotal(){return dividendRows().reduce((s,x)=>s+x.annual,0);}
+function renderInsights(){
+ const el=$('insightList'); if(!el)return;
+ const bw=bestWorstAssets();
+ const largest=topAssets(1)[0];
+ const div=dividendAnnualTotal();
+ const goal=Number(prefs.goalAmount)||0;
+ const goalPct=goal?Math.min(netWorth()/goal*100,999):0;
+ const items=[
+  largest?`가장 큰 자산은 <b>${esc(largest.display)}</b> ${money(largest.amount)}입니다.`:'아직 자산이 없습니다.',
+  bw.best?`가장 많이 오른 자산은 <b>${esc(bw.best.display)}</b> ${signedMoney(bw.best.profit)} (${signedPct(bw.best.pct)})입니다.`:'수익률 계산 가능한 자산이 아직 부족합니다.',
+  bw.worst?`가장 많이 내린 자산은 <b>${esc(bw.worst.display)}</b> ${signedMoney(bw.worst.profit)} (${signedPct(bw.worst.pct)})입니다.`:'',
+  goal?`순자산 목표 달성률은 <b>${goalPct.toFixed(1)}%</b>입니다.`:'순자산 목표를 설정하면 달성률을 표시합니다.',
+  div?`예상 연 배당은 <b>${money(div)}</b>, 월평균 ${money(div/12)}입니다.`:'배당 ETF/주식을 등록하면 예상 배당을 표시합니다.'
+ ].filter(Boolean);
+ el.innerHTML=items.map(x=>`<div class="insight-item">${x}</div>`).join('');
+ if($('goalProgressBar'))$('goalProgressBar').style.width=(goal?Math.min(goalPct,100):0)+'%';
+ if($('goalProgressText'))$('goalProgressText').textContent=goal?`${money(netWorth())} / ${money(goal)} · ${goalPct.toFixed(1)}%`:'목표 없음';
+ if($('expectedDividendAnnual'))$('expectedDividendAnnual').textContent=money(div);if($('expectedDividendAnnualHome'))$('expectedDividendAnnualHome').textContent=money(div);
+ if($('expectedDividendMonthly'))$('expectedDividendMonthly').textContent=money(div/12);
+}
+function renderTopAssets(){
+ const el=$('topAssetList'); if(!el)return;
+ const rows=topAssets(6);
+ el.innerHTML=rows.length?rows.map(x=>`<div class="perf-row"><div><b>${esc(x.display)}</b><small>${esc(x.type)} · ${esc(x.account)}</small></div><div><strong>${money(x.amount)}</strong>${x.profit?`<span class="${profitClass(x.profit)}">${signedMoney(x.profit)} (${signedPct(x.pct)})</span>`:''}</div></div>`).join(''):'<p class="note">자산을 추가하면 표시됩니다.</p>';
+}
+function renderAllocationAnalysis(){
+ const el=$('allocationAnalysisList'); if(!el)return;
+ const rows=allocationRows().slice(0,10);
+ el.innerHTML=rows.length?rows.map(x=>`<div class="perf-row"><div><b>${esc(x.name)}</b><small>${esc(x.group)}</small></div><div><strong>${money(x.value)}</strong><span>${x.share.toFixed(1)}%</span></div></div>`).join(''):'<p class="note">분석할 자산이 없습니다.</p>';
+}
+function renderDividendAnalysis(){
+ const el=$('dividendList'); if(!el)return;
+ const rows=dividendRows();
+ el.innerHTML=rows.length?rows.map(x=>`<div class="perf-row"><div><b>${esc(x.display)}</b><small>${esc(x.name)} · 예상 배당률 ${x.yield.toFixed(2)}%</small></div><div><strong>${money(x.annual)}/년</strong><span>${money(x.monthly)}/월</span></div></div>`).join(''):'<p class="note">SCHD, JEPI, JEPQ 같은 배당 ETF/주식을 등록하면 예상 배당이 표시됩니다.</p>';
+}
+function renderAnalysis(){
+ renderInsights();renderTopAssets();renderAllocationAnalysis();renderDividendAnalysis();
+}
 function render(){
  refreshFxBoard();refreshStatusBoard();
  $('netWorth').textContent=money(netWorth());$('totalAssets').textContent=money(totalAssets());$('totalLiabilities').textContent=money(totalDebts());if($('totalInvestCost'))$('totalInvestCost').textContent=money(totalInvestCost());if($('totalProfit')){$('totalProfit').textContent=signedMoney(totalProfit());$('totalProfit').className=profitClass(totalProfit());}if($('totalProfitPct')){$('totalProfitPct').textContent=signedPct(totalProfitPct());$('totalProfitPct').className=profitClass(totalProfit());}
@@ -425,7 +492,7 @@ function render(){
  const goal=Number(prefs.goalAmount)||0;$('goalText').textContent=goal?`목표 ${money(goal)} · 달성률 ${Math.round(netWorth()/goal*100)}%`:'목표 없음';
  const mc=monthlyChange();if($('monthlyChange')){$('monthlyChange').textContent=signedMoney(mc.amount);$('monthlyChange').className=profitClass(mc.amount);}if($('monthlyChangePct')){$('monthlyChangePct').textContent=signedPct(mc.pct);$('monthlyChangePct').className=profitClass(mc.amount);}
  const dc=dailyChange();if($('dailyChange')){$('dailyChange').textContent=signedMoney(dc.amount);$('dailyChange').className=profitClass(dc.amount);}if($('dailyChangePct')){$('dailyChangePct').textContent=signedPct(dc.pct);$('dailyChangePct').className=profitClass(dc.amount);}
- renderAssets();renderDebts();renderInsurances();renderExchanges();renderSnapshots();renderMonthlySnapshots();renderDailySnapshots();renderAccountPerformance();
+ renderAssets();renderDebts();renderInsurances();renderExchanges();renderSnapshots();renderMonthlySnapshots();renderDailySnapshots();renderAccountPerformance();renderAnalysis();
  const tab=currentTabId();
  if(tab==='dashboard'){drawPie('assetPie',byType(),'assetLegend','총자산');drawLine();drawMonthlyLine();drawDailyLine();}
  if(tab==='graphs'){drawPie('cryptoPie',byCrypto(),'cryptoLegend','코인');drawBar();}
@@ -779,4 +846,4 @@ async function clearAppCache(){
  }catch(e){setStatus('캐시 정리 실패: '+e.message);}
 }
 if($('clearCacheBtn'))$('clearCacheBtn').onclick=()=>clearAppCache();
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=48').catch(()=>{});updateAssetPreview();render();if(prefs.autoGithubSync)checkGithubSync(true);autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=53').catch(()=>{});updateAssetPreview();render();if(prefs.autoGithubSync)checkGithubSync(true);autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
