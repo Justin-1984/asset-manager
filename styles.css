@@ -52,3 +52,8 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .insight-item{padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08);line-height:1.5}
 .goal-progress{height:18px;background:rgba(148,163,184,.18);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
 .goal-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:999px;transition:width .35s ease}
+
+.menu-manager{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.menu-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08)}
+.menu-actions{display:flex;gap:6px}
+.menu-actions button{min-width:42px}

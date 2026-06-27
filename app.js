@@ -1,4 +1,4 @@
-const STORAGE_KEY='asset-manager-v5-3';
+const STORAGE_KEY='asset-manager-v5-4';
 const OLD_KEYS=['asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-6','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-9','asset-manager-v3-8-1','asset-manager-v3-8','asset-manager-v3-7','asset-manager-v3-6','asset-manager-v3-5','asset-manager-v3-0','asset-manager-v2-3','asset-manager-v2-2','asset-manager-v2-1','asset-manager-v2-0','asset-manager-v1-5','asset-manager-v1-4','asset-manager-v1-3','asset-manager-v1-2','asset-manager-v1-1'];
 const SETTINGS_KEY='asset-manager-github-settings';
 const PREFS_KEY='asset-manager-prefs';
@@ -104,8 +104,8 @@ function updateExchangePassHint(){const el=$('exchangePassphrase');if(!el||!$('e
 function updateCurrencyHint(){const guessed=guessCurrencyFromAccount($('assetAccount')?.value);const cur=$('assetCurrency')?.value||'KRW';const el=$('currencyHint');if(!el)return;el.innerHTML=guessed?`감지된 기본통화: <b>${guessed}</b> · 현재 입력통화: <b>${esc(cur.toUpperCase())}</b>`:'기본통화: 업비트/빗썸/코인원=KRW · 바이낸스/OKX/Bybit/Bitget/MEXC/Gate/BingX/HTX=USDT';}
 
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'5.3'};}catch{}} return {version:'5.3',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
-function save(){state.version='5.3';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
+function loadState(){let saved=localStorage.getItem(STORAGE_KEY);if(!saved){for(const k of OLD_KEYS){if(localStorage.getItem(k)){saved=localStorage.getItem(k);break;}}} if(saved){try{const s=JSON.parse(saved);return {...{assets:[],debts:[],snapshots:[],exchanges:[],insurances:[]},...s,version:'5.4'};}catch{}} return {version:'5.4',assets:[],debts:[],snapshots:[],exchanges:[],insurances:[],updatedAt:new Date().toISOString()};}
+function save(){state.version='5.4';state.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));requestRender();scheduleAutoGithubBackup();}
 function fx(cur){cur=String(cur||'KRW').toUpperCase();if(cur==='KRW')return 1;if(cur==='USD')return Number(prefs.usdRate)||1;if(cur==='USDT')return Number(prefs.usdtRate||prefs.usdRate)||1;if(cur==='HKD')return Number(prefs.hkdRate)||1;if(cur==='AUD')return Number(prefs.audRate)||1;return 1;}
 function assetAmount(a){return (Number(a.qty)||0)*(Number(a.price)||0)*fx(a.currency);}
 function assetCost(a){return (Number(a.qty)||0)*(Number(a.costPrice)||0)*fx(a.currency);}
@@ -729,13 +729,26 @@ if($('addInsuranceBtn'))$('addInsuranceBtn').onclick=()=>{$('insuranceForm').cla
 if($('insuranceCancelBtn'))$('insuranceCancelBtn').onclick=resetInsuranceForm;
 if($('insuranceForm'))$('insuranceForm').onsubmit=e=>{e.preventDefault();state.insurances=state.insurances||[];const item={id:editingInsuranceId||uid(),company:$('insuranceCompany').value.trim(),name:$('insuranceName').value.trim(),type:$('insuranceType').value,currency:$('insuranceCurrency').value.trim().toUpperCase()||'KRW',monthlyPremium:Number($('insuranceMonthlyPremium').value)||0,payDate:$('insurancePayDate').value,refundValue:Number($('insuranceRefundValue').value)||0,coverageAmount:Number($('insuranceCoverageAmount').value)||0,includeAsset:$('insuranceIncludeAsset').checked,memo:$('insuranceMemo').value.trim()};if(editingInsuranceId)state.insurances=state.insurances.map(i=>i.id===editingInsuranceId?item:i);else state.insurances.push(item);resetInsuranceForm();save();};
 
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if($('exchangeForm'))$('exchangeForm').onsubmit=e=>{e.preventDefault();state.exchanges=state.exchanges||[];const item={id:editingExchangeId||uid(),name:$('exchangeName').value,apiKey:$('exchangeApiKey').value.trim(),secret:$('exchangeSecret').value.trim(),passphrase:$('exchangePassphrase').value.trim(),workerUrl:($('exchangeWorkerUrl')?.value||'').trim(),readOnly:$('exchangeReadOnly').checked,lastSync:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastSync||'',lastPublicTest:(state.exchanges.find(x=>x.id===editingExchangeId)||{}).lastPublicTest||''};if(!item.readOnly){alert('안전을 위해 조회 전용 권한 확인이 필요합니다. 거래/출금 권한은 절대 켜지 마세요.');return;}if(editingExchangeId){state.exchanges=state.exchanges.map(x=>x.id===editingExchangeId?item:x);}else state.exchanges.push(item);resetExchangeForm();save();};
 
-if($('addInsuranceBtn'))$('addInsuranceBtn').onclick=()=>{$('insuranceForm').classList.toggle('hidden');if(!$('insuranceForm').classList.contains('hidden'))resetInsuranceForm();};
-if($('insuranceCancelBtn'))$('insuranceCancelBtn').onclick=resetInsuranceForm;
-if($('insuranceForm'))$('insuranceForm').onsubmit=e=>{e.preventDefault();state.insurances=state.insurances||[];const item={id:editingInsuranceId||uid(),company:$('insuranceCompany').value.trim(),name:$('insuranceName').value.trim(),type:$('insuranceType').value,currency:$('insuranceCurrency').value.trim().toUpperCase()||'KRW',monthlyPremium:Number($('insuranceMonthlyPremium').value)||0,payDate:$('insurancePayDate').value,refundValue:Number($('insuranceRefundValue').value)||0,coverageAmount:Number($('insuranceCoverageAmount').value)||0,includeAsset:$('insuranceIncludeAsset').checked,memo:$('insuranceMemo').value.trim()};if(editingInsuranceId)state.insurances=state.insurances.map(i=>i.id===editingInsuranceId?item:i);else state.insurances.push(item);resetInsuranceForm();save();};
-
-document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render();});
+const DEFAULT_MENU=[
+ {id:'dashboard',label:'홈',visible:true},
+ {id:'assets',label:'자산',visible:true},
+ {id:'analysis',label:'분석',visible:true},
+ {id:'debts',label:'부채',visible:true},
+ {id:'insurance',label:'보험',visible:true},
+ {id:'graphs',label:'그래프',visible:true},
+ {id:'exchanges',label:'거래소',visible:true},
+ {id:'settings',label:'설정',visible:true}
+];
+function loadMenuPrefs(){
+ const saved=JSON.parse(localStorage.getItem('asset-manager-menu')||'null');
+ if(!saved)return DEFAULT_MENU.map(x=>({...x}));
+ const merged=DEFAULT_MENU.map(d=>({ ...d, ...(saved.find(x=>x.id===d.id)||{}) }));
+ return [...saved.map(s=>merged.find(m=>m.id===s.id)).filter(Boolean),...merged.filter(m=>!saved.find(s=>s.id===m.id))];
+}
+function saveMenuPrefs(menu){localStorage.setItem('asset-manager-menu',JSON.stringify(menu));}
+function bindTabButtons(){
+ bindTabButtons();
 document.querySelectorAll('[data-asset-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-asset-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');assetFilter=b.dataset.assetFilter;renderAssets();});
 if($('assetSearch'))$('assetSearch').oninput=e=>{assetSearch=e.target.value;renderAssets();};if($('assetSort'))$('assetSort').onchange=e=>{assetSort=e.target.value;renderAssets();};
 document.querySelectorAll('[data-bar-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bar-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');barMode=b.dataset.barMode;drawBar();});
@@ -846,4 +859,6 @@ async function clearAppCache(){
  }catch(e){setStatus('캐시 정리 실패: '+e.message);}
 }
 if($('clearCacheBtn'))$('clearCacheBtn').onclick=()=>clearAppCache();
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=53').catch(()=>{});updateAssetPreview();render();if(prefs.autoGithubSync)checkGithubSync(true);autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
+if($('saveMenuOrderBtn'))$('saveMenuOrderBtn').onclick=()=>saveMenuFromManager();
+if($('resetMenuOrderBtn'))$('resetMenuOrderBtn').onclick=()=>resetMenuPrefs();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=54').catch(()=>{});updateAssetPreview();renderMenuManager();applyMenuPrefs();render();if(prefs.autoGithubSync)checkGithubSync(true);autoUpdateFx().then(()=>refreshCryptoPrices(false)).catch(()=>refreshCryptoPrices(false));
