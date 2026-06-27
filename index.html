@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.3</title>
+  <title>자산 매니저 v6.4</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.3</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.4</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -23,7 +23,25 @@
     </section>
     <nav id="tabBar" class="tab-bar"></nav>
 
-    <section id="assets" class="panel active">
+    <section id="dashboard" class="panel active">
+      <div class="section-head"><h2>대시보드</h2><button id="refreshDashboard" class="primary">새로고침</button></div>
+      <div class="dashboard-grid">
+        <article class="card hero-stat"><span>순자산</span><strong id="dashNetWorth">₩0</strong><p id="dashMonthChange">이번 달 변화 ₩0</p></article>
+        <article class="card hero-stat"><span>총 투자손익</span><strong id="dashProfit">₩0</strong><p id="dashProfitRate">수익률 0%</p></article>
+        <article class="card hero-stat"><span>목표 달성률</span><strong id="dashGoalRate">-</strong><p id="dashRiskText">위험도 -</p></article>
+        <article class="card hero-stat"><span>현금/코인 비중</span><strong id="dashCashCrypto">-</strong><p>유동성/위험자산 확인</p></article>
+      </div>
+      <div class="dashboard-grid two">
+        <article class="card"><h3>자산 배분</h3><div id="dashDonut" class="donut"></div><div id="dashLegend" class="legend"></div></article>
+        <article class="card"><h3>상위 자산 TOP 5</h3><div id="dashTopAssets" class="top-list"></div></article>
+      </div>
+      <div class="dashboard-grid two">
+        <article class="card"><h3>변화 요약</h3><div id="dashChanges" class="mini-list"></div></article>
+        <article class="card"><h3>오늘의 체크</h3><div id="dashChecks" class="mini-list"></div></article>
+      </div>
+    </section>
+
+    <section id="assets" class="panel">
       <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
       <form id="assetForm" class="form hidden">
         <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금" required /></label>
@@ -72,7 +90,7 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.3 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.4 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
