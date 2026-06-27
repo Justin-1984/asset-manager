@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.4</title>
+  <title>자산 매니저 v6.5</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.4</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.5</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -90,7 +90,7 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.4 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.5 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
@@ -102,6 +102,21 @@
       <div class="theme-card">
         <div><strong>화면 모드</strong><p>라이트/다크 모드를 전환합니다.</p></div>
         <button id="themeToggleBtn" class="theme-toggle" type="button">다크모드</button>
+      </div>
+      <div class="backup-status-card" id="backupStatusCard">
+        <div class="backup-dot" id="backupDot"></div>
+        <div><strong id="backupStatusTitle">백업 상태 확인 중</strong><p id="backupStatusText">최근 백업 기록을 확인합니다.</p></div>
+      </div>
+      <div class="card backup-card">
+        <h3>데이터 보호 시스템</h3>
+        <p class="muted">자산/부채/보험 데이터를 저장할 때마다 로컬 버전 백업을 남깁니다. 최근 30개까지 보관됩니다.</p>
+        <div class="button-grid">
+          <button id="versionBackupBtn" type="button">현재 상태 버전백업</button>
+          <button id="downloadHistoryBtn" type="button">백업묶음 다운로드</button>
+          <button id="integrityCheckBtn" type="button">데이터 검사</button>
+          <button id="cleanOldBackupsBtn" type="button">오래된 백업 정리</button>
+        </div>
+        <div id="backupHistoryList" class="backup-history"></div>
       </div>
       <div class="button-grid">
         <button id="backupBtn">백업 다운로드</button>
