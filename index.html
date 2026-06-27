@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.12.0</title>
+  <title>자산 매니저 v6.12.1</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.12.0</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.12.1</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -109,7 +109,7 @@
         <p class="muted">매수/매도/입금/출금을 입력하면 보유수량과 매입원금이 자동 반영됩니다. 삭제는 기록만 삭제하며 이미 반영된 자산은 되돌리지 않습니다.</p>
         <form id="transactionForm" class="form always">
           <label class="field"><span>거래일</span><input id="txDate" name="date" type="date" /></label>
-          <label class="field"><span>거래유형</span><select id="txType" name="type"><option>매수</option><option>매도</option><option>입금</option><option>출금</option><option>배당</option><option>수수료</option></select></label>
+          <label class="field"><span>거래유형</span><select id="txType" name="type"><option>매수</option><option>매도</option><option>입금</option><option>출금</option><option>배당</option><option>이자</option><option>수수료</option></select></label>
           <label class="field wide"><span>기존 자산 선택</span><select id="txAssetSelect" name="assetId"><option value="">직접 입력/새 자산</option></select></label>
           <label class="field"><span>자산명</span><input name="assetName" placeholder="예: SCHD, 441640 KODEX..." /></label>
           <label class="field"><span>종목코드 / 티커</span><input name="symbol" placeholder="예: SCHD / BTC / 441640" /></label>
