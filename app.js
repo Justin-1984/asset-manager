@@ -1,8 +1,8 @@
-const APP_VERSION = 'v6.9-market-stability';
+const APP_VERSION = 'v6.9.1-stable-recovery';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
+const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
 const MARKET_LOG_KEY = 'assetManagerPWA_v6_marketLog';
-const STORAGE_KEY = 'assetManagerPWA_v6';
 const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const MARKET_REFRESH_MINUTES = 15;
 const tabs = [['dashboard','대시보드'],['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
@@ -19,21 +19,13 @@ function safeSettings(){
   if(!Array.isArray(state.settings.hiddenTabs)) state.settings.hiddenTabs = [];
   const ids = tabs.map(t=>t[0]);
   state.settings.hiddenTabs = state.settings.hiddenTabs.filter(id=>ids.includes(id) && id !== 'settings');
-  const visible = ids.filter(id=>!state.settings.hiddenTabs.includes(id));
-  if(!visible.length || !visible.includes('settings')) state.settings.hiddenTabs = [];
+  if(!ids.some(id=>!state.settings.hiddenTabs.includes(id)) || state.settings.hiddenTabs.includes('settings')) state.settings.hiddenTabs = [];
   return state.settings;
 }
+function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.debts&&s.debts.length)||(s.insurance&&s.insurance.length)||(s.snapshots&&s.snapshots.length))); }
 function getPriceCache(){ try{return JSON.parse(localStorage.getItem(PRICE_CACHE_KEY)||'{}');}catch(e){return {};} }
-function setPriceCache(cache){ localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache||{})); }
-function marketLog(entry){
-  try{
-    const list = JSON.parse(localStorage.getItem(MARKET_LOG_KEY)||'[]');
-    list.unshift({time:new Date().toISOString(), ...entry});
-    localStorage.setItem(MARKET_LOG_KEY, JSON.stringify(list.slice(0,80)));
-  }catch(e){}
-}
-function getMarketLog(){ try{return JSON.parse(localStorage.getItem(MARKET_LOG_KEY)||'[]');}catch(e){return [];} }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function setPriceCache(cache){ try{localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache||{}));}catch(e){} }
+function marketLog(entry){ try{ const list=JSON.parse(localStorage.getItem(MARKET_LOG_KEY)||'[]'); list.unshift({time:new Date().toISOString(), ...entry}); localStorage.setItem(MARKET_LOG_KEY, JSON.stringify(list.slice(0,80))); }catch(e){} }
 function assetValue(a){ return num(a.value) || num(a.krwValue) || (num(a.amount)||1) * (num(a.price)||0) * fx(a.currency); }
 function debtValue(d){ return num(d.value) || num(d.krwValue) || num(d.balance) * fx(d.currency); }
 
@@ -110,7 +102,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-9-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-6-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -158,8 +150,23 @@ function findLegacyState(){
   }
   return null;
 }
+function latestBackupState(){
+  try{
+    const direct = JSON.parse(localStorage.getItem('assetManagerPWA_v6_lastGoodBackup')||'null');
+    if(direct && direct.data && hasMeaningfulData(direct.data)) return {state:normalizeState(direct.data,'lastGoodBackup'), key:'lastGoodBackup'};
+  }catch(e){}
+  try{
+    const list = JSON.parse(localStorage.getItem(BACKUP_HISTORY_KEY)||'[]');
+    const hit = list.find(b=>b && b.data && hasMeaningfulData(b.data));
+    if(hit) return {state:normalizeState(hit.data,'backupHistory'), key:'backupHistory'};
+  }catch(e){}
+  return null;
+}
 function loadState(){
   const found = findLegacyState();
+  if(found && hasMeaningfulData(found.state)){ return found.state; }
+  const backup = latestBackupState();
+  if(backup){ return backup.state; }
   if(found){ return found.state; }
   return normalizeState({}, 'empty');
 }
@@ -276,27 +283,21 @@ function setMarketStatus(message, ok=true){
   const mini=$('dashMarketStatus'); if(mini) mini.textContent = marketStatusText();
   save();
 }
-async function fetchJson(url, retries=1){
-  let lastErr;
-  for(let i=0;i<=retries;i++){
-    try{
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      return await res.json();
-    }catch(e){ lastErr=e; if(i<retries) await sleep(350*(i+1)); }
-  }
-  throw lastErr;
+async function fetchWithTimeout(url, options={}, timeout=8000){
+  const ctrl = new AbortController();
+  const id = setTimeout(()=>ctrl.abort(), timeout);
+  try{ return await fetch(url, {...options, cache:'no-store', signal:ctrl.signal}); }
+  finally{ clearTimeout(id); }
 }
-async function fetchText(url, retries=1){
-  let lastErr;
-  for(let i=0;i<=retries;i++){
-    try{
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      return await res.text();
-    }catch(e){ lastErr=e; if(i<retries) await sleep(350*(i+1)); }
-  }
-  throw lastErr;
+async function fetchJson(url, timeout=8000){
+  const res = await fetchWithTimeout(url, {}, timeout);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+async function fetchText(url, timeout=8000){
+  const res = await fetchWithTimeout(url, {}, timeout);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.text();
 }
 async function updateFxRates(){
   const needed = getNeededCurrencies();
@@ -338,41 +339,39 @@ async function fetchCryptoUsd(symbol){
   throw new Error('crypto price failed');
 }
 async function fetchStockUsd(symbol){
-  const raw = cleanSymbol(symbol);
-  const s = raw.toLowerCase();
+  const s = cleanSymbol(symbol).toLowerCase();
   if(!s) throw new Error('symbol');
-  const token = (state.settings?.finnhubToken || localStorage.getItem('assetManagerPWA_finnhubToken') || '').trim();
-  if(token){
-    try{
-      const j = await fetchJson(`https://finnhub.io/api/v1/quote?symbol=${raw}&token=${encodeURIComponent(token)}`, 1);
-      const price = Number(j.c || j.pc);
-      if(price>0){ marketLog({symbol:raw, source:'Finnhub', ok:true, price}); return price; }
-    }catch(e){ marketLog({symbol:raw, source:'Finnhub', ok:false, message:String(e.message||e)}); }
-  }
-  try{
-    const txt = await fetchText(`https://stooq.com/q/l/?s=${s}.us&f=sd2t2ohlcv&h&e=csv`, 1);
-    const line = txt.trim().split('\n')[1] || '';
-    const parts = line.split(',');
-    const close = Number(parts[6]);
-    if(close>0){ marketLog({symbol:raw, source:'Stooq', ok:true, price:close}); return close; }
-  }catch(e){ marketLog({symbol:raw, source:'Stooq', ok:false, message:String(e.message||e)}); }
-  throw new Error('stock price failed');
+  const url = `https://stooq.com/q/l/?s=${s}.us&f=sd2t2ohlcv&h&e=csv`;
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error('stock http');
+  const txt = await res.text();
+  const line = txt.trim().split('\n')[1] || '';
+  const parts = line.split(',');
+  const close = Number(parts[6]);
+  if(close>0) return close;
+  throw new Error('stock parse');
 }
 async function updateAssetMarketPrices(){
   let updated = 0, skipped = 0, failed = 0, cached = 0;
   const cache = getPriceCache();
   for(const a of state.assets){
     const type = String(a.type||'');
-    const symbol = cleanSymbol(a.name);
-    if(!symbol){ skipped++; continue; }
+    const symbol = cleanSymbol(a.name || a.symbol || a.ticker);
     try{
-      let usd = null;
-      if(type.includes('코인')) usd = await fetchCryptoUsd(a.name);
-      else if(type.includes('미국주식') || type.toUpperCase().includes('ETF') || type.includes('주식')) usd = await fetchStockUsd(a.name);
-      else { skipped++; continue; }
-      a.price = (a.currency||'USD').toUpperCase()==='KRW' ? usd * (state.fx.USD||state.fx.USDT||fxDefaults.USD) : usd;
-      cache[symbol] = {price:a.price, usd, at:new Date().toISOString(), currency:(a.currency||'USD').toUpperCase()};
-      updated++;
+      if(!symbol){ skipped++; continue; }
+      if(type.includes('코인')){
+        const usd = await fetchCryptoUsd(symbol);
+        a.price = (a.currency||'USDT').toUpperCase()==='KRW' ? usd * (state.fx.USDT||state.fx.USD||fxDefaults.USD) : usd;
+        cache[symbol] = {price:a.price, usd, at:new Date().toISOString(), currency:(a.currency||'USDT').toUpperCase()};
+        updated++;
+      } else if(type.includes('미국주식') || type.toUpperCase().includes('ETF') || type.includes('주식')){
+        const usd = await fetchStockUsd(symbol);
+        a.price = (a.currency||'USD').toUpperCase()==='KRW' ? usd * (state.fx.USD||fxDefaults.USD) : usd;
+        cache[symbol] = {price:a.price, usd, at:new Date().toISOString(), currency:(a.currency||'USD').toUpperCase()};
+        updated++;
+      } else {
+        skipped++;
+      }
     }catch(e){
       const old = cache[symbol];
       if(old && old.price>0){ a.price = old.price; cached++; marketLog({symbol, source:'cache', ok:true, message:'최근 성공 시세 유지'}); }
@@ -411,14 +410,9 @@ function startAutoMarketRefresh(){
 
 function initTabs(){
   safeSettings();
-  const visibleTabs = tabs.filter(t=>!state.settings.hiddenTabs.includes(t[0]));
-  const bar = $('tabBar');
-  if(!bar) return;
-  bar.innerHTML = visibleTabs.map(([id,label])=>`<button data-tab="${id}">${label}</button>`).join('');
+  $('tabBar').innerHTML = tabs.filter(t=>!state.settings.hiddenTabs.includes(t[0])).map(([id,label])=>`<button data-tab="${id}">${label}</button>`).join('');
   document.querySelectorAll('#tabBar button').forEach(btn=>btn.onclick=()=>showTab(btn.dataset.tab));
-  const activePanel = document.querySelector('.panel.active');
-  const activeId = activePanel && visibleTabs.some(t=>t[0]===activePanel.id) ? activePanel.id : visibleTabs[0]?.[0] || 'dashboard';
-  showTab(activeId);
+  document.querySelector('#tabBar button')?.classList.add('active');
 }
 function showTab(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id===id));
@@ -426,10 +420,10 @@ function showTab(id){
   if(id==='analysis') renderAnalysis();
   if(id==='dashboard') renderDashboard();
 }
-function render(){ safeSettings(); applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); renderMarketLog(); updateBackupStatus(); save(); }
+function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent='v6.9'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent='v6.6'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -541,19 +535,14 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-9-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-6-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
 function forceMigrate(){ const found=findLegacyState(); if(found){ createLocalVersionBackup('기존 데이터 복구 전 자동백업'); state=found.state; createLocalVersionBackup('기존 데이터 복구 완료'); render(); log(`기존 데이터 복구 완료: ${found.key}`); } else log('기존 데이터를 찾지 못했습니다. 백업 파일 복원을 사용하세요.'); }
 function resetDemo(){ state.assets = state.assets.filter(a=>!(a.name||'').startsWith('예시 ')); autoBackup('예시 데이터 제거'); render(); log('예시 데이터 제거 완료'); }
 function restoreMenus(){ safeSettings(); state.settings.hiddenTabs=[]; initTabs(); render(); log('메뉴 전체 복구 완료'); }
-function saveFinnhubToken(){ safeSettings(); const el=$('finnhubTokenInput'); if(!el) return; state.settings.finnhubToken = el.value.trim(); localStorage.setItem('assetManagerPWA_finnhubToken', state.settings.finnhubToken); save(); log(state.settings.finnhubToken ? 'Finnhub 토큰 저장 완료' : 'Finnhub 토큰 제거 완료'); }
-function renderMarketLog(){
-  const box=$('marketLogList'); if(!box) return;
-  const list=getMarketLog().slice(0,10);
-  box.innerHTML = list.length ? list.map(x=>`<div class="backup-item"><div><b>${escapeHtml(x.symbol||'-')} · ${escapeHtml(x.source||'-')} · ${x.ok?'성공':'실패'}</b><p>${new Date(x.time).toLocaleString()} ${x.price?`· ${x.price}`:''} ${x.message?`· ${escapeHtml(x.message)}`:''}</p></div></div>`).join('') : '<div class="empty">아직 시세 로그가 없습니다.</div>';
-}
+function recoverLastGoodBackup(){ const b=latestBackupState(); if(!b){ log('복구 가능한 백업 데이터를 찾지 못했습니다.'); return; } createLocalVersionBackup('최근 정상 백업 복구 전 자동백업'); state=b.state; createLocalVersionBackup('최근 정상 백업 복구 완료'); render(); log('최근 정상 데이터 복구 완료: '+b.key); }
 
 async function checkForUpdate(){
   log('업데이트 확인 중...');
@@ -620,8 +609,7 @@ window.addEventListener('load',()=>{
   safeBind('forceMigrateBtn', forceMigrate);
   safeBind('resetDemoBtn', resetDemo);
   safeBind('restoreMenusBtn', restoreMenus);
-  safeBind('saveFinnhubBtn', saveFinnhubToken);
-  const tokenEl=$('finnhubTokenInput'); if(tokenEl) tokenEl.value = state.settings?.finnhubToken || localStorage.getItem('assetManagerPWA_finnhubToken') || '';
+  safeBind('recoverLastGoodBtn', recoverLastGoodBackup);
   safeBind('themeToggleBtn', toggleTheme);
   startAutoMarketRefresh();
 

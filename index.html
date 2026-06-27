@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.9</title>
+  <title>자산 매니저 v6.6</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.9</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.6</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -91,7 +91,7 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.9 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.9.1 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
@@ -123,17 +123,6 @@
         </div>
         <div id="backupHistoryList" class="backup-history"></div>
       </div>
-
-      <div class="card backup-card">
-        <h3>시세 엔진 안정화</h3>
-        <p class="muted">Finnhub 토큰이 있으면 미국주식/ETF는 Finnhub를 우선 사용하고, 실패하면 보조 시세와 최근 성공 시세를 유지합니다.</p>
-        <label class="field wide"><span>Finnhub API Token 선택입력</span><input id="finnhubTokenInput" type="password" placeholder="토큰이 없으면 보조 시세만 사용" /></label>
-        <div class="button-grid">
-          <button id="saveFinnhubBtn" type="button">Finnhub 토큰 저장</button>
-          <button id="restoreMenusBtn" type="button">메뉴 전체 복구</button>
-        </div>
-        <div id="marketLogList" class="backup-history"></div>
-      </div>
       <div class="button-grid">
         <button id="backupBtn">백업 다운로드</button>
         <label class="file-btn">복원<input id="restoreInput" type="file" accept="application/json" hidden /></label>
@@ -141,6 +130,8 @@
         <button id="updateCheckBtn" class="primary" type="button">업데이트 확인</button>
         <button id="clearCacheBtn">캐시삭제</button>
         <button id="forceMigrateBtn">기존 데이터 다시 찾기</button>
+        <button id="recoverLastGoodBtn" class="primary" type="button">최근 정상백업 복구</button>
+        <button id="restoreMenusBtn" type="button">메뉴 전체 복구</button>
         <button id="resetDemoBtn">예시데이터 제거</button>
       </div>
       <pre id="logBox" class="log">상태 메시지가 여기에 표시됩니다.</pre>
