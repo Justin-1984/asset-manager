@@ -56,3 +56,11 @@ body.dark .backup-item button,body[data-theme="dark"] .backup-item button{backgr
 body.dark .head-actions button,body[data-theme="dark"] .head-actions button{background:#111827;color:#7dd3fc;border-color:var(--line)}
 body.dark .head-actions button.primary,body[data-theme="dark"] .head-actions button.primary{background:#f9fafb;color:#111827}
 @media(max-width:520px){.section-head{align-items:flex-start;gap:8px}.head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.market-card{display:block}.market-card p{text-align:left;margin-top:5px}}
+
+
+.avg-result{margin-top:14px}
+.avg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.avg-grid div{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--card-soft,rgba(148,163,184,.08))}
+.avg-grid span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.avg-grid strong{font-size:17px;word-break:break-all}
+@media(max-width:640px){.avg-grid{grid-template-columns:1fr}}

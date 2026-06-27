@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.9.9</title>
+  <title>자산 매니저 v6.10.0</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.9.9</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.10.0</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -99,6 +99,27 @@
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
       <div class="card"><h3>국가별 비중</h3><div id="countryBars"></div></div>
+    </section>
+
+
+    <section id="calculator" class="panel">
+      <div class="section-head"><h2>추가매수 평단 계산기</h2><button id="avgResetBtn" type="button">초기화</button></div>
+      <article class="card backup-card">
+        <p class="muted">기존 보유수량/평단과 추가매수 수량/단가를 입력하면 새 평단과 총 매입금액을 계산합니다. 결과는 자산 데이터에 자동 반영하지 않고 계산용으로만 사용합니다.</p>
+        <div class="form always">
+          <label class="field wide"><span>보유 자산 불러오기(선택)</span><select id="avgAssetSelect"><option value="">직접 입력</option></select></label>
+          <label class="field"><span>기존 보유수량</span><input id="avgCurrentQty" type="number" step="0.00000001" placeholder="예: 10" /></label>
+          <label class="field"><span>기존 평단</span><input id="avgCurrentPrice" type="number" step="0.0001" placeholder="예: 70000" /></label>
+          <label class="field"><span>추가매수 수량</span><input id="avgAddQty" type="number" step="0.00000001" placeholder="예: 5" /></label>
+          <label class="field"><span>추가매수 단가</span><input id="avgAddPrice" type="number" step="0.0001" placeholder="예: 65000" /></label>
+          <label class="field"><span>수수료/부대비용(선택)</span><input id="avgFee" type="number" step="0.01" placeholder="예: 1000" value="0" /></label>
+        </div>
+        <div class="button-grid">
+          <button id="avgCalcBtn" class="primary" type="button">평단 계산</button>
+          <button id="avgApplyMemoBtn" type="button">결과 복사</button>
+        </div>
+        <div id="avgResult" class="avg-result"></div>
+      </article>
     </section>
 
     <section id="settings" class="panel">

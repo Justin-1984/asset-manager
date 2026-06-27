@@ -1,11 +1,11 @@
-const APP_VERSION = 'v6.9.8-kr-etf-lookup-ui-fix';
+const APP_VERSION = 'v6.10.0-avg-buy-calculator';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
 const MARKET_LOG_KEY = 'assetManagerPWA_v6_marketLog';
 const LEGACY_KEYS = ['asset-manager-v4-5-1','asset-manager-v4-5','asset-manager-v4-4','asset-manager-v4','asset-manager-v3-9','assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const MARKET_REFRESH_MINUTES = 15;
-const tabs = [['dashboard','대시보드'],['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
+const tabs = [['dashboard','대시보드'],['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['calculator','계산기'],['settings','설정']];
 const fxDefaults = { KRW:1, USD:1380, USDT:1380, HKD:195, AUD:1080 };
 let state = loadState();
 (function applyLegacyPrefsOnce(){ const p=getLegacyPrefs(); if(p){ if(!state.settings) state.settings={}; if(!state.settings.marketWorkerUrl && p.marketWorkerUrl) state.settings.marketWorkerUrl=p.marketWorkerUrl; if(goodRate("USD",p.usdRate)) state.fx.USD=Number(p.usdRate); if(goodRate("USDT",p.usdtRate)) state.fx.USDT=Number(p.usdtRate); if(goodRate("HKD",p.hkdRate)) state.fx.HKD=Number(p.hkdRate); if(goodRate("AUD",p.audRate)) state.fx.AUD=Number(p.audRate); } })();
@@ -596,7 +596,7 @@ function showTab(id){
   if(id==='analysis') renderAnalysis();
   if(id==='dashboard') renderDashboard();
 }
-function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); save(); }
+function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderAverageAssetOptions(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
   $('versionBadge').textContent='v6.9.6'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
@@ -688,6 +688,66 @@ function renderAnalysis(){
 function renderBars(id,obj){
   const entries=Object.entries(obj).sort((x,y)=>y[1]-x[1]);
   $(id).innerHTML = entries.length ? entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div><i style="width:${Math.min(100,v)}%"></i></div><b>${v.toFixed(1)}%</b></div>`).join('') : '<div class="empty">분석할 데이터가 없습니다.</div>';
+}
+
+
+function renderAverageAssetOptions(){
+  const sel=$('avgAssetSelect');
+  if(!sel) return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">직접 입력</option>' + state.assets.map(a=>`<option value="${a.id}">${escapeHtml(displayAssetName(a))} · ${escapeHtml(a.currency||'KRW')}</option>`).join('');
+  if(current && state.assets.some(a=>a.id===current)) sel.value=current;
+}
+function loadAverageAsset(){
+  const sel=$('avgAssetSelect'); if(!sel || !sel.value) return;
+  const a=state.assets.find(x=>x.id===sel.value); if(!a) return;
+  const qty=Number(a.amount||0);
+  const cost=Number(a.cost||0);
+  const avg = qty>0 && cost>0 ? cost/qty : Number(a.price||0);
+  if($('avgCurrentQty')) $('avgCurrentQty').value = qty || '';
+  if($('avgCurrentPrice')) $('avgCurrentPrice').value = avg ? String(Math.round(avg*10000)/10000) : '';
+  if($('avgResult')) $('avgResult').innerHTML = `<div class="empty">${escapeHtml(displayAssetName(a))} 기준으로 기존 수량/평단을 불러왔습니다.</div>`;
+}
+function calculateAverageBuy(){
+  const curQty=Number($('avgCurrentQty')?.value||0);
+  const curPrice=Number($('avgCurrentPrice')?.value||0);
+  const addQty=Number($('avgAddQty')?.value||0);
+  const addPrice=Number($('avgAddPrice')?.value||0);
+  const fee=Number($('avgFee')?.value||0);
+  const box=$('avgResult');
+  if(!box) return;
+  if(curQty<0 || addQty<0 || curPrice<0 || addPrice<0 || fee<0 || (curQty+addQty)<=0){
+    box.innerHTML='<div class="empty">수량과 단가를 확인해 주세요.</div>'; return;
+  }
+  const oldCost=curQty*curPrice;
+  const addCost=addQty*addPrice + fee;
+  const totalQty=curQty+addQty;
+  const totalCost=oldCost+addCost;
+  const newAvg=totalCost/totalQty;
+  const beforeAvg=curQty>0?curPrice:0;
+  const diff=beforeAvg>0?newAvg-beforeAvg:0;
+  const diffPct=beforeAvg>0?(diff/beforeAvg*100):0;
+  const rows=[
+    ['기존 매입금액', money(oldCost)],
+    ['추가 매입금액', money(addCost)],
+    ['총 보유수량', totalQty.toLocaleString('ko-KR',{maximumFractionDigits:8})],
+    ['새 총 매입금액', money(totalCost)],
+    ['새 평단', newAvg.toLocaleString('ko-KR',{maximumFractionDigits:4})],
+    ['평단 변화', beforeAvg>0 ? `${diff>=0?'+':''}${diff.toLocaleString('ko-KR',{maximumFractionDigits:4})} (${diffPct>=0?'+':''}${diffPct.toFixed(2)}%)` : '-']
+  ];
+  box.dataset.copy = `새 평단: ${newAvg}\n총 보유수량: ${totalQty}\n총 매입금액: ${totalCost}`;
+  box.innerHTML = '<div class="avg-grid">' + rows.map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('') + '</div>';
+}
+function resetAverageCalculator(){
+  ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee'].forEach(id=>{ const el=$(id); if(el) el.value = id==='avgFee' ? '0' : ''; });
+  const sel=$('avgAssetSelect'); if(sel) sel.value='';
+  const box=$('avgResult'); if(box) box.innerHTML='';
+}
+async function copyAverageResult(){
+  const box=$('avgResult'); const txt=box?.dataset?.copy;
+  if(!txt){ log('복사할 계산 결과가 없습니다.'); return; }
+  try{ await navigator.clipboard.writeText(txt); log('평단 계산 결과 복사 완료'); }
+  catch(e){ log('복사 실패. 결과를 직접 선택해서 복사하세요.'); }
 }
 
 function applyTheme(){
@@ -843,6 +903,11 @@ window.addEventListener('load',()=>{
   safeBind('themeToggleBtn', toggleTheme);
   safeBind('saveMarketSettingsBtn', saveMarketSettings);
   safeBind('testMarketWorkerBtn', testMarketWorker);
+  safeBind('avgCalcBtn', calculateAverageBuy);
+  safeBind('avgResetBtn', resetAverageCalculator);
+  safeBind('avgApplyMemoBtn', copyAverageResult);
+  const avgSel=$('avgAssetSelect'); if(avgSel) avgSel.addEventListener('change', loadAverageAsset);
+  ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', calculateAverageBuy); });
   startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));
