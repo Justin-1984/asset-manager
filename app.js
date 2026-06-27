@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.2-field-labels';
+const APP_VERSION = 'v6.2-field-labels-darkmode-fix';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const tabs = [['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
@@ -25,7 +25,7 @@ function normalizeState(raw, source='unknown'){
     debts: normalizeArray(old.debts || old.debtList).map(d=>({id:d.id||uid(), name:d.name||d.title||'부채', type:d.type||'일반 부채', currency:(d.currency||'KRW').toUpperCase(), balance:d.balance??d.amount??d.value??0, rate:d.rate||0, monthly:d.monthly||0, value:d.value, krwValue:d.krwValue})),
     insurance: normalizeArray(old.insurance || old.insurances || old.policies).map(i=>({id:i.id||uid(), company:i.company||i.insurer||'', product:i.product||i.name||'', type:i.type||'', premium:i.premium||0, payday:i.payday||'', refund:i.refund||0, includeRefund:!!i.includeRefund, memo:i.memo||''})),
     snapshots: normalizeArray(old.snapshots),
-    settings: { hiddenTabs: [], ...(old.settings||{}) }
+    settings: { hiddenTabs: [], theme: 'light', ...(old.settings||{}) }
   };
 }
 function looksLikeAssetData(obj){ return obj && typeof obj==='object' && (Array.isArray(obj.assets)||Array.isArray(obj.assetList)||Array.isArray(obj.debts)||Array.isArray(obj.insurance)||Array.isArray(obj.insurances)); }
@@ -96,7 +96,7 @@ function showTab(id){
   document.querySelectorAll('#tabBar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
   if(id==='analysis') renderAnalysis();
 }
-function render(){ renderSummary(); renderLists(); renderAnalysis(); save(); }
+function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
   $('versionBadge').textContent='v6.2'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
@@ -180,6 +180,22 @@ function renderBars(id,obj){
   const entries=Object.entries(obj).sort((x,y)=>y[1]-x[1]);
   $(id).innerHTML = entries.length ? entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div><i style="width:${Math.min(100,v)}%"></i></div><b>${v.toFixed(1)}%</b></div>`).join('') : '<div class="empty">분석할 데이터가 없습니다.</div>';
 }
+
+function applyTheme(){
+  const theme = state.settings?.theme || 'light';
+  document.body.classList.toggle('dark', theme === 'dark');
+  const btn = $('themeToggleBtn');
+  if(btn) btn.textContent = theme === 'dark' ? '라이트모드' : '다크모드';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', theme === 'dark' ? '#0b1220' : '#111827');
+}
+function toggleTheme(){
+  state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  save();
+  log(state.settings.theme === 'dark' ? '다크모드 적용 완료' : '라이트모드 적용 완료');
+}
+
 function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
   assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('assets', f); render(); };
@@ -195,7 +211,7 @@ function resetDemo(){ state.assets = state.assets.filter(a=>!(a.name||'').starts
 
 window.addEventListener('load',()=>{
   initTabs(); bindForms(); render(); log(`로드 완료 · 데이터 출처: ${state.migratedFrom || 'unknown'}`);
-  snapshotBtn.onclick=takeSnapshot; refreshAnalysis.onclick=renderAnalysis; backupBtn.onclick=backup; restoreInput.onchange=e=>e.target.files[0]&&restore(e.target.files[0]); syncCheckBtn.onclick=()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'); clearCacheBtn.onclick=async()=>{ if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.'); }; forceMigrateBtn.onclick=forceMigrate; resetDemoBtn.onclick=resetDemo;
+  snapshotBtn.onclick=takeSnapshot; refreshAnalysis.onclick=renderAnalysis; backupBtn.onclick=backup; restoreInput.onchange=e=>e.target.files[0]&&restore(e.target.files[0]); syncCheckBtn.onclick=()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'); clearCacheBtn.onclick=async()=>{ if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.'); }; forceMigrateBtn.onclick=forceMigrate; resetDemoBtn.onclick=resetDemo; if($('themeToggleBtn')) themeToggleBtn.onclick=toggleTheme;
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.onclick=()=>resetEdit(btn.dataset.cancel));
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 });

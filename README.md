@@ -1,6 +1,9 @@
-# Asset Manager PWA v6.2 Field Labels Update
+# Asset Manager PWA v6.2 Dark Mode Fix
 
 ## 변경 내용
+- 설정 탭 다크모드/라이트모드 전환 복구
+- 선택한 화면 모드 LocalStorage 저장
+- 다크모드 카드/입력칸/버튼/로그 색상 보정
 - 자산 입력칸에 작은 이름표 추가
 - 부채 입력칸에 작은 이름표 추가
 - 보험 입력칸에 작은 이름표 추가
