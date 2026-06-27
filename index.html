@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.6</title>
+  <title>자산 매니저 v6.8</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.6</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.8</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -45,7 +45,8 @@
     <section id="assets" class="panel">
       <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
       <form id="assetForm" class="form hidden">
-        <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금" required /></label>
+        <label class="field"><span>자산명</span><input name="name" placeholder="예: SCHD 배당 ETF, BTC, 현금" required /></label>
+        <label class="field"><span>티커 / 심볼</span><input name="ticker" placeholder="예: SCHD, BTC, 005930" /></label>
         <label class="field"><span>자산 종류</span><select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select></label>
         <label class="field"><span>국가 / 거래소 / 계좌</span><input name="country" placeholder="예: 한국, 미국, OKX" /></label>
         <label class="field"><span>통화</span><input name="currency" placeholder="KRW / USD / HKD / AUD / USDT" value="KRW" /></label>
@@ -91,7 +92,7 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.6 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.8 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
@@ -107,6 +108,12 @@
       <div class="backup-status-card" id="marketStatusCard">
         <div class="backup-dot ok"></div>
         <div><strong>자동 시세/환율 갱신</strong><p id="marketStatusText">앱 실행 시 자동 갱신하고, 실행 중에는 15분마다 갱신합니다.</p></div>
+      </div>
+      <div class="card backup-card">
+        <h3>Finnhub 미국주식/ETF 시세</h3>
+        <p class="muted">SCHD, JEPI, JEPQ, VOO, SPY 같은 미국주식/ETF는 Finnhub를 우선 사용합니다. API Key가 없거나 실패하면 보조 시세로만 조회합니다.</p>
+        <label class="field wide"><span>Finnhub API Key</span><input id="finnhubKeyInput" type="password" placeholder="Finnhub API Key 입력" autocomplete="off" /></label>
+        <button id="saveFinnhubKeyBtn" class="primary" type="button">Finnhub Key 저장</button>
       </div>
       <div class="backup-status-card" id="backupStatusCard">
         <div class="backup-dot" id="backupDot"></div>

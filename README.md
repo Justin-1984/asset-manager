@@ -1,4 +1,4 @@
-# 자산 매니저 PWA v6.6
+# 자산 매니저 PWA v6.8
 
 ## 변경 내용
 
@@ -28,4 +28,20 @@
 
 PWA 특성상 앱이 완전히 꺼져 있을 때 백그라운드에서 계속 갱신하지는 않습니다. 대신 앱을 열면 자동으로 환율과 보유 자산 시세를 갱신하고, 앱이 열린 상태에서는 15분마다 다시 갱신합니다.
 
-코인은 Binance → OKX → Bybit → CoinGecko 순서로 조회를 시도합니다. 미국 주식/ETF는 Stooq 공개 시세를 우선 사용합니다. API가 실패하면 기존 수동 입력 가격을 유지합니다.
+코인은 Binance → OKX → Bybit → CoinGecko 순서로 조회를 시도합니다. 미국 주식/ETF는 Finnhub API를 우선 사용합니다. Finnhub Key가 없거나 실패하면 Stooq/Yahoo 보조 시세를 사용하고, 모두 실패하면 기존 수동 입력 가격을 유지합니다.
+
+
+## v6.7
+- SCHD 등 미국 ETF/주식 시세 갱신 보강
+- 자산 입력에 티커/심볼 필드 추가
+- Stooq 실패 시 Yahoo Chart fallback 추가
+- 시세 갱신 실패 항목 로그 표시
+
+
+## v6.8
+- 미국주식/미국 ETF 시세 조회를 Finnhub 우선으로 복구
+- 설정 탭에 Finnhub API Key 저장 기능 추가
+- 자산의 티커/심볼 값을 저장·복원하도록 보강
+- SCHD 등 ETF 조회 시 티커 우선, 티커가 없으면 자산명 사용
+- Finnhub 성공/실패 로그 표시
+- Finnhub 실패 시에만 Stooq/Yahoo 보조 조회
