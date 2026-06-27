@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.10.2</title>
+  <title>자산 매니저 v6.10.3</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.10.2</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.10.3</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -54,7 +54,8 @@
         <label class="field"><span>현재 단가</span><input name="price" type="number" step="0.01" placeholder="현재 단가" required /></label>
         <div class="button-grid wide"><button id="lookupKrEtfBtn" type="button">한국 ETF 이름/시세 조회</button></div>
         <p id="krEtfLookupStatus" class="muted wide">한국 ETF는 6자리 코드만 입력해도 이름과 현재가를 조회합니다.</p>
-        <label class="field"><span>매입 원금(KRW)</span><input name="cost" type="number" step="0.01" placeholder="원화 총 매입원금" /></label>
+        <label class="field"><span>매입 원금</span><input name="cost" type="number" step="0.01" placeholder="총 매입원금" /></label>
+        <label class="field"><span>매입 원금 통화</span><select name="costCurrency"><option>KRW</option><option>USD</option><option>USDT</option><option>HKD</option><option>AUD</option></select></label>
         <button class="primary" type="submit" data-save>저장</button>
         <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>

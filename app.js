@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.10.2-fx-hidden-avg-currency-fix';
+const APP_VERSION = 'v6.10.3-cost-currency-fix';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
@@ -141,7 +141,7 @@ function normalizeState(raw, source='unknown'){
     version: APP_VERSION,
     migratedFrom: source,
     fx: {...fxDefaults, ...(old.fx||old.exchangeRates||{})},
-    assets: normalizeArray(old.assets || old.assetList).map(a=>({id:a.id||uid(), name:a.name||a.title||'이름없음', symbol:a.symbol||a.ticker||a.code||'', type:a.type||a.category||'자산', country:a.country||a.account||'', account:a.account||'', currency:(a.currency||'KRW').toUpperCase(), amount:a.amount??a.quantity??a.qty??1, price:a.price??a.currentPrice??0, cost:a.cost??a.costPrice??a.principal??0, value:a.value, krwValue:a.krwValue, priceSource:a.priceSource||'', priceUpdatedAt:a.priceUpdatedAt||''})),
+    assets: normalizeArray(old.assets || old.assetList).map(a=>({id:a.id||uid(), name:a.name||a.title||'이름없음', symbol:a.symbol||a.ticker||a.code||'', type:a.type||a.category||'자산', country:a.country||a.account||'', account:a.account||'', currency:(a.currency||'KRW').toUpperCase(), amount:a.amount??a.quantity??a.qty??1, price:a.price??a.currentPrice??0, cost:a.cost??a.costPrice??a.principal??0, costCurrency:(a.costCurrency||a.costCur||a.purchaseCurrency||'KRW').toUpperCase(), value:a.value, krwValue:a.krwValue, priceSource:a.priceSource||'', priceUpdatedAt:a.priceUpdatedAt||''})),
     debts: normalizeArray(old.debts || old.debtList).map(d=>({id:d.id||uid(), name:d.name||d.title||'부채', type:d.type||'일반 부채', currency:(d.currency||'KRW').toUpperCase(), balance:d.balance??d.amount??d.value??0, rate:d.rate||0, monthly:d.monthly||0, value:d.value, krwValue:d.krwValue})),
     insurance: normalizeArray(old.insurance || old.insurances || old.policies).map(i=>({id:i.id||uid(), company:i.company||i.insurer||'', product:i.product||i.name||'', type:i.type||'', premium:i.premium||0, payday:i.payday||'', refund:i.refund||0, includeRefund:!!i.includeRefund, memo:i.memo||''})),
     snapshots: normalizeArray(old.snapshots),
@@ -232,9 +232,11 @@ function changeSince(days){
   return t.net - num(base.net);
 }
 function assetCostKrw(a){
-  // v6.9.6 기준: 입력칸의 '매입 원금'은 원화 총매입원금으로 고정합니다.
-  // 현재환율은 현재평가액에만 반영하고, 매입원금은 환율 갱신 때 바뀌지 않게 합니다.
-  return num(a.cost);
+  // v6.10.3: 매입 원금도 통화를 선택할 수 있습니다.
+  // KRW면 그대로, USD/HKD/AUD/USDT면 현재 환율로 원화 환산합니다.
+  const cost = num(a.cost);
+  const cur = (a.costCurrency || 'KRW').toUpperCase();
+  return cost * fx(cur);
 }
 function investmentProfit(){
   const cost = state.assets.reduce((sum,a)=>sum+assetCostKrw(a),0);
@@ -599,7 +601,7 @@ function showTab(id){
 function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderAverageAssetOptions(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent=APP_VERSION.replace('-update-system-fix','').replace('-fx-hidden-avg-currency-fix',''); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent=APP_VERSION.replace('-update-system-fix','').replace('-fx-hidden-avg-currency-fix','').replace('-cost-currency-fix',''); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -721,11 +723,16 @@ function loadAverageAsset(){
   if($('avgCurrency')) $('avgCurrency').value = ['KRW','USD','USDT','HKD','AUD'].includes(cur) ? cur : 'KRW';
   syncAvgFxRate();
   const rate=getAvgFxRate();
-  const costKrw=Number(a.cost||0);
-  const avg = qty>0 && costKrw>0 ? (cur==='KRW' ? costKrw/qty : costKrw/qty/rate) : Number(a.price||0);
+  const cost=Number(a.cost||0);
+  const costCur=(a.costCurrency||'KRW').toUpperCase();
+  let avg = Number(a.price||0);
+  if(qty>0 && cost>0){
+    if(costCur===cur) avg = cost/qty;
+    else avg = assetCostKrw(a) / qty / rate;
+  }
   if($('avgCurrentQty')) $('avgCurrentQty').value = qty || '';
   if($('avgCurrentPrice')) $('avgCurrentPrice').value = avg ? String(Math.round(avg*10000)/10000) : '';
-  if($('avgResult')) $('avgResult').innerHTML = `<div class="empty">${escapeHtml(displayAssetName(a))} 기준으로 ${cur} 평단을 불러왔습니다. 외화 평단은 현재 환율 기준 KRW 매입원금을 역산한 값입니다.</div>`;
+  if($('avgResult')) $('avgResult').innerHTML = `<div class="empty">${escapeHtml(displayAssetName(a))} 기준으로 ${cur} 평단을 불러왔습니다. 매입원금 통화(${costCur})를 반영했습니다.</div>`;
 }
 function calculateAverageBuy(){
   syncAvgFxRate();
@@ -839,12 +846,14 @@ function bindForms(){
     e.preventDefault();
     const f=Object.fromEntries(new FormData(assetForm));
     f.currency=(f.currency||'KRW').toUpperCase();
+    f.costCurrency=(f.costCurrency||'KRW').toUpperCase();
     if(String(f.type||'').includes('한국 ETF')){
       const code=extractKoreanCode(f.symbol, f.name);
       if(code){
         const nm=krEtfKnownName(code);
         f.symbol=code;
         f.currency='KRW';
+        f.costCurrency = f.costCurrency || 'KRW';
         if(nm && !String(f.name||'').includes(nm)) f.name=`${code} ${nm}`;
       }
     }
