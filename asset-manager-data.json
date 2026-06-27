@@ -1,38 +1,45 @@
 {
   "state": {
-    "version": "4.8",
+    "version": "5.3",
     "assets": [],
     "debts": [],
     "snapshots": [],
     "exchanges": [],
     "insurances": [],
-    "updatedAt": "2026-06-22T22:26:25.869Z",
+    "updatedAt": "2026-06-27T05:08:14.237Z",
     "monthlySnapshots": [],
     "dailySnapshots": []
   },
   "prefs": {
-    "usdRate": 1531,
-    "usdtRate": 1531,
-    "hkdRate": 195.34,
-    "audRate": 1073.91,
+    "usdRate": 1536.01,
+    "usdtRate": 1536.01,
+    "hkdRate": 195.87,
+    "audRate": 1059.6,
     "goalAmount": 300000000000,
-    "fxUpdatedAt": "2026. 6. 23. 오전 7:29:42",
-    "fxAutoStatus": "수동 환율 저장 완료",
+    "fxUpdatedAt": "2026. 6. 27. 오후 2:08:14",
+    "fxAutoStatus": "자동 환율 조회 완료 · ExchangeRate API",
     "marketWorkerUrl": "https://asset-manager-market-worker.questionbox00.workers.dev",
     "autoGithubBackup": true,
     "autoGithubSync": true,
     "lastBackupAt": "2026-06-22T22:28:47.348Z",
     "backupLogs": [
       {
+        "type": "복원",
+        "msg": "성공",
+        "time": "2026-06-22T22:32:57.149Z",
+        "display": "2026. 6. 23. 오전 7:32:57"
+      },
+      {
         "type": "자동백업",
         "msg": "성공",
         "time": "2026-06-22T22:28:47.349Z",
         "display": "2026. 6. 23. 오전 7:28:47"
       }
-    ]
+    ],
+    "lastRestoreAt": "2026-06-22T22:32:57.149Z"
   },
-  "backupAt": "2026-06-22T22:29:46.257Z",
-  "updatedAt": "2026-06-22T22:26:25.869Z",
-  "backupMode": "auto",
+  "backupAt": "2026-06-27T06:17:48.876Z",
+  "updatedAt": "2026-06-27T05:08:14.237Z",
+  "backupMode": "manual",
   "device": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
 }
