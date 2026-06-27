@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.10.0-avg-buy-calculator';
+const APP_VERSION = 'v6.10.1-update-system-fix';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
@@ -599,7 +599,7 @@ function showTab(id){
 function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderAverageAssetOptions(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent='v6.9.6'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent=APP_VERSION.replace('-update-system-fix',''); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -833,33 +833,68 @@ function resetDemo(){ state.assets = state.assets.filter(a=>!(a.name||'').starts
 function restoreMenus(){ safeSettings(); state.settings.hiddenTabs=[]; initTabs(); render(); log('메뉴 전체 복구 완료'); }
 function recoverLastGoodBackup(){ const b=latestBackupState(); if(!b){ log('복구 가능한 백업 데이터를 찾지 못했습니다.'); return; } createLocalVersionBackup('최근 정상 백업 복구 전 자동백업'); state=b.state; createLocalVersionBackup('최근 정상 백업 복구 완료'); render(); log('최근 정상 데이터 복구 완료: '+b.key); }
 
+async function purgeAppCaches(){
+  if('caches' in window){
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k=>caches.delete(k)));
+  }
+}
+
 async function checkForUpdate(){
-  log('업데이트 확인 중...');
+  log('업데이트 확인 중... 캐시와 Service Worker를 갱신합니다.');
   try{
+    await purgeAppCaches();
+
     if('serviceWorker' in navigator){
       const reg = await navigator.serviceWorker.getRegistration();
       if(reg){
         await reg.update();
-        const waiting = reg.waiting || reg.installing;
-        if(waiting){
-          waiting.postMessage({type:'SKIP_WAITING'});
-          log('새 업데이트 발견. 앱을 새로고침합니다.');
-          setTimeout(()=>location.reload(), 700);
+        const sw = reg.waiting || reg.installing;
+        if(sw){
+          sw.postMessage({type:'SKIP_WAITING'});
+          log('새 Service Worker 적용 중입니다. 잠시 후 새로고침합니다.');
+          setTimeout(()=>location.reload(), 900);
           return;
         }
       }
     }
-    if('caches' in window){
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k=>caches.delete(k)));
-    }
-    await fetch(`./index.html?update=${Date.now()}`, {cache:'reload'});
-    await fetch(`./app.js?update=${Date.now()}`, {cache:'reload'});
-    await fetch(`./styles.css?update=${Date.now()}`, {cache:'reload'});
-    log('업데이트 확인 완료. 최신 파일을 다시 불러옵니다.');
-    setTimeout(()=>location.reload(), 700);
+
+    // GitHub Pages / 브라우저 캐시를 우회해서 핵심 파일을 다시 요청합니다.
+    await Promise.all([
+      fetch(`./index.html?update=${Date.now()}`, {cache:'reload'}),
+      fetch(`./app.js?update=${Date.now()}`, {cache:'reload'}),
+      fetch(`./styles.css?update=${Date.now()}`, {cache:'reload'}),
+      fetch(`./sw.js?update=${Date.now()}`, {cache:'reload'})
+    ]);
+
+    log('업데이트 확인 완료. 최신 파일로 다시 시작합니다.');
+    setTimeout(()=>location.reload(), 800);
   }catch(e){
+    console.warn(e);
     log('업데이트 확인 실패. 인터넷 연결 또는 GitHub Pages 배포 상태를 확인하세요.');
+  }
+}
+
+async function registerServiceWorker(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    let reloadedByControllerChange = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(reloadedByControllerChange) return;
+      reloadedByControllerChange = true;
+      log('새 앱 버전이 적용되어 화면을 새로고침합니다.');
+      setTimeout(()=>location.reload(), 500);
+    });
+
+    const reg = await navigator.serviceWorker.register(`sw.js?v=${encodeURIComponent(APP_VERSION)}`);
+    await reg.update();
+    if(reg.waiting){
+      reg.waiting.postMessage({type:'SKIP_WAITING'});
+    }
+    log('업데이트 시스템 준비 완료 · '+APP_VERSION);
+  }catch(e){
+    console.warn(e);
+    log('Service Worker 등록 실패 · 일반 웹 모드로 실행합니다.');
   }
 }
 
@@ -890,11 +925,9 @@ window.addEventListener('load',()=>{
   safeBind('syncCheckBtn', ()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'));
   safeBind('updateCheckBtn', checkForUpdate);
   safeBind('clearCacheBtn', async()=>{
-    if('caches' in window){
-      const ks=await caches.keys();
-      await Promise.all(ks.map(k=>caches.delete(k)));
-    }
-    log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.');
+    await purgeAppCaches();
+    log('캐시 삭제 완료. 최신 파일 확인을 위해 새로고침합니다.');
+    setTimeout(()=>location.reload(), 600);
   });
   safeBind('forceMigrateBtn', forceMigrate);
   safeBind('resetDemoBtn', resetDemo);
@@ -911,5 +944,5 @@ window.addEventListener('load',()=>{
   startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  registerServiceWorker();
 });
