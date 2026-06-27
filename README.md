@@ -1,7 +1,3 @@
-# Asset Manager PWA v6.9.7
+# AssetManager PWA v6.9.9
 
-- v6.9.6 기준 패치
-- 한국 ETF 6자리 코드 입력 시 종목명/현재가 조회 버튼 추가
-- 한국 ETF 저장 시 코드/이름 자동 정리
-- 환율 입력 방식 안내 보강
-- SCHD/Worker 및 기존 코인 로직 유지
+한국 ETF Worker 우선 복원, 종목명 자산목록 반영, 비정상 한국 ETF 가격 덮어쓰기 차단 패치.

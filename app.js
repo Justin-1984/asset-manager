@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.9.7-kr-etf-name-fx-guide';
+const APP_VERSION = 'v6.9.8-kr-etf-lookup-ui-fix';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
@@ -270,7 +270,7 @@ function renderDashboard(){
   $('dashDonut').style.background = parts.length ? `conic-gradient(${parts.join(',')})` : 'var(--line)';
   $('dashLegend').innerHTML = entries.length ? entries.map(([k,v],idx)=>`<span><i style="background:hsl(${(idx*58)%360} 70% 55%)"></i>${escapeHtml(k)} ${v.toFixed(1)}%</span>`).join('') : '<span>분석할 자산이 없습니다.</span>';
   const top=[...state.assets].map(x=>({...x,_v:assetValue(x)})).sort((x,y)=>y._v-x._v).slice(0,5);
-  $('dashTopAssets').innerHTML = top.length ? top.map((x,i)=>`<div><b>${i+1}. ${escapeHtml(x.name)}</b><span>${escapeHtml(x.type)} · ${money(x._v)}</span></div>`).join('') : '<div class="empty">자산을 등록하면 TOP 5가 표시됩니다.</div>';
+  $('dashTopAssets').innerHTML = top.length ? top.map((x,i)=>`<div><b>${i+1}. ${escapeHtml(displayAssetName(x))}</b><span>${escapeHtml(x.type)} · ${money(x._v)}</span></div>`).join('') : '<div class="empty">자산을 등록하면 TOP 5가 표시됩니다.</div>';
   $('dashChanges').innerHTML = [
     ['이번 주', week], ['이번 달', month], ['올해', year]
   ].map(([label,val])=>`<p><b>${label}</b><span>${val===null?'스냅샷 없음':money(val)}</span></p>`).join('');
@@ -357,6 +357,13 @@ function cleanSymbol(name){
   return String(name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$|USD$|KRW$/,'');
 }
 const cryptoNameMap = {BTC:'bitcoin',ETH:'ethereum',XRP:'ripple',SOL:'solana',AVAX:'avalanche-2',LINK:'chainlink',BNB:'binancecoin',DOGE:'dogecoin',ADA:'cardano',TRX:'tron',DOT:'polkadot'};
+const KR_ETF_NAMES = {
+  '069500':'KODEX 200','102110':'TIGER 200','278530':'KODEX 200TR','360750':'TIGER 미국S&P500','379800':'KODEX 미국S&P500TR','379810':'KODEX 미국나스닥100TR','133690':'TIGER 미국나스닥100','381180':'TIGER 미국필라델피아반도체나스닥','453850':'ACE 미국30년국채액티브(H)','441640':'KODEX 미국배당커버드콜액티브','458730':'TIGER 미국배당다우존스','489250':'KODEX 미국배당다우존스','476800':'KODEX 한국부동산리츠인프라','329200':'TIGER 리츠부동산인프라','114800':'KODEX 인버스','252670':'KODEX 200선물인버스2X','122630':'KODEX 레버리지','305720':'KODEX 2차전지산업','364980':'TIGER 2차전지TOP10','371460':'TIGER 차이나전기차SOLACTIVE'
+};
+function krEtfKnownName(code){ return KR_ETF_NAMES[String(code||'').trim()] || ''; }
+function validKrwMarketPrice(v){ v=Number(v); return v>=100 && v<=1000000; }
+function parseKoreanPrice(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')); }
+
 async function fetchCryptoUsd(symbol){
   const s = cleanSymbol(symbol);
   if(!s) throw new Error('symbol');
@@ -422,27 +429,64 @@ function cleanKoreanNameFromTitle(title, code){
   t = t.replace(new RegExp('^'+code+'\\s*'), '').trim();
   return t;
 }
+async function fetchNaverRealtimeKoreanPrice(code){
+  const url=`https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:${code}`;
+  const j=await fetchJson(url, 9000);
+  const item=j.result?.areas?.[0]?.datas?.[0];
+  const price=parseKoreanPrice(item?.nv || item?.closePrice || item?.cv);
+  if(validKrwMarketPrice(price)) return price;
+  throw new Error('Naver Realtime 가격 파싱 실패');
+}
+async function fetchNaverJinaKoreanPrice(code){
+  const txt=await fetchText(`https://r.jina.ai/http://finance.naver.com/item/main.naver?code=${code}`, 12000);
+  const clean=txt.replace(/\s+/g,' ');
+  const candidates=[/현재가\s*([0-9,]{3,})/, /종가\s*([0-9,]{3,})/, /([0-9]{1,3}(?:,[0-9]{3})+)\s*원/];
+  for(const rgx of candidates){
+    const m=clean.match(rgx);
+    if(m){ const p=parseKoreanPrice(m[1]); if(validKrwMarketPrice(p)) return p; }
+  }
+  throw new Error('Naver/Jina 가격 파싱 실패');
+}
 async function fetchKoreanEtfInfo(...texts){
   const code = extractKoreanCode(...texts);
   if(!code) throw new Error('한국 ETF는 6자리 종목코드가 필요합니다. 예: 069500');
-  const errors=[]; let price=0, name='', source='';
-  // 1순위: Naver. 현재가와 종목명을 함께 얻기 위해 우선 사용합니다.
+  const errors=[];
+  let name = krEtfKnownName(code) || code;
+
+  // v6.9.9: v4.5.1에서 성공했던 구조로 복원. 한국 ETF도 Worker를 1순위로 사용합니다.
   try{
-    const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://finance.naver.com/item/main.naver?code='+code);
-    const html = await fetchText(url, 10000);
-    const pm = html.match(/no_today[\s\S]*?<span class="blind">([0-9,]+)<\/span>/);
-    price = pm ? Number(pm[1].replace(/,/g,'')) : 0;
-    const hm = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
-    const tm = html.match(/<title>([\s\S]*?)<\/title>/i);
-    name = cleanKoreanNameFromTitle((hm?hm[1]:tm?tm[1]:'').replace(/<[^>]*>/g,''), code);
-    if(price>0) { source='Naver'; return {code, name, price, source}; }
-  }catch(e){ errors.push('Naver:'+e.message); }
-  // 2순위: Yahoo Finance KRX 심볼. 이름은 못 얻더라도 현재가 백업으로 사용합니다.
+    const w = await fetchMarketWorkerPrice(code);
+    if(validKrwMarketPrice(w.price)){
+      return {code, name, price:Number(w.price), source:w.source || 'Market Worker', currency:w.currency || 'KRW'};
+    }
+    errors.push('Worker:비정상 가격 '+w.price);
+  }catch(e){ errors.push('Worker:'+e.message); }
+
+  // 2순위: v4.5.1의 네이버 실시간 API. 현재가(nv)만 허용합니다.
+  try{
+    const p = await fetchNaverRealtimeKoreanPrice(code);
+    return {code, name, price:p, source:'Naver Realtime', currency:'KRW'};
+  }catch(e){ errors.push('NaverRealtime:'+e.message); }
+
+  // 3순위: v4.5.1의 Jina/Naver 보조 조회.
+  try{
+    const p = await fetchNaverJinaKoreanPrice(code);
+    return {code, name, price:p, source:'Naver/Jina', currency:'KRW'};
+  }catch(e){ errors.push('Naver/Jina:'+e.message); }
+
+  // 4순위: Yahoo KS/KQ. HTML 오류가 잦아서 최후순위로만 사용합니다.
   try{
     const p = await fetchYahooChart(code+'.KS');
-    if(p>0) return {code, name: name || code, price:p, source:'Yahoo KR'};
+    if(validKrwMarketPrice(p)) return {code, name, price:p, source:'Yahoo KS', currency:'KRW'};
   }catch(e){ errors.push('Yahoo.KS:'+e.message); }
-  throw new Error('한국 ETF 시세 실패 ('+errors.join(' → ')+')');
+  try{
+    const p = await fetchYahooChart(code+'.KQ');
+    if(validKrwMarketPrice(p)) return {code, name, price:p, source:'Yahoo KQ', currency:'KRW'};
+  }catch(e){ errors.push('Yahoo.KQ:'+e.message); }
+
+  // 실패해도 종목명은 살립니다. 단, 현재단가는 절대 이상한 값으로 덮지 않습니다.
+  if(name && name !== code) return {code, name, price:0, source:'Name Map', currency:'KRW'};
+  throw new Error('한국 ETF 조회 실패 ('+errors.join(' → ')+')');
 }
 async function fetchKoreanEtfKrw(name, symbol){
   return await fetchKoreanEtfInfo(symbol, name);
@@ -459,7 +503,7 @@ async function lookupKoreanEtfNameFromInput(){
     if(form.name && info.name && info.name !== info.code) form.name.value = `${info.code} ${info.name}`;
     if(form.currency) form.currency.value = 'KRW';
     if(form.price && info.price>0) form.price.value = info.price;
-    if(status) status.textContent = `조회 완료 · ${info.code} ${info.name||''} · ${info.price.toLocaleString('ko-KR')}원 · ${info.source}`;
+    if(status) status.textContent = info.price>0 ? `조회 완료 · ${info.code} ${info.name||''} · ${info.price.toLocaleString('ko-KR')}원 · ${info.source}` : `이름 확인 완료 · ${info.code} ${info.name||''} · 가격은 시세/환율 갱신에서 다시 시도`;
   }catch(e){ if(status) status.textContent='조회 실패: '+e.message; }
 }
 
@@ -490,11 +534,11 @@ async function updateAssetMarketPrices(){
         const kr = await fetchKoreanEtfKrw(a.name, a.symbol || a.ticker || a.code);
         a.symbol = kr.code || a.symbol || a.ticker || a.code || '';
         if(kr.name && kr.name !== kr.code) a.name = `${kr.code} ${kr.name}`;
-        a.price = Number(kr.price);
+        if(Number(kr.price)>0) a.price = Number(kr.price);
         a.currency = 'KRW';
         a.priceSource = kr.source;
         a.priceUpdatedAt = new Date().toLocaleString('ko-KR');
-        cache[kr.code || symbol || extractKoreanCode(a.name)] = {price:a.price, at:new Date().toISOString(), currency:'KRW', source:kr.source};
+        if(Number(kr.price)>0) cache[kr.code || symbol || extractKoreanCode(a.name)] = {price:a.price, at:new Date().toISOString(), currency:'KRW', source:kr.source};
         updated++;
       } else if(type.includes('미국주식') || type.includes('미국 ETF') || (type.toUpperCase().includes('ETF') && !type.includes('한국')) || type.includes('주식')){
         const usd = await fetchStockUsd(symbol);
@@ -615,9 +659,17 @@ function upsert(kind, data){
 }
 
 function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function displayAssetName(a){
+  const code = extractKoreanCode(a.symbol, a.name);
+  if(String(a.type||'').includes('한국 ETF') && code){
+    const nm = krEtfKnownName(code);
+    if(nm && !String(a.name||'').includes(nm)) return `${code} ${nm}`;
+  }
+  return a.name || code || '이름없음';
+}
 function renderLists(){
   const assetList=$('assetList'); assetList.innerHTML='';
-  state.assets.forEach(a=>assetList.appendChild(itemRow(a.name, `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }))); 
+  state.assets.forEach(a=>assetList.appendChild(itemRow(displayAssetName(a), `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }))); 
   if(!state.assets.length) assetList.innerHTML='<div class="empty">등록된 자산이 없습니다.</div>';
   const debtList=$('debtList'); debtList.innerHTML='';
   state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>startEdit('debts', d), ()=>{ if(confirm('이 부채를 삭제할까요?')){state.debts=state.debts.filter(x=>x.id!==d.id); autoBackup('부채 삭제'); render();} }))); 
@@ -673,7 +725,7 @@ function saveMarketSettings(){
   ['USD','USDT','HKD','AUD'].forEach(cur=>{ const el=$('fx'+cur); if(el && Number(el.value)>0) state.fx[cur]=Number(el.value); });
   if(!state.settings) state.settings={};
   const w=$('marketWorkerUrl'); if(w) state.settings.marketWorkerUrl=w.value.trim();
-  save(); render(); log('환율/Worker 설정 저장 완료');
+  save(); renderMarketSettings(); const st=$('marketWorkerStatus'); if(st) st.textContent='환율/Worker 설정 저장 완료'; log('환율/Worker 설정 저장 완료');
 }
 async function testMarketWorker(){
   const el=$('marketWorkerStatus');
@@ -694,7 +746,21 @@ function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
   const krBtn=$('lookupKrEtfBtn'); if(krBtn) krBtn.onclick=lookupKoreanEtfNameFromInput;
   const typeEl=assetForm?.elements?.type; if(typeEl) typeEl.onchange=()=>{ if(typeEl.value==='한국 ETF'){ assetForm.currency.value='KRW'; } };
-  assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('assets', f); render(); };
+  assetForm.onsubmit=e=>{
+    e.preventDefault();
+    const f=Object.fromEntries(new FormData(assetForm));
+    f.currency=(f.currency||'KRW').toUpperCase();
+    if(String(f.type||'').includes('한국 ETF')){
+      const code=extractKoreanCode(f.symbol, f.name);
+      if(code){
+        const nm=krEtfKnownName(code);
+        f.symbol=code;
+        f.currency='KRW';
+        if(nm && !String(f.name||'').includes(nm)) f.name=`${code} ${nm}`;
+      }
+    }
+    upsert('assets', f); render();
+  };
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
@@ -750,7 +816,8 @@ window.addEventListener('load',()=>{
   };
 
   safeBind('snapshotBtn', takeSnapshot);
-  safeBind('refreshDashboard', renderDashboard);
+  safeBind('refreshDashboard', ()=>location.reload());
+  safeBind('pageReloadBtn', ()=>location.reload());
   safeBind('marketRefreshBtn', ()=>refreshMarketData(true));
   safeBind('refreshAnalysis', renderAnalysis);
   safeBind('backupBtn', backup);

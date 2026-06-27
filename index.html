@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.9.5</title>
+  <title>자산 매니저 v6.9.9</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.9.5</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.9.9</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -24,7 +24,7 @@
     <nav id="tabBar" class="tab-bar"></nav>
 
     <section id="dashboard" class="panel active">
-      <div class="section-head"><h2>대시보드</h2><div class="head-actions"><button id="marketRefreshBtn" class="primary" type="button">시세/환율 갱신</button><button id="refreshDashboard" type="button">화면 새로고침</button></div></div>
+      <div class="section-head"><h2>대시보드</h2><div class="head-actions"><button id="marketRefreshBtn" class="primary" type="button">시세/환율 갱신</button></div></div>
       <article class="card market-card"><strong>마지막 시세/환율 업데이트</strong><p id="dashMarketStatus">아직 자동 갱신 전입니다.</p></article>
       <div class="dashboard-grid">
         <article class="card hero-stat"><span>순자산</span><strong id="dashNetWorth">₩0</strong><p id="dashMonthChange">이번 달 변화 ₩0</p></article>
@@ -105,7 +105,7 @@
       <h2>설정 / 백업</h2>
       <div class="theme-card">
         <div><strong>화면 모드</strong><p>라이트/다크 모드를 전환합니다.</p></div>
-        <button id="themeToggleBtn" class="theme-toggle" type="button">다크모드</button>
+        <div class="head-actions"><button id="themeToggleBtn" class="theme-toggle" type="button">다크모드</button><button id="pageReloadBtn" type="button">페이지 새로고침</button></div>
       </div>
       <div class="backup-status-card" id="marketStatusCard">
         <div class="backup-dot ok"></div>
