@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.0-fixed';
+const APP_VERSION = 'v6.1-edit';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const tabs = [['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
@@ -99,24 +99,74 @@ function showTab(id){
 function render(){ renderSummary(); renderLists(); renderAnalysis(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent='v6.0'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent='v6.1'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
-function itemRow(title, sub, value, onDelete){
+
+let editing = { assets:null, debts:null, insurance:null };
+function itemRow(title, sub, value, onEdit, onDelete){
   const el=document.createElement('article'); el.className='row card';
-  el.innerHTML=`<div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(sub)}</p></div><div><b>${value}</b><button class="danger">삭제</button></div>`;
-  el.querySelector('button').onclick=onDelete; return el;
+  el.innerHTML=`<div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(sub)}</p></div><div><b>${value}</b><div class="row-actions"><button class="edit" type="button">수정</button><button class="danger" type="button">삭제</button></div></div>`;
+  el.querySelector('.edit').onclick=onEdit;
+  el.querySelector('.danger').onclick=onDelete;
+  return el;
 }
+function setFormValues(form, data){
+  [...form.elements].forEach(el=>{
+    if(!el.name) return;
+    if(el.type==='checkbox') el.checked = !!data[el.name];
+    else el.value = data[el.name] ?? '';
+  });
+}
+function showForm(form, visible=true){ form.classList.toggle('hidden', !visible); }
+function resetEdit(kind){
+  editing[kind]=null;
+  const form = kind==='assets' ? assetForm : kind==='debts' ? debtForm : insuranceForm;
+  form.reset();
+  const title = document.querySelector(`[data-title="${kind}"]`);
+  const saveBtn = form.querySelector('[data-save]') || form.querySelector('button[type=submit]');
+  const cancelBtn = form.querySelector('[data-cancel]');
+  if(title) title.textContent = kind==='assets' ? '자산 추가' : kind==='debts' ? '부채 추가' : '보험 추가';
+  if(saveBtn) saveBtn.textContent = '저장';
+  if(cancelBtn) cancelBtn.classList.add('hidden');
+}
+function startEdit(kind, item){
+  editing[kind]=item.id;
+  const form = kind==='assets' ? assetForm : kind==='debts' ? debtForm : insuranceForm;
+  const title = document.querySelector(`[data-title="${kind}"]`);
+  const saveBtn = form.querySelector('[data-save]') || form.querySelector('button[type=submit]');
+  const cancelBtn = form.querySelector('[data-cancel]');
+  showForm(form,true);
+  setFormValues(form,item);
+  if(title) title.textContent = kind==='assets' ? '자산 수정' : kind==='debts' ? '부채 수정' : '보험 수정';
+  if(saveBtn) saveBtn.textContent = '수정 완료';
+  if(cancelBtn) cancelBtn.classList.remove('hidden');
+  form.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function upsert(kind, data){
+  const id = editing[kind];
+  if(id){
+    const list = state[kind];
+    const idx = list.findIndex(x=>x.id===id);
+    if(idx>=0) list[idx] = {...list[idx], ...data, id};
+    log('수정 완료');
+  } else {
+    state[kind].push({id:uid(),...data});
+    log('저장 완료');
+  }
+  resetEdit(kind);
+}
+
 function escapeHtml(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function renderLists(){
   const assetList=$('assetList'); assetList.innerHTML='';
-  state.assets.forEach(a=>assetList.appendChild(itemRow(a.name, `${a.type} · ${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>{state.assets=state.assets.filter(x=>x.id!==a.id); render();})));
+  state.assets.forEach(a=>assetList.appendChild(itemRow(a.name, `${a.type} · ${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); render();} }))); 
   if(!state.assets.length) assetList.innerHTML='<div class="empty">등록된 자산이 없습니다.</div>';
   const debtList=$('debtList'); debtList.innerHTML='';
-  state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>{state.debts=state.debts.filter(x=>x.id!==d.id); render();})));
+  state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>startEdit('debts', d), ()=>{ if(confirm('이 부채를 삭제할까요?')){state.debts=state.debts.filter(x=>x.id!==d.id); render();} }))); 
   if(!state.debts.length) debtList.innerHTML='<div class="empty">등록된 부채가 없습니다.</div>';
   const insuranceList=$('insuranceList'); insuranceList.innerHTML='';
-  state.insurance.forEach(i=>insuranceList.appendChild(itemRow(`${i.company} ${i.product}`, `${i.type||'-'} · 매월 ${i.payday||'-'}일 · 월 ${money(i.premium)}`, i.includeRefund?money(i.refund):'자산 제외', ()=>{state.insurance=state.insurance.filter(x=>x.id!==i.id); render();})));
+  state.insurance.forEach(i=>insuranceList.appendChild(itemRow(`${i.company} ${i.product}`, `${i.type||'-'} · 매월 ${i.payday||'-'}일 · 월 ${money(i.premium)}`, i.includeRefund?money(i.refund):'자산 제외', ()=>startEdit('insurance', i), ()=>{ if(confirm('이 보험을 삭제할까요?')){state.insurance=state.insurance.filter(x=>x.id!==i.id); render();} }))); 
   if(!state.insurance.length) insuranceList.innerHTML='<div class="empty">등록된 보험이 없습니다.</div>';
 }
 function renderAnalysis(){
@@ -132,11 +182,11 @@ function renderBars(id,obj){
 }
 function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
-  assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); state.assets.push({id:uid(),...f}); assetForm.reset(); render(); };
-  debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); state.debts.push({id:uid(),...f}); debtForm.reset(); render(); };
-  insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; state.insurance.push({id:uid(),...f}); insuranceForm.reset(); render(); };
+  assetForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(assetForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('assets', f); render(); };
+  debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
+  insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-fixed-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-1-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ state=normalizeState(JSON.parse(r.result),'restore'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); render(); log('스냅샷 저장 완료'); }
@@ -146,5 +196,6 @@ function resetDemo(){ state.assets = state.assets.filter(a=>!(a.name||'').starts
 window.addEventListener('load',()=>{
   initTabs(); bindForms(); render(); log(`로드 완료 · 데이터 출처: ${state.migratedFrom || 'unknown'}`);
   snapshotBtn.onclick=takeSnapshot; refreshAnalysis.onclick=renderAnalysis; backupBtn.onclick=backup; restoreInput.onchange=e=>e.target.files[0]&&restore(e.target.files[0]); syncCheckBtn.onclick=()=>log('로컬 저장 정상 · GitHub 백업/동기화 데이터는 기존 설정값 유지 대상입니다.'); clearCacheBtn.onclick=async()=>{ if('caches' in window){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } log('캐시 삭제 완료. 앱을 완전히 종료 후 다시 열어주세요.'); }; forceMigrateBtn.onclick=forceMigrate; resetDemoBtn.onclick=resetDemo;
+  document.querySelectorAll('[data-cancel]').forEach(btn=>btn.onclick=()=>resetEdit(btn.dataset.cancel));
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 });

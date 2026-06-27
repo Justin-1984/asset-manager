@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.0</title>
+  <title>자산 매니저 v6.1</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.0</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.1</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -24,7 +24,7 @@
     <nav id="tabBar" class="tab-bar"></nav>
 
     <section id="assets" class="panel active">
-      <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm">자산 추가</button></div>
+      <div class="section-head"><h2>자산</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
       <form id="assetForm" class="form hidden">
         <input name="name" placeholder="자산명" required />
         <select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select>
@@ -33,13 +33,14 @@
         <input name="amount" type="number" step="0.0001" placeholder="수량" value="1" />
         <input name="price" type="number" step="0.01" placeholder="현재 단가" required />
         <input name="cost" type="number" step="0.01" placeholder="매입 원금" />
-        <button class="primary" type="submit">저장</button>
+        <button class="primary" type="submit" data-save>저장</button>
+        <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>
       <div id="assetList" class="list"></div>
     </section>
 
     <section id="debts" class="panel">
-      <div class="section-head"><h2>부채</h2><button class="primary" data-open="debtForm">부채 추가</button></div>
+      <div class="section-head"><h2>부채</h2><button class="primary" data-open="debtForm" data-title="debts">부채 추가</button></div>
       <form id="debtForm" class="form hidden">
         <input name="name" placeholder="부채명" required />
         <select name="type"><option>일반 부채</option><option>홍콩 모기지</option><option>카드 결제 예정금</option></select>
@@ -47,13 +48,14 @@
         <input name="balance" type="number" step="0.01" placeholder="잔액" required />
         <input name="rate" type="number" step="0.01" placeholder="연이율 %" />
         <input name="monthly" type="number" step="0.01" placeholder="월 상환액" />
-        <button class="primary" type="submit">저장</button>
+        <button class="primary" type="submit" data-save>저장</button>
+        <button class="secondary hidden" type="button" data-cancel="debts">수정 취소</button>
       </form>
       <div id="debtList" class="list"></div>
     </section>
 
     <section id="insurance" class="panel">
-      <div class="section-head"><h2>보험</h2><button class="primary" data-open="insuranceForm">보험 추가</button></div>
+      <div class="section-head"><h2>보험</h2><button class="primary" data-open="insuranceForm" data-title="insurance">보험 추가</button></div>
       <form id="insuranceForm" class="form hidden">
         <input name="company" placeholder="보험사" required />
         <input name="product" placeholder="상품명" required />
@@ -63,13 +65,14 @@
         <input name="refund" type="number" placeholder="해지환급금" />
         <label class="check"><input name="includeRefund" type="checkbox" /> 해지환급금 자산 포함</label>
         <textarea name="memo" placeholder="메모"></textarea>
-        <button class="primary" type="submit">저장</button>
+        <button class="primary" type="submit" data-save>저장</button>
+        <button class="secondary hidden" type="button" data-cancel="insurance">수정 취소</button>
       </form>
       <div id="insuranceList" class="list"></div>
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.0 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <div class="section-head"><h2>v6.1 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
       <div id="analysisCards" class="analysis-grid"></div>
       <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
       <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
