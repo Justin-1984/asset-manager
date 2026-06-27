@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-12-1-transactions-interest-20260627';
+const CACHE_NAME = 'asset-manager-v6-13-0-asset-card-details-20260627';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

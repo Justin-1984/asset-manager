@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.12.1-transactions-interest';
+const APP_VERSION = 'v6.13.0-asset-card-details';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
@@ -238,6 +238,61 @@ function assetCostKrw(a){
   const cost = num(a.cost);
   const cur = (a.costCurrency || 'KRW').toUpperCase();
   return cost * fx(cur);
+}
+function isInvestmentAsset(a){
+  const t=String(a?.type||'').toLowerCase();
+  return t.includes('코인') || t.includes('미국주식') || t.includes('미국 주식') || t.includes('미국 etf') || t.includes('etf') || t.includes('한국 etf') || t.includes('주식') || t.includes('금');
+}
+function formatAssetQty(a){
+  const qty=num(a.amount);
+  if(!qty) return '-';
+  const t=String(a.type||'');
+  const symbol=String(a.symbol||'').trim().toUpperCase();
+  const unit = t.includes('코인') ? (symbol || '개') : t.includes('금') ? 'g/개' : '주';
+  const digits = t.includes('코인') ? 8 : qty%1 ? 4 : 0;
+  return `${qty.toLocaleString('ko-KR',{maximumFractionDigits:digits})}${unit}`;
+}
+function formatForeignMoney(v, cur='KRW'){
+  cur=(cur||'KRW').toUpperCase();
+  const n=num(v);
+  if(cur==='KRW') return money(n);
+  const prefix = cur==='USD' ? '$' : cur==='USDT' ? 'USDT ' : cur+' ';
+  return prefix + n.toLocaleString('ko-KR',{maximumFractionDigits: cur==='USDT' ? 4 : 2});
+}
+function formatAssetUnitPrice(a, price){
+  const cur=(a.currency||'KRW').toUpperCase();
+  return formatForeignMoney(price, cur);
+}
+function assetAveragePrice(a){
+  const qty=num(a.amount);
+  if(qty<=0) return 0;
+  const cur=(a.currency||'KRW').toUpperCase();
+  const costKrw=assetCostKrw(a);
+  const rate=fx(cur)||1;
+  return costKrw / qty / rate;
+}
+function signedMoney(v){
+  const n=Math.round(num(v));
+  if(n>0) return '+'+money(n);
+  if(n<0) return '-'+money(Math.abs(n));
+  return money(0);
+}
+function assetDetailHtml(a){
+  if(!isInvestmentAsset(a)) return '';
+  const value=assetValue(a);
+  const cost=assetCostKrw(a);
+  const profit=value-cost;
+  const rate=cost>0 ? profit/cost*100 : 0;
+  const avg=assetAveragePrice(a);
+  const price=num(a.price);
+  const rows=[
+    ['보유수량', formatAssetQty(a)],
+    ['평균단가', avg>0 ? formatAssetUnitPrice(a, avg) : '-'],
+    ['현재가', price>0 ? formatAssetUnitPrice(a, price) : '-'],
+    ['투자원금', cost>0 ? money(cost) : '-'],
+    ['평가손익', `${signedMoney(profit)} (${rate>=0?'+':''}${rate.toFixed(2)}%)`]
+  ];
+  return `<div class="asset-detail-grid">${rows.map(([k,v])=>`<span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b>`).join('')}</div>`;
 }
 function investmentProfit(){
   const cost = state.assets.reduce((sum,a)=>sum+assetCostKrw(a),0);
@@ -607,9 +662,9 @@ function renderSummary(){
 }
 
 let editing = { assets:null, debts:null, insurance:null };
-function itemRow(title, sub, value, onEdit, onDelete){
+function itemRow(title, sub, value, onEdit, onDelete, detailHtml=''){
   const el=document.createElement('article'); el.className='row card';
-  el.innerHTML=`<div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(sub)}</p></div><div><b>${value}</b><div class="row-actions"><button class="edit" type="button">수정</button><button class="danger" type="button">삭제</button></div></div>`;
+  el.innerHTML=`<div class="row-main"><strong>${escapeHtml(title)}</strong><p>${escapeHtml(sub)}</p>${detailHtml||''}</div><div class="row-side"><b>${value}</b><div class="row-actions"><button class="edit" type="button">수정</button><button class="danger" type="button">삭제</button></div></div>`;
   el.querySelector('.edit').onclick=onEdit;
   el.querySelector('.danger').onclick=onDelete;
   return el;
@@ -672,7 +727,7 @@ function displayAssetName(a){
 }
 function renderLists(){
   const assetList=$('assetList'); assetList.innerHTML='';
-  state.assets.forEach(a=>assetList.appendChild(itemRow(displayAssetName(a), `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }))); 
+  state.assets.forEach(a=>assetList.appendChild(itemRow(displayAssetName(a), `${a.type} · ${a.symbol?escapeHtml(a.symbol)+' · ':''}${a.country||'-'} · ${a.currency}`, money(assetValue(a)), ()=>startEdit('assets', a), ()=>{ if(confirm('이 자산을 삭제할까요?')){state.assets=state.assets.filter(x=>x.id!==a.id); autoBackup('자산 삭제'); render();} }, assetDetailHtml(a)))); 
   if(!state.assets.length) assetList.innerHTML='<div class="empty">등록된 자산이 없습니다.</div>';
   const debtList=$('debtList'); debtList.innerHTML='';
   state.debts.forEach(d=>debtList.appendChild(itemRow(d.name, `${d.type} · ${d.currency} · ${d.rate||0}%`, money(debtValue(d)), ()=>startEdit('debts', d), ()=>{ if(confirm('이 부채를 삭제할까요?')){state.debts=state.debts.filter(x=>x.id!==d.id); autoBackup('부채 삭제'); render();} }))); 

@@ -64,3 +64,12 @@ body.dark .head-actions button.primary,body[data-theme="dark"] .head-actions but
 .avg-grid span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
 .avg-grid strong{font-size:17px;word-break:break-all}
 @media(max-width:640px){.avg-grid{grid-template-columns:1fr}}
+
+
+/* v6.13 asset card details */
+.row-main{min-width:0;flex:1}
+.row-side{flex:0 0 auto;text-align:right}
+.asset-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px}
+.asset-detail-grid span{color:var(--muted);font-weight:800}
+.asset-detail-grid b{text-align:right;font-size:12.5px;word-break:break-all}
+@media(max-width:520px){.row.card{align-items:flex-start}.asset-detail-grid{grid-template-columns:1fr 1fr}.row-side b{font-size:15px}}
