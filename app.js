@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.13.6-asset-type-card-fix';
+const APP_VERSION = 'v6.13.7-cash-fx-display-fix';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -274,6 +274,36 @@ function formatForeignMoney(v, cur='KRW'){
   const prefix = cur==='USD' ? '$' : cur==='USDT' ? 'USDT ' : cur+' ';
   return prefix + n.toLocaleString('ko-KR',{maximumFractionDigits: cur==='USDT' ? 4 : 2});
 }
+function inferCashCurrency(a){
+  const cur=String(a?.currency||'KRW').toUpperCase();
+  if(cur && cur !== 'KRW') return cur;
+  const text=(' '+String(a?.symbol||'')+' '+String(a?.name||'')+' ').toUpperCase();
+  const candidates=['USDT','USD','HKD','AUD'];
+  for(const c of candidates){
+    if(new RegExp('(^|[^A-Z])'+c+'([^A-Z]|$)').test(text)) return c;
+  }
+  return 'KRW';
+}
+function cashHoldingAmount(a, cur){
+  const amount=num(a?.amount);
+  if(cur !== 'KRW' && amount>0) return amount;
+  return assetValue(a);
+}
+function cashAppliedRate(a, cur){
+  if(cur === 'KRW') return 1;
+  const amount=num(a?.amount);
+  const savedPrice=num(a?.price);
+  if(savedPrice>0) return savedPrice;
+  if(amount>0){
+    const derived=assetValue(a)/amount;
+    if(derived>0) return derived;
+  }
+  return fx(cur);
+}
+function formatFxRate(rate, cur){
+  if(cur === 'KRW') return '-';
+  return money(rate) + ' / ' + cur;
+}
 function formatAssetUnitPrice(a, price){
   const cur=(a.currency||'KRW').toUpperCase();
   return formatForeignMoney(price, cur);
@@ -311,13 +341,14 @@ function assetDetailHtml(a){
 }
 function nonInvestmentStatsHtml(a){
   if(isCashAsset(a)){
-    const cur=String(a.currency||'KRW').toUpperCase();
-    const raw=num(a.amount || a.value || a.krwValue || 0);
+    const cur=inferCashCurrency(a);
+    const amount=cashHoldingAmount(a, cur);
     const krw=assetValue(a);
+    const rate=cashAppliedRate(a, cur);
     const rows=[
-      ['잔액', cur==='KRW' ? money(krw) : formatForeignMoney(raw, cur)],
+      ['보유 외화', cur==='KRW' ? money(krw) : formatForeignMoney(amount, cur)],
       ['원화 환산', money(krw)],
-      ['적용 환율', cur==='KRW' ? '-' : money(fx(cur))]
+      ['적용 환율', formatFxRate(rate, cur)]
     ];
     return `<div class="asset-stat-grid simple-asset-grid">${rows.map(([k,v])=>`<div><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`).join('')}</div>`;
   }
