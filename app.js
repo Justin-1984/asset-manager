@@ -1,7 +1,8 @@
-const APP_VERSION = 'v6.5-data-guard';
+const APP_VERSION = 'v6.6-auto-market-refresh';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const LEGACY_KEYS = ['assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
+const MARKET_REFRESH_MINUTES = 15;
 const tabs = [['dashboard','대시보드'],['assets','자산'],['debts','부채'],['insurance','보험'],['analysis','분석'],['settings','설정']];
 const fxDefaults = { KRW:1, USD:1380, USDT:1380, HKD:195, AUD:1080 };
 let state = loadState();
@@ -87,7 +88,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-5-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-6-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -228,6 +229,133 @@ function renderDashboard(){
     ['이번 주', week], ['이번 달', month], ['올해', year]
   ].map(([label,val])=>`<p><b>${label}</b><span>${val===null?'스냅샷 없음':money(val)}</span></p>`).join('');
   $('dashChecks').innerHTML = a.recommendations.slice(0,4).map(r=>`<p>• ${escapeHtml(r)}</p>`).join('');
+  const ds=$('dashMarketStatus'); if(ds) ds.textContent = marketStatusText();
+}
+
+
+
+function uniq(arr){ return [...new Set(arr.filter(Boolean))]; }
+function getNeededCurrencies(){
+  const cur = [];
+  state.assets.forEach(a=>cur.push((a.currency||'KRW').toUpperCase()));
+  state.debts.forEach(d=>cur.push((d.currency||'KRW').toUpperCase()));
+  return uniq(cur).filter(c=>c!=='KRW');
+}
+function marketStatusText(){
+  const m = state.settings?.market || {};
+  if(!m.lastUpdate) return '아직 자동 갱신 전입니다.';
+  const t = new Date(m.lastUpdate).toLocaleString();
+  return `${t} · ${m.message || '갱신 완료'}`;
+}
+function setMarketStatus(message, ok=true){
+  if(!state.settings) state.settings = {};
+  state.settings.market = {...(state.settings.market||{}), lastUpdate: ok ? new Date().toISOString() : (state.settings.market?.lastUpdate||''), message, ok};
+  const box=$('marketStatusText'); if(box) box.textContent = marketStatusText();
+  const mini=$('dashMarketStatus'); if(mini) mini.textContent = marketStatusText();
+  save();
+}
+async function fetchJson(url){
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+async function updateFxRates(){
+  const needed = getNeededCurrencies();
+  if(!needed.length) return '환율 필요 없음';
+  let data = null;
+  try{
+    data = await fetchJson('https://open.er-api.com/v6/latest/USD');
+    if(data && data.rates && data.rates.KRW){
+      state.fx.USD = data.rates.KRW;
+      state.fx.USDT = data.rates.KRW;
+      if(data.rates.HKD) state.fx.HKD = data.rates.KRW / data.rates.HKD;
+      if(data.rates.AUD) state.fx.AUD = data.rates.KRW / data.rates.AUD;
+      return '환율 갱신 완료';
+    }
+  }catch(e){}
+  try{
+    data = await fetchJson('https://api.exchangerate.host/latest?base=USD&symbols=KRW,HKD,AUD');
+    if(data && data.rates && data.rates.KRW){
+      state.fx.USD = data.rates.KRW;
+      state.fx.USDT = data.rates.KRW;
+      if(data.rates.HKD) state.fx.HKD = data.rates.KRW / data.rates.HKD;
+      if(data.rates.AUD) state.fx.AUD = data.rates.KRW / data.rates.AUD;
+      return '환율 갱신 완료';
+    }
+  }catch(e){}
+  return '환율 갱신 실패 · 기존 환율 유지';
+}
+function cleanSymbol(name){
+  return String(name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$|USD$|KRW$/,'');
+}
+const cryptoNameMap = {BTC:'bitcoin',ETH:'ethereum',XRP:'ripple',SOL:'solana',AVAX:'avalanche-2',LINK:'chainlink',BNB:'binancecoin',DOGE:'dogecoin',ADA:'cardano',TRX:'tron',DOT:'polkadot'};
+async function fetchCryptoUsd(symbol){
+  const s = cleanSymbol(symbol);
+  if(!s) throw new Error('symbol');
+  try{ const j=await fetchJson(`https://api.binance.com/api/v3/ticker/price?symbol=${s}USDT`); if(j.price) return Number(j.price); }catch(e){}
+  try{ const j=await fetchJson(`https://www.okx.com/api/v5/market/ticker?instId=${s}-USDT`); if(j.data?.[0]?.last) return Number(j.data[0].last); }catch(e){}
+  try{ const j=await fetchJson(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${s}USDT`); if(j.result?.list?.[0]?.lastPrice) return Number(j.result.list[0].lastPrice); }catch(e){}
+  try{ const id=cryptoNameMap[s]; if(id){ const j=await fetchJson(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`); if(j[id]?.usd) return Number(j[id].usd); } }catch(e){}
+  throw new Error('crypto price failed');
+}
+async function fetchStockUsd(symbol){
+  const s = cleanSymbol(symbol).toLowerCase();
+  if(!s) throw new Error('symbol');
+  const url = `https://stooq.com/q/l/?s=${s}.us&f=sd2t2ohlcv&h&e=csv`;
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error('stock http');
+  const txt = await res.text();
+  const line = txt.trim().split('\n')[1] || '';
+  const parts = line.split(',');
+  const close = Number(parts[6]);
+  if(close>0) return close;
+  throw new Error('stock parse');
+}
+async function updateAssetMarketPrices(){
+  let updated = 0, skipped = 0, failed = 0;
+  for(const a of state.assets){
+    const type = String(a.type||'');
+    try{
+      if(type.includes('코인')){
+        const usd = await fetchCryptoUsd(a.name);
+        a.price = (a.currency||'USDT').toUpperCase()==='KRW' ? usd * (state.fx.USDT||state.fx.USD||fxDefaults.USD) : usd;
+        updated++;
+      } else if(type.includes('미국주식') || type.toUpperCase().includes('ETF') || type.includes('주식')){
+        const usd = await fetchStockUsd(a.name);
+        a.price = (a.currency||'USD').toUpperCase()==='KRW' ? usd * (state.fx.USD||fxDefaults.USD) : usd;
+        updated++;
+      } else {
+        skipped++;
+      }
+    }catch(e){ failed++; }
+  }
+  return `시세 ${updated}개 갱신${failed?`, ${failed}개 실패`:''}${skipped?`, ${skipped}개 제외`:''}`;
+}
+let marketUpdating = false;
+async function refreshMarketData(manual=false){
+  if(marketUpdating) return;
+  if(!navigator.onLine){ setMarketStatus('오프라인 · 온라인 복귀 시 갱신 대기', false); return; }
+  marketUpdating = true;
+  const btn=$('marketRefreshBtn'); if(btn) btn.textContent='갱신 중...';
+  try{
+    setMarketStatus('환율/시세 갱신 중...', false);
+    const fxMsg = await updateFxRates();
+    const priceMsg = await updateAssetMarketPrices();
+    setMarketStatus(`${fxMsg} · ${priceMsg}`, true);
+    renderSummary(); renderAnalysis(); renderDashboard(); renderLists();
+    log('자동 업데이트 완료 · '+fxMsg+' · '+priceMsg);
+  }catch(e){
+    setMarketStatus('갱신 실패 · 기존 데이터 유지', false);
+    log('자동 업데이트 실패 · 인터넷/API 상태를 확인하세요.');
+  }finally{
+    marketUpdating = false;
+    if(btn) btn.textContent='시세/환율 갱신';
+  }
+}
+function startAutoMarketRefresh(){
+  setTimeout(()=>refreshMarketData(false), 500);
+  setInterval(()=>refreshMarketData(false), MARKET_REFRESH_MINUTES*60*1000);
+  window.addEventListener('online', ()=>refreshMarketData(false));
 }
 
 function initTabs(){
@@ -244,7 +372,7 @@ function showTab(id){
 function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent='v6.5'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent='v6.6'; $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -356,7 +484,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-5-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-6-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
@@ -407,6 +535,7 @@ window.addEventListener('load',()=>{
 
   safeBind('snapshotBtn', takeSnapshot);
   safeBind('refreshDashboard', renderDashboard);
+  safeBind('marketRefreshBtn', ()=>refreshMarketData(true));
   safeBind('refreshAnalysis', renderAnalysis);
   safeBind('backupBtn', backup);
   safeBind('versionBackupBtn', ()=>{createLocalVersionBackup('수동 버전백업'); log('수동 버전백업 완료');});
@@ -427,6 +556,7 @@ window.addEventListener('load',()=>{
   safeBind('forceMigrateBtn', forceMigrate);
   safeBind('resetDemoBtn', resetDemo);
   safeBind('themeToggleBtn', toggleTheme);
+  startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
