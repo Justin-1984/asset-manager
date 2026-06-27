@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.10.1-update-system-fix';
+const APP_VERSION = 'v6.10.2-fx-hidden-avg-currency-fix';
 const BACKUP_HISTORY_KEY = 'assetManagerPWA_v6_backupHistory';
 const STORAGE_KEY = 'assetManagerPWA_v6';
 const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
@@ -599,7 +599,7 @@ function showTab(id){
 function render(){ applyTheme(); renderSummary(); renderLists(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderAverageAssetOptions(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
-  $('versionBadge').textContent=APP_VERSION.replace('-update-system-fix',''); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
+  $('versionBadge').textContent=APP_VERSION.replace('-update-system-fix','').replace('-fx-hidden-avg-currency-fix',''); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
   if(!state.assets.length && !state.debts.length && !state.insurance.length) showNotice('기존 데이터가 자동으로 발견되지 않았습니다. 설정에서 “기존 데이터 다시 찾기” 또는 “복원”을 사용하세요. 예시 데이터는 더 이상 자동 생성하지 않습니다.');
 }
 
@@ -691,6 +691,21 @@ function renderBars(id,obj){
 }
 
 
+function getAvgCurrency(){ return ($('avgCurrency')?.value || 'KRW').toUpperCase(); }
+function getAvgFxRate(){ const cur=getAvgCurrency(); const manual=Number($('avgFxRate')?.value||0); return cur==='KRW' ? 1 : (manual>0 ? manual : fx(cur)); }
+function syncAvgFxRate(){
+  const cur=getAvgCurrency();
+  const el=$('avgFxRate');
+  if(!el) return;
+  if(cur==='KRW'){ el.value='1'; el.disabled=true; }
+  else { el.disabled=false; if(!Number(el.value) || Number(el.value)===1) el.value = fx(cur) || ''; }
+}
+function fmtUnit(v,cur){
+  v=Number(v)||0; cur=(cur||'KRW').toUpperCase();
+  if(cur==='KRW') return money(v);
+  return `${v.toLocaleString('ko-KR',{maximumFractionDigits:4})} ${cur}`;
+}
+
 function renderAverageAssetOptions(){
   const sel=$('avgAssetSelect');
   if(!sel) return;
@@ -702,13 +717,20 @@ function loadAverageAsset(){
   const sel=$('avgAssetSelect'); if(!sel || !sel.value) return;
   const a=state.assets.find(x=>x.id===sel.value); if(!a) return;
   const qty=Number(a.amount||0);
-  const cost=Number(a.cost||0);
-  const avg = qty>0 && cost>0 ? cost/qty : Number(a.price||0);
+  const cur=(a.currency||'KRW').toUpperCase();
+  if($('avgCurrency')) $('avgCurrency').value = ['KRW','USD','USDT','HKD','AUD'].includes(cur) ? cur : 'KRW';
+  syncAvgFxRate();
+  const rate=getAvgFxRate();
+  const costKrw=Number(a.cost||0);
+  const avg = qty>0 && costKrw>0 ? (cur==='KRW' ? costKrw/qty : costKrw/qty/rate) : Number(a.price||0);
   if($('avgCurrentQty')) $('avgCurrentQty').value = qty || '';
   if($('avgCurrentPrice')) $('avgCurrentPrice').value = avg ? String(Math.round(avg*10000)/10000) : '';
-  if($('avgResult')) $('avgResult').innerHTML = `<div class="empty">${escapeHtml(displayAssetName(a))} 기준으로 기존 수량/평단을 불러왔습니다.</div>`;
+  if($('avgResult')) $('avgResult').innerHTML = `<div class="empty">${escapeHtml(displayAssetName(a))} 기준으로 ${cur} 평단을 불러왔습니다. 외화 평단은 현재 환율 기준 KRW 매입원금을 역산한 값입니다.</div>`;
 }
 function calculateAverageBuy(){
+  syncAvgFxRate();
+  const cur=getAvgCurrency();
+  const rate=getAvgFxRate();
   const curQty=Number($('avgCurrentQty')?.value||0);
   const curPrice=Number($('avgCurrentPrice')?.value||0);
   const addQty=Number($('avgAddQty')?.value||0);
@@ -716,8 +738,8 @@ function calculateAverageBuy(){
   const fee=Number($('avgFee')?.value||0);
   const box=$('avgResult');
   if(!box) return;
-  if(curQty<0 || addQty<0 || curPrice<0 || addPrice<0 || fee<0 || (curQty+addQty)<=0){
-    box.innerHTML='<div class="empty">수량과 단가를 확인해 주세요.</div>'; return;
+  if(curQty<0 || addQty<0 || curPrice<0 || addPrice<0 || fee<0 || (curQty+addQty)<=0 || rate<=0){
+    box.innerHTML='<div class="empty">수량, 단가, 환율을 확인해 주세요.</div>'; return;
   }
   const oldCost=curQty*curPrice;
   const addCost=addQty*addPrice + fee;
@@ -727,20 +749,28 @@ function calculateAverageBuy(){
   const beforeAvg=curQty>0?curPrice:0;
   const diff=beforeAvg>0?newAvg-beforeAvg:0;
   const diffPct=beforeAvg>0?(diff/beforeAvg*100):0;
+  const totalKrw=totalCost*rate, avgKrw=newAvg*rate;
   const rows=[
-    ['기존 매입금액', money(oldCost)],
-    ['추가 매입금액', money(addCost)],
+    ['계산 통화', cur],
+    ['적용 환율', cur==='KRW' ? '1' : rate.toLocaleString('ko-KR',{maximumFractionDigits:2})],
+    ['기존 매입금액', fmtUnit(oldCost,cur)],
+    ['추가 매입금액', fmtUnit(addCost,cur)],
     ['총 보유수량', totalQty.toLocaleString('ko-KR',{maximumFractionDigits:8})],
-    ['새 총 매입금액', money(totalCost)],
-    ['새 평단', newAvg.toLocaleString('ko-KR',{maximumFractionDigits:4})],
-    ['평단 변화', beforeAvg>0 ? `${diff>=0?'+':''}${diff.toLocaleString('ko-KR',{maximumFractionDigits:4})} (${diffPct>=0?'+':''}${diffPct.toFixed(2)}%)` : '-']
+    ['새 총 매입금액', fmtUnit(totalCost,cur)],
+    ['새 평단', fmtUnit(newAvg,cur)],
+    ['원화 환산 평단', money(avgKrw)],
+    ['원화 총 매입금액', money(totalKrw)],
+    ['평단 변화', beforeAvg>0 ? `${diff>=0?'+':''}${diff.toLocaleString('ko-KR',{maximumFractionDigits:4})} ${cur} (${diffPct>=0?'+':''}${diffPct.toFixed(2)}%)` : '-']
   ];
-  box.dataset.copy = `새 평단: ${newAvg}\n총 보유수량: ${totalQty}\n총 매입금액: ${totalCost}`;
+  box.dataset.copy = `계산 통화: ${cur}\n새 평단: ${newAvg} ${cur}\n원화 환산 평단: ${Math.round(avgKrw)} KRW\n총 보유수량: ${totalQty}\n총 매입금액: ${totalCost} ${cur}\n원화 총 매입금액: ${Math.round(totalKrw)} KRW`;
   box.innerHTML = '<div class="avg-grid">' + rows.map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('') + '</div>';
 }
 function resetAverageCalculator(){
   ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee'].forEach(id=>{ const el=$(id); if(el) el.value = id==='avgFee' ? '0' : ''; });
   const sel=$('avgAssetSelect'); if(sel) sel.value='';
+  if($('avgCurrency')) $('avgCurrency').value='KRW';
+  if($('avgFxRate')) $('avgFxRate').value='1';
+  syncAvgFxRate();
   const box=$('avgResult'); if(box) box.innerHTML='';
 }
 async function copyAverageResult(){
@@ -782,10 +812,9 @@ function renderMarketSettings(){
   if(note) note.textContent = `현재환율 USD ${state.fx.USD||'-'} · USDT ${state.fx.USDT||'-'} · HKD ${state.fx.HKD||'-'} · AUD ${state.fx.AUD||'-'}`;
 }
 function saveMarketSettings(){
-  ['USD','USDT','HKD','AUD'].forEach(cur=>{ const el=$('fx'+cur); if(el && Number(el.value)>0) state.fx[cur]=Number(el.value); });
   if(!state.settings) state.settings={};
   const w=$('marketWorkerUrl'); if(w) state.settings.marketWorkerUrl=w.value.trim();
-  save(); renderMarketSettings(); const st=$('marketWorkerStatus'); if(st) st.textContent='환율/Worker 설정 저장 완료'; log('환율/Worker 설정 저장 완료');
+  save(); renderMarketSettings(); const st=$('marketWorkerStatus'); if(st) st.textContent='Worker URL 저장 완료'; log('Worker URL 저장 완료');
 }
 async function testMarketWorker(){
   const el=$('marketWorkerStatus');
@@ -940,7 +969,9 @@ window.addEventListener('load',()=>{
   safeBind('avgResetBtn', resetAverageCalculator);
   safeBind('avgApplyMemoBtn', copyAverageResult);
   const avgSel=$('avgAssetSelect'); if(avgSel) avgSel.addEventListener('change', loadAverageAsset);
-  ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', calculateAverageBuy); });
+  ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee','avgFxRate'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', calculateAverageBuy); });
+  const avgCur=$('avgCurrency'); if(avgCur) avgCur.addEventListener('change', ()=>{ syncAvgFxRate(); calculateAverageBuy(); });
+  syncAvgFxRate();
   startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));

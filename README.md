@@ -1,5 +1,6 @@
-# AssetManager PWA v6.10.1
+# AssetManager PWA v6.10.2
 
-- v6.10.0 stable base
-- Service Worker / cache update system fixed
-- App version badge fixed
+- 설정의 수동 환율 입력 숨김
+- Worker URL 저장 버튼 정리
+- 평단 계산기 통화/환율 반영 수정
+- v6.10.1 업데이트 시스템 유지

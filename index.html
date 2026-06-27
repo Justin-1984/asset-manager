@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.10.1</title>
+  <title>자산 매니저 v6.10.2</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.10.1</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.10.2</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -105,9 +105,11 @@
     <section id="calculator" class="panel">
       <div class="section-head"><h2>추가매수 평단 계산기</h2><button id="avgResetBtn" type="button">초기화</button></div>
       <article class="card backup-card">
-        <p class="muted">기존 보유수량/평단과 추가매수 수량/단가를 입력하면 새 평단과 총 매입금액을 계산합니다. 결과는 자산 데이터에 자동 반영하지 않고 계산용으로만 사용합니다.</p>
+        <p class="muted">기존 보유수량/평단과 추가매수 수량/단가를 입력하면 새 평단을 계산합니다. USD/HKD/AUD 자산은 해당 통화 단가로 계산하고, 원화 환산금액을 함께 표시합니다.</p>
         <div class="form always">
           <label class="field wide"><span>보유 자산 불러오기(선택)</span><select id="avgAssetSelect"><option value="">직접 입력</option></select></label>
+          <label class="field"><span>계산 통화</span><select id="avgCurrency"><option>KRW</option><option>USD</option><option>USDT</option><option>HKD</option><option>AUD</option></select></label>
+          <label class="field"><span>적용 환율(KRW)</span><input id="avgFxRate" type="number" step="0.01" value="1" /></label>
           <label class="field"><span>기존 보유수량</span><input id="avgCurrentQty" type="number" step="0.00000001" placeholder="예: 10" /></label>
           <label class="field"><span>기존 평단</span><input id="avgCurrentPrice" type="number" step="0.0001" placeholder="예: 70000" /></label>
           <label class="field"><span>추가매수 수량</span><input id="avgAddQty" type="number" step="0.00000001" placeholder="예: 5" /></label>
@@ -135,16 +137,16 @@
 
       <div class="card backup-card">
         <h3>환율 / 미국 ETF 시세 설정</h3>
-        <p class="muted">v4.5.1에서 성공했던 Worker(Finnhub) 방식을 우선 사용합니다. 매입원금은 KRW 기준으로 고정하고, 외화 보유액/현재평가액에만 현재환율을 반영합니다. 외화 현금은 통화 선택 후 수량=보유 외화, 현재 단가=1로 입력하세요.</p>
+        <p class="muted">환율은 자동 갱신값을 사용합니다. 수동 환율 입력은 계산 오류를 막기 위해 숨겼습니다. Worker URL만 필요할 때 저장하세요.</p>
         <div class="form always">
-          <label class="field"><span>USD/KRW</span><input id="fxUSD" type="number" step="0.01" placeholder="예: 1380" /></label>
-          <label class="field"><span>USDT/KRW</span><input id="fxUSDT" type="number" step="0.01" placeholder="예: 1380" /></label>
-          <label class="field"><span>HKD/KRW</span><input id="fxHKD" type="number" step="0.01" placeholder="예: 195" /></label>
-          <label class="field"><span>AUD/KRW</span><input id="fxAUD" type="number" step="0.01" placeholder="예: 1080" /></label>
           <label class="field wide"><span>미국주식/ETF Worker URL</span><input id="marketWorkerUrl" placeholder="https://...workers.dev" /></label>
+          <input id="fxUSD" type="hidden" />
+          <input id="fxUSDT" type="hidden" />
+          <input id="fxHKD" type="hidden" />
+          <input id="fxAUD" type="hidden" />
         </div>
         <div class="button-grid">
-          <button id="saveMarketSettingsBtn" class="primary" type="button">환율/Worker 저장</button>
+          <button id="saveMarketSettingsBtn" class="primary" type="button">Worker URL 저장</button>
           <button id="testMarketWorkerBtn" type="button">SCHD Worker 테스트</button>
         </div>
         <p id="fxRateStatus" class="muted"></p>
