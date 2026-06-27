@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-10-3-cost-currency-fix-20260627';
+const CACHE_NAME = 'asset-manager-v6-12-0-transactions-20260627';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {
