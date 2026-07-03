@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-14-2-menu-contrast-fix-20260703';
+const CACHE_NAME = 'asset-manager-v6-14-3-dark-mode-fix-20260703';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {
