@@ -532,3 +532,16 @@ body.dark .asset-view-section summary,body[data-theme="dark"] .asset-view-sectio
   .home-platform-row strong{grid-column:1/-1;text-align:left;padding-left:52px;}
   .home-transaction-row{grid-template-columns:1fr;}
 }
+
+/* v6.16.2 market update summary/detail */
+.market-status-card{align-items:flex-start;gap:14px}
+.market-status-body{width:100%}
+.market-status-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.chip-btn{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:var(--card);font-size:12px;font-weight:800;color:var(--muted);cursor:pointer}
+.market-status-detail{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.market-status-detail.open{display:block}
+.market-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.market-detail-grid p{margin:0;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08);display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.market-detail-grid span{font-weight:800}
+.market-detail-section{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08)}
+.market-detail-section p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}

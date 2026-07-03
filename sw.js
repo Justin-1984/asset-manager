@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-16-1-market-exclusion-detail-20260703';
+const CACHE_NAME = 'asset-manager-v6-16-2-market-exclusion-detail-20260703';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

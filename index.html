@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.16.1</title>
+  <title>자산 매니저 v6.16.2</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.1</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.2</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -173,9 +173,13 @@
         <div><strong>화면 모드</strong><p>라이트/다크 모드를 전환합니다.</p></div>
         <div class="head-actions"><button id="themeToggleBtn" class="theme-toggle" type="button">다크모드</button><button id="pageReloadBtn" type="button">페이지 새로고침</button></div>
       </div>
-      <div class="backup-status-card" id="marketStatusCard">
+      <div class="backup-status-card market-status-card" id="marketStatusCard">
         <div class="backup-dot ok"></div>
-        <div><strong>자동 시세/환율 갱신</strong><p id="marketStatusText">앱 실행 시 자동 갱신하고, 실행 중에는 15분마다 갱신합니다.</p></div>
+        <div class="market-status-body">
+          <div class="market-status-head"><strong>자동 시세/환율 갱신</strong><button id="marketDetailToggle" type="button" class="chip-btn">상세</button></div>
+          <p id="marketStatusText">앱 실행 시 자동 갱신하고, 실행 중에는 15분마다 갱신합니다.</p>
+          <div id="marketStatusDetail" class="market-status-detail"></div>
+        </div>
       </div>
 
       <div class="card backup-card">

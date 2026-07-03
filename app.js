@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.1-market-exclusion-detail';
+const APP_VERSION = 'v6.16.2-market-summary-detail';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -767,13 +767,43 @@ function marketStatusText(){
   const m = state.settings?.market || {};
   if(!m.lastUpdate) return '아직 자동 갱신 전입니다.';
   const t = new Date(m.lastUpdate).toLocaleString();
+  if(m.summary) return `${t} · ${m.summary}`;
   return `${t} · ${m.message || '갱신 완료'}`;
 }
-function setMarketStatus(message, ok=true){
-  if(!state.settings) state.settings = {};
-  state.settings.market = {...(state.settings.market||{}), lastUpdate: ok ? new Date().toISOString() : (state.settings.market?.lastUpdate||''), message, ok};
+function marketDetailHtml(){
+  const m = state.settings?.market || {};
+  const d = m.detail || {};
+  if(!m.lastUpdate) return '<p class="muted">아직 갱신 기록이 없습니다.</p>';
+  const rows = [
+    ['시장 데이터', d.market ? `${d.market.success || 0}/${d.market.total || 0}` : '-'],
+    ['환율', d.fx ? `${d.fx.success || 0}/${d.fx.total || 0}` : '-'],
+    ['캐시 유지', d.market?.cached || 0],
+    ['실패', d.market?.failed || 0],
+    ['제외', d.market?.skipped || 0],
+    ['소요시간', d.elapsedMs ? `${(d.elapsedMs/1000).toFixed(1)}초` : '-']
+  ];
+  const skippedTypes = d.skippedTypes || {};
+  const failedItems = d.failedItems || [];
+  let html = `<div class="market-detail-grid">${rows.map(([k,v])=>`<p><b>${k}</b><span>${v}</span></p>`).join('')}</div>`;
+  if(Object.keys(skippedTypes).length){
+    html += `<div class="market-detail-section"><strong>제외 자산 분류</strong><p>${Object.entries(skippedTypes).map(([k,v])=>`${escapeHtml(k)} ${v}`).join(' · ')}</p></div>`;
+  }
+  if(failedItems.length){
+    html += `<div class="market-detail-section"><strong>실패 항목</strong><p>${failedItems.slice(0,8).map(x=>escapeHtml(x)).join(' · ')}${failedItems.length>8?' 외 '+(failedItems.length-8)+'개':''}</p></div>`;
+  }
+  return html;
+}
+function renderMarketStatus(){
   const box=$('marketStatusText'); if(box) box.textContent = marketStatusText();
   const mini=$('dashMarketStatus'); if(mini) mini.textContent = marketStatusText();
+  const detail=$('marketStatusDetail'); if(detail) detail.innerHTML = marketDetailHtml();
+}
+function setMarketStatus(message, ok=true, detail=null){
+  if(!state.settings) state.settings = {};
+  const prev = state.settings.market || {};
+  const summary = detail?.summary || message;
+  state.settings.market = {...prev, lastUpdate: ok ? new Date().toISOString() : (prev.lastUpdate||''), message, summary, ok, detail: detail || prev.detail || null};
+  renderMarketStatus();
   save();
 }
 async function fetchWithTimeout(url, options={}, timeout=8000){
@@ -1007,14 +1037,14 @@ function shortAssetList(list, limit=6){
 }
 async function updateAssetMarketPrices(){
   let updated = 0, skipped = 0, failed = 0, cached = 0;
-  const skippedAssets = [];
-  const failedAssets = [];
+  const skippedTypes = {};
+  const failedItems = [];
   const cache = getPriceCache();
   for(const a of state.assets){
-    const type = String(a.type||'');
+    const type = String(a.type||'미분류');
     const symbol = cleanSymbol(a.symbol || a.ticker || a.code || a.name);
     try{
-      if(!symbol){ skipped++; skippedAssets.push(a); continue; }
+      if(!symbol){ skipped++; skippedTypes[type]=(skippedTypes[type]||0)+1; continue; }
       if(type.includes('코인')){
         const usd = await fetchCryptoUsd(symbol);
         a.price = (a.currency||'USDT').toUpperCase()==='KRW' ? usd * (state.fx.USDT||state.fx.USD||fxDefaults.USD) : usd;
@@ -1037,18 +1067,17 @@ async function updateAssetMarketPrices(){
         updated++;
       } else {
         skipped++;
-        skippedAssets.push(a);
+        skippedTypes[type]=(skippedTypes[type]||0)+1;
       }
     }catch(e){
       const old = cache[symbol];
       if(old && old.price>0){ a.price = old.price; cached++; marketLog({symbol, source:'cache', ok:true, message:'최근 성공 시세 유지'}); }
-      else { failed++; failedAssets.push(a); marketLog({symbol, source:'all', ok:false, message:String(e.message||e)}); }
+      else { failed++; failedItems.push(symbol || a.name || type); marketLog({symbol, source:'all', ok:false, message:String(e.message||e)}); }
     }
   }
   setPriceCache(cache);
-  const skippedText = skippedAssets.length ? ` · 제외: ${shortAssetList(skippedAssets)}` : '';
-  const failedText = failedAssets.length ? ` · 실패: ${shortAssetList(failedAssets, 4)}` : '';
-  return `시세 ${updated}개 갱신${cached?`, ${cached}개 캐시 유지`:''}${failed?`, ${failed}개 실패`:''}${skipped?`, ${skipped}개 제외`:''}${skippedText}${failedText}`;
+  const total = updated + cached + failed;
+  return {updated, cached, failed, skipped, total, skippedTypes, failedItems};
 }
 let marketUpdating = false;
 async function refreshMarketData(manual=false){
@@ -1057,12 +1086,22 @@ async function refreshMarketData(manual=false){
   marketUpdating = true;
   const btn=$('marketRefreshBtn'); if(btn) btn.textContent='갱신 중...';
   try{
+    const started = Date.now();
     setMarketStatus('환율/시세 갱신 중...', false);
     const fxMsg = await updateFxRates();
-    const priceMsg = await updateAssetMarketPrices();
-    setMarketStatus(`${fxMsg} · ${priceMsg}`, true);
+    const price = await updateAssetMarketPrices();
+    const fxCount = getNeededCurrencies().length;
+    const summary = `정상 · 시장 ${price.updated + price.cached}/${price.total} · 환율 ${fxCount}/${fxCount}`;
+    setMarketStatus(summary, true, {
+      summary,
+      elapsedMs: Date.now() - started,
+      market: {success: price.updated + price.cached, total: price.total, updated: price.updated, cached: price.cached, failed: price.failed, skipped: price.skipped},
+      fx: {success: fxCount, total: fxCount, message: fxMsg},
+      skippedTypes: price.skippedTypes,
+      failedItems: price.failedItems
+    });
     renderSummary(); renderAnalysis(); renderDashboard(); renderLists();
-    log('자동 업데이트 완료 · '+fxMsg+' · '+priceMsg);
+    log('자동 업데이트 완료 · '+summary);
   }catch(e){
     setMarketStatus('갱신 실패 · 기존 데이터 유지', false);
     log('자동 업데이트 실패 · 인터넷/API 상태를 확인하세요.');
@@ -1678,6 +1717,7 @@ window.addEventListener('load',()=>{
   safeBind('refreshDashboard', ()=>location.reload());
   safeBind('pageReloadBtn', ()=>location.reload());
   safeBind('marketRefreshBtn', ()=>refreshMarketData(true));
+  safeBind('marketDetailToggle', ()=>{ const d=$('marketStatusDetail'); if(d) d.classList.toggle('open'); });
   safeBind('refreshAnalysis', renderAnalysis);
   safeBind('backupBtn', backup);
   safeBind('versionBackupBtn', ()=>{createLocalVersionBackup('수동 버전백업'); log('수동 버전백업 완료');});
