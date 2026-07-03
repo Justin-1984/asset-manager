@@ -545,3 +545,11 @@ body.dark .asset-view-section summary,body[data-theme="dark"] .asset-view-sectio
 .market-detail-grid span{font-weight:800}
 .market-detail-section{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(148,163,184,.08)}
 .market-detail-section p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+
+.home-status-card{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px;border:0;box-shadow:var(--shadow-card);background:linear-gradient(135deg,#ffffff,#f8fafc);}
+.home-status-card .status-label{display:block;color:#64748b;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.home-status-card strong{display:block;color:#0f172a;font-size:18px;letter-spacing:-.04em;}
+.home-status-card p{margin-top:4px;color:#64748b;font-weight:800;font-size:13px;}
+.home-market-detail{margin:-4px 0 12px 0;border-radius:22px;border:1px solid #e2e8f0;background:#fff;box-shadow:var(--shadow-soft);}
+.home-market-detail:not(.open){display:none;}
+@media(max-width:720px){.home-status-card{align-items:flex-start}.home-status-card .chip-btn{flex:0 0 auto}}

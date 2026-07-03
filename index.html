@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.16.2</title>
+  <title>자산 매니저 v6.16.3</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.2</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.3</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -27,7 +27,7 @@
       <div class="section-head dashboard-head home-head"><div><p class="eyebrow">Home</p><h2>오늘의 자산</h2></div><div class="head-actions"><button id="marketRefreshBtn" class="primary" type="button">시세/환율 갱신</button></div></div>
       <article class="home-hero" id="homeHeroSummary"></article>
       <div id="homeFocusGrid" class="home-focus-grid"></div>
-      <article class="card market-card"><strong>마지막 시세/환율 업데이트</strong><p id="dashMarketStatus">아직 자동 갱신 전입니다.</p></article>
+      <article class="card home-status-card"><div><span class="status-label">Update Status</span><strong id="homeMarketStatusTitle">시세/환율 상태</strong><p id="dashMarketStatus">아직 자동 갱신 전입니다.</p></div><button id="homeMarketDetailToggle" type="button" class="chip-btn">상세</button></article><div id="homeMarketStatusDetail" class="market-status-detail home-market-detail"></div>
       <div class="home-two-col">
         <article class="card home-panel"><div class="panel-title-row"><h3>기관 TOP</h3><button type="button" onclick="showTab('platforms')">전체 보기</button></div><div id="homePlatformPreview" class="home-platform-preview"></div></article>
         <article class="card home-panel"><div class="panel-title-row"><h3>최근 거래</h3><button type="button" onclick="showTab('transactions')">거래 보기</button></div><div id="homeRecentTransactions" class="home-recent-transactions"></div></article>

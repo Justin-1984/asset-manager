@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.2-market-summary-detail';
+const APP_VERSION = 'v6.16.3-home-dashboard-polish';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -723,6 +723,8 @@ function renderDashboard(){
   const topPlatform = platformSummaries()[0];
   const todayHint = a.recommendations[0] || (topPlatform ? `${topPlatform.label} 비중 ${((topPlatform.value/totalAssets)*100).toFixed(1)}% 확인` : '자산을 등록하면 오늘의 체크가 표시됩니다.');
   const ds=$('dashMarketStatus'); if(ds) ds.textContent = marketStatusText();
+  const hmt=$('homeMarketStatusTitle'); if(hmt) hmt.textContent = marketStatusTitle();
+  const hmd=$('homeMarketStatusDetail'); if(hmd) hmd.innerHTML = marketDetailHtml();
   const hero=$('homeHeroSummary');
   if(hero){
     hero.innerHTML = `<div class="home-hero-main"><span>총 순자산</span><strong>${money(t.net)}</strong><p>${month===null?'스냅샷 기준 변화 계산 대기':'이번 달 '+money(month)}</p></div><div class="home-hero-chips"><span>기관 ${platformCount}개</span><span>자산 ${assetCount}개</span><span>${a.risk.label.trim()}</span></div>`;
@@ -763,6 +765,18 @@ function getNeededCurrencies(){
   state.debts.forEach(d=>cur.push((d.currency||'KRW').toUpperCase()));
   return uniq(cur).filter(c=>c!=='KRW');
 }
+
+function marketStatusTitle(){
+  const m = state.settings?.market || {};
+  const d = m.detail || {};
+  if(!m.lastUpdate) return '갱신 대기';
+  const failed = Number(d.market?.failed || 0) + Number(d.fx?.failed || 0);
+  if(!m.ok || failed>0) return `확인 필요 · 실패 ${failed}건`;
+  const market = d.market ? `${d.market.success || 0}/${d.market.total || 0}` : '-';
+  const fx = d.fx ? `${d.fx.success || 0}/${d.fx.total || 0}` : '-';
+  return `정상 · 시장 ${market} · 환율 ${fx}`;
+}
+
 function marketStatusText(){
   const m = state.settings?.market || {};
   if(!m.lastUpdate) return '아직 자동 갱신 전입니다.';
@@ -1718,6 +1732,7 @@ window.addEventListener('load',()=>{
   safeBind('pageReloadBtn', ()=>location.reload());
   safeBind('marketRefreshBtn', ()=>refreshMarketData(true));
   safeBind('marketDetailToggle', ()=>{ const d=$('marketStatusDetail'); if(d) d.classList.toggle('open'); });
+  safeBind('homeMarketDetailToggle', ()=>{ const d=$('homeMarketStatusDetail'); if(d) d.classList.toggle('open'); });
   safeBind('refreshAnalysis', renderAnalysis);
   safeBind('backupBtn', backup);
   safeBind('versionBackupBtn', ()=>{createLocalVersionBackup('수동 버전백업'); log('수동 버전백업 완료');});
