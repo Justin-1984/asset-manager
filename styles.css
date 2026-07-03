@@ -125,3 +125,93 @@ button.primary,.head-actions button.primary{background:linear-gradient(135deg,#6
 .asset-skin-binance:before,.asset-view-section-binance .section-summary-left i{background:linear-gradient(135deg,#fff4c2,#fff9e6)}.asset-skin-bybit:before,.asset-view-section-bybit .section-summary-left i{background:linear-gradient(135deg,#eef2ff,#f5f3ff)}.asset-skin-upbit:before,.asset-view-section-upbit .section-summary-left i{background:linear-gradient(135deg,#e0f2fe,#f8fbff)}.asset-skin-kiwoom:before,.asset-view-section-kiwoom .section-summary-left i{background:linear-gradient(135deg,#ffe4ef,#fff7fb)}.asset-skin-mirae:before,.asset-view-section-mirae .section-summary-left i{background:linear-gradient(135deg,#dcfce7,#f7fee7)}.asset-skin-hsbc:before,.asset-view-section-hsbc .section-summary-left i{background:linear-gradient(135deg,#fee2e2,#fff7f7)}.asset-skin-bank:before,.asset-view-section-bank .section-summary-left i{background:linear-gradient(135deg,#ccfbf1,#f0fdfa)}.asset-skin-crypto:before{background:linear-gradient(135deg,#ffedd5,#fff7ed)}.asset-skin-stock:before{background:linear-gradient(135deg,#dbeafe,#eff6ff)}
 .asset-skin-binance .asset-avatar{background:#111827;color:#facc15}.asset-skin-bybit .asset-avatar{background:#111827;color:#fff}.asset-skin-upbit .asset-avatar{background:#1d4ed8}.asset-skin-kiwoom .asset-avatar{background:#ec4899}.asset-skin-mirae .asset-avatar{background:#0ea5e9}.asset-skin-hsbc .asset-avatar{background:#ef4444}.asset-skin-bank .asset-avatar{background:#16a34a}.asset-skin-crypto .asset-avatar{background:#f97316}.asset-skin-stock .asset-avatar{background:#2563eb}
 @media(max-width:640px){main{padding:16px 14px 96px}.asset-view-toolbar{top:0;display:grid;grid-template-columns:1fr;position:relative}.view-select-wrap,.asset-search{width:100%}.view-select-wrap select,.asset-search input{flex:1}.asset-view-section details>summary{padding:16px}.asset-section-list{padding:0 10px 12px}.asset-card-head{grid-template-columns:1fr;gap:8px}.asset-value{display:flex;text-align:left;align-items:center;justify-content:space-between}.asset-value b{font-size:19px}.asset-stat-grid{grid-template-columns:1fr 1fr}.asset-card-actions{display:grid;grid-template-columns:1fr 1fr}.asset-card-actions .edit,.asset-card-actions .danger{width:100%}.tab-bar{padding-bottom:12px}.section-head h2{font-size:28px}}
+
+/* v6.14.2 bright UI contrast fix: prevent old dark-mode rules from hiding labels */
+body.dark .card,
+body[data-theme="dark"] .card,
+body.dark .empty,
+body[data-theme="dark"] .empty,
+body.dark .secondary,
+body[data-theme="dark"] .secondary,
+body.dark .form input,
+body[data-theme="dark"] .form input,
+body.dark .form select,
+body[data-theme="dark"] .form select,
+body.dark .form textarea,
+body[data-theme="dark"] .form textarea,
+body.dark .form .check,
+body[data-theme="dark"] .form .check{
+  background:#ffffff !important;
+  color:#111827 !important;
+  border-color:#e5e7eb !important;
+}
+body.dark .summary-grid .card,
+body[data-theme="dark"] .summary-grid .card{
+  background:rgba(255,255,255,.86) !important;
+  color:#111827 !important;
+  border-color:rgba(226,232,240,.95) !important;
+}
+body.dark .stat span,
+body[data-theme="dark"] .stat span,
+body.dark .metric span,
+body[data-theme="dark"] .metric span{
+  color:#64748b !important;
+}
+body.dark .stat strong,
+body[data-theme="dark"] .stat strong,
+body.dark .metric strong,
+body[data-theme="dark"] .metric strong{
+  color:#0f172a !important;
+}
+body.dark .tab-bar button,
+body[data-theme="dark"] .tab-bar button,
+body.dark .button-grid button,
+body[data-theme="dark"] .button-grid button,
+body.dark .file-btn,
+body[data-theme="dark"] .file-btn{
+  background:#ffffff !important;
+  color:#334155 !important;
+  border-color:#e2e8f0 !important;
+  box-shadow:0 8px 20px rgba(15,23,42,.06) !important;
+}
+body.dark .tab-bar button.active,
+body[data-theme="dark"] .tab-bar button.active,
+body.dark button.primary,
+body[data-theme="dark"] button.primary,
+body.dark .head-actions button.primary,
+body[data-theme="dark"] .head-actions button.primary{
+  background:linear-gradient(135deg,#6d5dfc,#2563eb) !important;
+  color:#ffffff !important;
+  border-color:transparent !important;
+}
+body.dark .head-actions button,
+body[data-theme="dark"] .head-actions button{
+  background:#ffffff !important;
+  color:#2563eb !important;
+  border-color:#e2e8f0 !important;
+}
+body.dark .asset-view-toolbar,
+body[data-theme="dark"] .asset-view-toolbar,
+body.dark .asset-view-section,
+body[data-theme="dark"] .asset-view-section,
+body.dark .asset-card-v2,
+body[data-theme="dark"] .asset-card-v2{
+  color:#111827 !important;
+  border-color:#e5e7eb !important;
+}
+body.dark .asset-view-toolbar,
+body[data-theme="dark"] .asset-view-toolbar{
+  background:rgba(255,255,255,.82) !important;
+}
+body.dark .asset-card-v2,
+body[data-theme="dark"] .asset-card-v2{
+  background:#ffffff !important;
+}
+body.dark .view-help,
+body[data-theme="dark"] .view-help,
+body.dark .asset-title p,
+body[data-theme="dark"] .asset-title p,
+body.dark .asset-view-section summary span,
+body[data-theme="dark"] .asset-view-section summary span{
+  color:#64748b !important;
+}
