@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.4-assets-overview-polish';
+const APP_VERSION = 'v6.16.5-dashboard-dark-detail-fix';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);

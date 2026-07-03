@@ -570,3 +570,47 @@ body.dark .asset-overview-card,body[data-theme="dark"] .asset-overview-card{back
 body.dark .asset-overview-card span,body[data-theme="dark"] .asset-overview-card span,body.dark .asset-overview-card small,body[data-theme="dark"] .asset-overview-card small{color:#94a3b8!important;}
 @media(max-width:900px){.asset-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.asset-overview-head{align-items:flex-start;flex-direction:column}.asset-overview-head strong{font-size:22px}}
 @media(max-width:420px){.asset-overview-grid{grid-template-columns:1fr}.asset-overview-card{padding:13px}.asset-overview-card strong{font-size:17px}}
+
+
+/* v6.16.5 Dashboard Market Detail Dark Fix */
+body.dark .home-status-card,
+body[data-theme="dark"] .home-status-card{
+  background:linear-gradient(135deg,#101827,#0b1220)!important;
+  border:1px solid #263244!important;
+  box-shadow:0 16px 40px rgba(0,0,0,.28)!important;
+}
+body.dark .home-status-card .status-label,
+body[data-theme="dark"] .home-status-card .status-label,
+body.dark .home-status-card p,
+body[data-theme="dark"] .home-status-card p{color:#94a3b8!important;}
+body.dark .home-status-card strong,
+body[data-theme="dark"] .home-status-card strong{color:#f8fafc!important;}
+body.dark .home-market-detail,
+body[data-theme="dark"] .home-market-detail{
+  background:#0b1220!important;
+  border-color:#263244!important;
+  box-shadow:0 16px 40px rgba(0,0,0,.28)!important;
+  color:#f8fafc!important;
+}
+body.dark .market-detail-grid p,
+body[data-theme="dark"] .market-detail-grid p,
+body.dark .market-detail-section,
+body[data-theme="dark"] .market-detail-section{
+  background:rgba(15,23,42,.78)!important;
+  border-color:#263244!important;
+  color:#f8fafc!important;
+}
+body.dark .market-detail-grid b,
+body[data-theme="dark"] .market-detail-grid b,
+body.dark .market-detail-section strong,
+body[data-theme="dark"] .market-detail-section strong{color:#f8fafc!important;}
+body.dark .market-detail-grid span,
+body[data-theme="dark"] .market-detail-grid span{color:#e2e8f0!important;}
+body.dark .market-detail-section p,
+body[data-theme="dark"] .market-detail-section p{color:#94a3b8!important;}
+body.dark .chip-btn,
+body[data-theme="dark"] .chip-btn{
+  background:#111827!important;
+  border-color:#334155!important;
+  color:#e2e8f0!important;
+}

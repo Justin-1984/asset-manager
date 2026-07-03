@@ -1,4 +1,4 @@
-# AssetManager PWA v6.16.4 Assets Overview Polish
+# AssetManager PWA v6.16.5 Dashboard Dark Detail Fix
 
 기준 버전: v6.16.3 Home Dashboard Polish
 
@@ -15,3 +15,7 @@
 - 데이터 엔진 변경 없음
 - View Engine과 UI Layer만 개선
 - 기존 기능 회귀 방지
+
+## v6.16.5
+- Dashboard 상세 패널 다크모드 색상 깨짐 수정
+- Settings 화면 동작/데이터 구조 변경 없음
