@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.5-dashboard-dark-detail-fix';
+const APP_VERSION = 'v6.16.6-platform-center-ui-polish';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -603,6 +603,30 @@ function groupAssetsForList(items){
   return groups;
 }
 
+
+function platformLastUpdateText(){
+  const last = state.settings?.market?.lastUpdate;
+  if(!last) return '업데이트 대기';
+  try{ return new Date(last).toLocaleString('ko-KR'); }catch(e){ return '업데이트 기록 있음'; }
+}
+function platformBreakdown(sec){
+  const byType = {};
+  const byCurrency = {};
+  (sec.items||[]).forEach(a=>{
+    const type = a.type || '자산';
+    const cur = String(a.currency||'KRW').toUpperCase();
+    byType[type] = (byType[type]||0) + assetValue(a);
+    byCurrency[cur] = (byCurrency[cur]||0) + assetValue(a);
+  });
+  const typeRows = Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const curRows = Object.entries(byCurrency).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return {typeRows, curRows};
+}
+function platformMiniBar(value,total){
+  const pct = total>0 ? Math.max(0, Math.min(100, value/total*100)) : 0;
+  return `<div class="platform-mini-bar"><span style="width:${pct.toFixed(2)}%"></span></div>`;
+}
+
 function platformSummaries(){
   return groupedBy(state.assets, assetPlatform).sort((a,b)=>b.value-a.value);
 }
@@ -625,7 +649,8 @@ function renderPlatformCenter(){
   const summary=$('platformSummary');
   if(summary){
     const shownValue=filteredByCat.reduce((s,x)=>s+x.value,0);
-    summary.innerHTML=`<div><span>${escapeHtml(platformCategoryLabel(cat))}</span><strong>${money(shownValue)}</strong><p>전체 ${allSections.length}개 기관 중 ${filteredByCat.length}개 표시</p></div><div class="platform-summary-meta"><b>${state.assets.length}개 자산</b><small>${q?'검색 적용 중':'검색 없음'}</small></div>`;
+    const top=filteredByCat[0];
+    summary.innerHTML=`<div><span>${escapeHtml(platformCategoryLabel(cat))}</span><strong>${money(shownValue)}</strong><p>${top?`1위 ${escapeHtml(top.label)} · ${money(top.value)}`:'기관 자산 등록 대기'}</p></div><div class="platform-summary-meta"><b>${filteredByCat.length}개 기관 · ${state.assets.length}개 자산</b><small>${q?'검색 적용 중':'최근 업데이트 '+escapeHtml(platformLastUpdateText())}</small></div>`;
   }
   const chips=$('platformCategoryChips');
   if(chips){
@@ -638,10 +663,12 @@ function renderPlatformCenter(){
     const pct=total>0 ? sec.value/total*100 : 0;
     const cls=visualKeyFromText(sec.label);
     const profitClass=sec.profit>=0?'positive':'negative';
-    const top=groupAssetsForList(sec.items).slice(0,5);
+    const top=groupAssetsForList(sec.items).slice(0,4);
     const assetRows=top.map(g=>`<li><span>${escapeHtml(g.name)}</span><em>${escapeHtml(g.type||'자산')}</em><b>${money(g.value)}</b></li>`).join('');
-    const topNames=top.slice(0,3).map(g=>g.name).join(' · ');
-    return `<article class="platform-card platform-skin-${cls}"><div class="platform-rank">${idx+1}</div><div class="platform-head"><div class="platform-title"><i>${escapeHtml(platformIcon(sec.label))}</i><div><strong>${escapeHtml(sec.label)}</strong><span>${sec.items.length}개 자산 · ${escapeHtml(platformCategoryLabel(platformCategory(sec)))} · 비중 ${pct.toFixed(1)}%</span></div></div><button type="button" data-platform-view="${escapeHtml(sec.label)}">열기</button></div><div class="platform-main"><b>${money(sec.value)}</b><small class="${profitClass}">${escapeHtml(signedMoney(sec.profit))} (${sec.rate>=0?'+':''}${sec.rate.toFixed(2)}%)</small></div><p class="platform-key-assets">${escapeHtml(topNames || '자산 등록 대기')}</p><ul>${assetRows || '<li><span>자산 없음</span><b>-</b></li>'}</ul></article>`;
+    const {typeRows, curRows}=platformBreakdown(sec);
+    const typeText=typeRows.map(([k,v])=>`${escapeHtml(k)} ${money(v)}`).join(' · ') || '분류 대기';
+    const curText=curRows.map(([k,v])=>`${escapeHtml(k)} ${money(v)}`).join(' · ') || 'KRW';
+    return `<article class="platform-card platform-card-pro platform-skin-${cls}"><div class="platform-rank">${idx+1}</div><div class="platform-head"><div class="platform-title"><i>${escapeHtml(platformIcon(sec.label))}</i><div><strong>${escapeHtml(sec.label)}</strong><span>${escapeHtml(platformCategoryLabel(platformCategory(sec)))} · 전체 비중 ${pct.toFixed(1)}%</span></div></div><button type="button" data-platform-view="${escapeHtml(sec.label)}">열기</button></div><div class="platform-main"><b>${money(sec.value)}</b><small class="${profitClass}">${escapeHtml(signedMoney(sec.profit))} (${sec.rate>=0?'+':''}${sec.rate.toFixed(2)}%)</small></div>${platformMiniBar(sec.value,total)}<div class="platform-metrics"><p><span>자산 개수</span><b>${sec.items.length}개</b></p><p><span>최근 업데이트</span><b>${escapeHtml(platformLastUpdateText())}</b></p><p><span>통화</span><b>${escapeHtml(sec.currencies.join(' / ') || 'KRW')}</b></p></div><div class="platform-breakdown"><p><span>자산 구성</span><b>${typeText}</b></p><p><span>통화 구성</span><b>${curText}</b></p></div><ul>${assetRows || '<li><span>자산 없음</span><b>-</b></li>'}</ul></article>`;
   }).join('');
   box.querySelectorAll('[data-platform-view]').forEach(btn=>{
     btn.onclick=()=>{
@@ -653,6 +680,7 @@ function renderPlatformCenter(){
     };
   });
 }
+
 function bindPlatformCenterControls(){
   const input=$('platformSearchInput');
   if(input) input.oninput=()=>{ safeSettings().platformSearch=input.value; save(); renderPlatformCenter(); };

@@ -614,3 +614,21 @@ body[data-theme="dark"] .chip-btn{
   border-color:#334155!important;
   color:#e2e8f0!important;
 }
+
+
+/* v6.16.6 Platform Center UI Polish */
+.platform-card-pro{min-height:360px;}
+.platform-mini-bar{height:8px;border-radius:999px;background:#e5e7eb;overflow:hidden;margin-top:14px;}
+.platform-mini-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#2563eb);}
+.platform-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;}
+.platform-metrics p{margin:0;padding:10px;border-radius:16px;background:#f8fafc;border:1px solid #eef2f7;min-width:0;}
+.platform-metrics span,.platform-breakdown span{display:block;color:#64748b;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.02em;}
+.platform-metrics b{display:block;color:#0f172a;font-size:13px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.platform-breakdown{display:grid;gap:8px;margin-top:10px;}
+.platform-breakdown p{margin:0;padding:11px 12px;border-radius:16px;background:rgba(248,250,252,.78);border:1px solid #eef2f7;}
+.platform-breakdown b{display:block;color:#0f172a;font-size:12.5px;margin-top:5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.dark .platform-mini-bar,body[data-theme="dark"] .platform-mini-bar{background:#1e293b!important;}
+body.dark .platform-metrics p,body[data-theme="dark"] .platform-metrics p,body.dark .platform-breakdown p,body[data-theme="dark"] .platform-breakdown p{background:#0b1220!important;border-color:#263244!important;}
+body.dark .platform-metrics b,body[data-theme="dark"] .platform-metrics b,body.dark .platform-breakdown b,body[data-theme="dark"] .platform-breakdown b{color:#f8fafc!important;}
+body.dark .platform-metrics span,body[data-theme="dark"] .platform-metrics span,body.dark .platform-breakdown span,body[data-theme="dark"] .platform-breakdown span{color:#94a3b8!important;}
+@media(max-width:760px){.platform-metrics{grid-template-columns:1fr 1fr;}.platform-metrics p:nth-child(2){grid-column:1/-1;}.platform-card-pro{min-height:auto;}}
