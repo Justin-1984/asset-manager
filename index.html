@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.14.3</title>
+  <title>자산 매니저 v6.15.0</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.14.3</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.15.0</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -60,6 +60,19 @@
         <button class="secondary hidden" type="button" data-cancel="assets">수정 취소</button>
       </form>
       <div id="assetList" class="list"></div>
+    </section>
+
+    <section id="platforms" class="panel">
+      <div class="section-head"><h2>기관</h2><button class="primary" data-open="assetForm" data-title="assets">자산 추가</button></div>
+      <article class="card platform-intro">
+        <strong>기관별 자산 관리</strong>
+        <p>Binance, Bybit, Upbit, 키움증권, HSBC, 은행처럼 실제 보관 위치별로 자산을 확인합니다. 원본 자산 데이터는 합치지 않고 화면에서만 기관별로 재구성합니다.</p>
+      </article>
+      <div class="asset-view-toolbar platform-toolbar">
+        <label class="asset-search"><span>기관 검색</span><input id="platformSearchInput" placeholder="기관, 자산, 통화 검색" /></label>
+        <button id="platformSearchClear" type="button" class="secondary">초기화</button>
+      </div>
+      <div id="platformList" class="platform-grid"></div>
     </section>
 
     <section id="debts" class="panel">
