@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-13-6-cash-fx-display-fix-20260628';
+const CACHE_NAME = 'asset-manager-v6-14-1-benefit-style-ui-20260703';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {
