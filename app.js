@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.0-ui-foundation';
+const APP_VERSION = 'v6.16.1-market-exclusion-detail';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -993,14 +993,28 @@ async function fetchStockUsd(symbol){
   try{ return await fetchYahooChart(raw); }catch(e){ errors.push('Yahoo:'+e.message); }
   throw new Error(`${raw} 미국 ETF/주식 시세 실패 (${errors.join(' → ')})`);
 }
+function marketAssetLabel(a){
+  const name = displayAssetName(a);
+  const type = a.type || '종류없음';
+  const place = a.country || a.account || a.platform || '';
+  return `${name}${place ? `(${place})` : ''}·${type}`;
+}
+function shortAssetList(list, limit=6){
+  if(!list.length) return '';
+  const shown = list.slice(0, limit).map(x=>marketAssetLabel(x));
+  const more = list.length > limit ? ` 외 ${list.length-limit}개` : '';
+  return shown.join(', ') + more;
+}
 async function updateAssetMarketPrices(){
   let updated = 0, skipped = 0, failed = 0, cached = 0;
+  const skippedAssets = [];
+  const failedAssets = [];
   const cache = getPriceCache();
   for(const a of state.assets){
     const type = String(a.type||'');
-    const symbol = cleanSymbol(a.name || a.symbol || a.ticker);
+    const symbol = cleanSymbol(a.symbol || a.ticker || a.code || a.name);
     try{
-      if(!symbol){ skipped++; continue; }
+      if(!symbol){ skipped++; skippedAssets.push(a); continue; }
       if(type.includes('코인')){
         const usd = await fetchCryptoUsd(symbol);
         a.price = (a.currency||'USDT').toUpperCase()==='KRW' ? usd * (state.fx.USDT||state.fx.USD||fxDefaults.USD) : usd;
@@ -1023,15 +1037,18 @@ async function updateAssetMarketPrices(){
         updated++;
       } else {
         skipped++;
+        skippedAssets.push(a);
       }
     }catch(e){
       const old = cache[symbol];
       if(old && old.price>0){ a.price = old.price; cached++; marketLog({symbol, source:'cache', ok:true, message:'최근 성공 시세 유지'}); }
-      else { failed++; marketLog({symbol, source:'all', ok:false, message:String(e.message||e)}); }
+      else { failed++; failedAssets.push(a); marketLog({symbol, source:'all', ok:false, message:String(e.message||e)}); }
     }
   }
   setPriceCache(cache);
-  return `시세 ${updated}개 갱신${cached?`, ${cached}개 캐시 유지`:''}${failed?`, ${failed}개 실패`:''}${skipped?`, ${skipped}개 제외`:''}`;
+  const skippedText = skippedAssets.length ? ` · 제외: ${shortAssetList(skippedAssets)}` : '';
+  const failedText = failedAssets.length ? ` · 실패: ${shortAssetList(failedAssets, 4)}` : '';
+  return `시세 ${updated}개 갱신${cached?`, ${cached}개 캐시 유지`:''}${failed?`, ${failed}개 실패`:''}${skipped?`, ${skipped}개 제외`:''}${skippedText}${failedText}`;
 }
 let marketUpdating = false;
 async function refreshMarketData(manual=false){
