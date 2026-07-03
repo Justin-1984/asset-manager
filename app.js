@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.15.0-platform-view-engine';
+const APP_VERSION = 'v6.16.0-ui-foundation';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -11,7 +11,7 @@ const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
 const MARKET_LOG_KEY = 'assetManagerPWA_v6_marketLog';
 const LEGACY_KEYS = ['asset-manager-v4-5-1','asset-manager-v4-5','asset-manager-v4-4','asset-manager-v4','asset-manager-v3-9','assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const MARKET_REFRESH_MINUTES = 15;
-const tabs = [['dashboard','대시보드'],['assets','자산'],['platforms','기관'],['debts','부채'],['insurance','보험'],['analysis','분석'],['transactions','거래내역'],['calculator','계산기'],['settings','설정']];
+const tabs = [['dashboard','🏠 Home'],['assets','💼 Assets'],['platforms','🏦 Platforms'],['transactions','🧾 Transactions'],['analysis','📊 Reports'],['calculator','🧮 Tools'],['settings','⚙ Settings'],['debts','부채'],['insurance','보험']];
 const fxDefaults = { KRW:1, USD:1380, USDT:1380, HKD:195, AUD:1080 };
 let state = loadState();
 (function applyLegacyPrefsOnce(){ const p=getLegacyPrefs(); if(p){ if(!state.settings) state.settings={}; if(!state.settings.marketWorkerUrl && p.marketWorkerUrl) state.settings.marketWorkerUrl=p.marketWorkerUrl; if(goodRate("USD",p.usdRate)) state.fx.USD=Number(p.usdRate); if(goodRate("USDT",p.usdtRate)) state.fx.USDT=Number(p.usdtRate); if(goodRate("HKD",p.hkdRate)) state.fx.HKD=Number(p.hkdRate); if(goodRate("AUD",p.audRate)) state.fx.AUD=Number(p.audRate); } })();
@@ -35,6 +35,8 @@ function safeSettings(){
   if(!state.settings.assetSearch) state.settings.assetSearch = '';
   if(!Array.isArray(state.settings.favoriteAssetIds)) state.settings.favoriteAssetIds = [];
   if(!state.settings.platformSearch) state.settings.platformSearch = '';
+  const cats = ['all','exchange','broker','bank','insurance','other'];
+  if(!cats.includes(state.settings.platformCategory)) state.settings.platformCategory = 'all';
   return state.settings;
 }
 function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.debts&&s.debts.length)||(s.insurance&&s.insurance.length)||(s.transactions&&s.transactions.length)||(s.snapshots&&s.snapshots.length))); }
@@ -482,6 +484,50 @@ function platformIcon(label){
   return ({binance:'B',bybit:'Y',upbit:'U',kiwoom:'K',mirae:'M',hsbc:'H',bank:'₩',crypto:'₿',stock:'↗',default:'•'})[k] || '•';
 }
 
+function platformCategory(sec){
+  const label=String(sec?.label||'').toLowerCase();
+  const types=(sec?.types||[]).join(' ').toLowerCase();
+  if(['binance','bybit','okx','upbit','bithumb','coinone','gate','bingx','htx'].some(x=>label.includes(x))) return 'exchange';
+  if(['키움','미래','삼성증권','토스증권','ibkr','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
+  if(['은행','bank','hsbc','sc','국민','신한','카카오','토스','우리','하나'].some(x=>label.includes(x.toLowerCase())) || types.includes('은행') || types.includes('현금')) return 'bank';
+  if(types.includes('보험')) return 'insurance';
+  return 'other';
+}
+function platformCategoryLabel(cat){
+  return ({all:'전체',exchange:'거래소',broker:'증권사',bank:'은행/현금',insurance:'보험',other:'기타'})[cat] || '전체';
+}
+function categoryCount(sections, cat){
+  if(cat==='all') return sections.length;
+  return sections.filter(sec=>platformCategory(sec)===cat).length;
+}
+function recentTransactionRows(limit=3){
+  const list=(state.transactions||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,limit);
+  if(!list.length) return '<div class="empty compact-empty">최근 거래가 없습니다.</div>';
+  return list.map(t=>`<div class="home-transaction-row"><span>${escapeHtml(t.date||'-')}</span><b>${escapeHtml(t.type||'-')} · ${escapeHtml(t.assetName||t.asset||'-')}</b><em>${escapeHtml(money(transactionKrwTotal(t)))}</em></div>`).join('');
+}
+function platformPreviewHtml(limit=4){
+  const total=state.assets.reduce((s,a)=>s+assetValue(a),0);
+  const sections=platformSummaries().slice(0,limit);
+  if(!sections.length) return '<div class="empty compact-empty">기관별 자산을 등록하면 표시됩니다.</div>';
+  return sections.map(sec=>{
+    const pct=total>0 ? sec.value/total*100 : 0;
+    const top=groupAssetsForList(sec.items).slice(0,3).map(g=>g.name).join(' · ');
+    const cls=visualKeyFromText(sec.label);
+    return `<button type="button" class="home-platform-row platform-skin-${cls}" data-home-platform="${escapeHtml(sec.label)}"><i>${escapeHtml(platformIcon(sec.label))}</i><span><b>${escapeHtml(sec.label)}</b><small>${escapeHtml(top || sec.types.join(' · ') || '자산')}</small></span><strong>${money(sec.value)}<em>${pct.toFixed(1)}%</em></strong></button>`;
+  }).join('');
+}
+function bindDashboardHomeActions(){
+  document.querySelectorAll('[data-home-platform]').forEach(btn=>{
+    btn.onclick=()=>{
+      safeSettings().assetViewMode='platform';
+      safeSettings().assetSearch=btn.dataset.homePlatform || '';
+      save();
+      showTab('assets');
+      renderLists();
+    };
+  });
+}
+
 function renderAssetViewSection(sec){
   const el=document.createElement('article');
   el.className='asset-view-section asset-view-section-'+visualKeyFromText(sec.label);
@@ -525,16 +571,31 @@ function renderPlatformCenter(){
   const input=$('platformSearchInput');
   if(input && document.activeElement!==input) input.value = state.settings.platformSearch || '';
   const q=String(state.settings.platformSearch||'').trim();
+  const allSections=platformSummaries();
   const total=state.assets.reduce((s,a)=>s+assetValue(a),0);
-  const sections=platformSummaries().filter(sec=>platformSearchMatch(sec,q));
+  const cat=state.settings.platformCategory || 'all';
+  const filteredByCat=allSections.filter(sec=>cat==='all' || platformCategory(sec)===cat);
+  const sections=filteredByCat.filter(sec=>platformSearchMatch(sec,q));
+  const summary=$('platformSummary');
+  if(summary){
+    const shownValue=filteredByCat.reduce((s,x)=>s+x.value,0);
+    summary.innerHTML=`<div><span>${escapeHtml(platformCategoryLabel(cat))}</span><strong>${money(shownValue)}</strong><p>전체 ${allSections.length}개 기관 중 ${filteredByCat.length}개 표시</p></div><div class="platform-summary-meta"><b>${state.assets.length}개 자산</b><small>${q?'검색 적용 중':'검색 없음'}</small></div>`;
+  }
+  const chips=$('platformCategoryChips');
+  if(chips){
+    const cats=['all','exchange','broker','bank','insurance','other'];
+    chips.innerHTML=cats.map(c=>`<button type="button" data-platform-cat="${c}" class="${cat===c?'active':''}">${platformCategoryLabel(c)} <b>${categoryCount(allSections,c)}</b></button>`).join('');
+    chips.querySelectorAll('[data-platform-cat]').forEach(btn=>btn.onclick=()=>{ safeSettings().platformCategory=btn.dataset.platformCat; save(); renderPlatformCenter(); });
+  }
   if(!sections.length){ box.innerHTML='<div class="empty">표시할 기관이 없습니다.</div>'; return; }
-  box.innerHTML=sections.map(sec=>{
+  box.innerHTML=sections.map((sec,idx)=>{
     const pct=total>0 ? sec.value/total*100 : 0;
     const cls=visualKeyFromText(sec.label);
     const profitClass=sec.profit>=0?'positive':'negative';
-    const top=groupAssetsForList(sec.items).slice(0,4);
-    const assetRows=top.map(g=>`<li><span>${escapeHtml(g.name)}</span><b>${money(g.value)}</b></li>`).join('');
-    return `<article class="platform-card platform-skin-${cls}"><div class="platform-head"><div class="platform-title"><i>${escapeHtml(platformIcon(sec.label))}</i><div><strong>${escapeHtml(sec.label)}</strong><span>${sec.items.length}개 자산 · 비중 ${pct.toFixed(1)}%</span></div></div><button type="button" data-platform-view="${escapeHtml(sec.label)}">자산 보기</button></div><div class="platform-main"><b>${money(sec.value)}</b><small class="${profitClass}">${escapeHtml(signedMoney(sec.profit))} (${sec.rate>=0?'+':''}${sec.rate.toFixed(2)}%)</small></div><ul>${assetRows || '<li><span>자산 없음</span><b>-</b></li>'}</ul></article>`;
+    const top=groupAssetsForList(sec.items).slice(0,5);
+    const assetRows=top.map(g=>`<li><span>${escapeHtml(g.name)}</span><em>${escapeHtml(g.type||'자산')}</em><b>${money(g.value)}</b></li>`).join('');
+    const topNames=top.slice(0,3).map(g=>g.name).join(' · ');
+    return `<article class="platform-card platform-skin-${cls}"><div class="platform-rank">${idx+1}</div><div class="platform-head"><div class="platform-title"><i>${escapeHtml(platformIcon(sec.label))}</i><div><strong>${escapeHtml(sec.label)}</strong><span>${sec.items.length}개 자산 · ${escapeHtml(platformCategoryLabel(platformCategory(sec)))} · 비중 ${pct.toFixed(1)}%</span></div></div><button type="button" data-platform-view="${escapeHtml(sec.label)}">열기</button></div><div class="platform-main"><b>${money(sec.value)}</b><small class="${profitClass}">${escapeHtml(signedMoney(sec.profit))} (${sec.rate>=0?'+':''}${sec.rate.toFixed(2)}%)</small></div><p class="platform-key-assets">${escapeHtml(topNames || '자산 등록 대기')}</p><ul>${assetRows || '<li><span>자산 없음</span><b>-</b></li>'}</ul></article>`;
   }).join('');
   box.querySelectorAll('[data-platform-view]').forEach(btn=>{
     btn.onclick=()=>{
@@ -656,6 +717,29 @@ function renderDashboard(){
   $('dashGoalRate').textContent=goal===null ? '목표 미설정' : goal.toFixed(1)+'%';
   $('dashRiskText').textContent='위험도 ' + a.risk.label.trim() + ' · 점수 ' + a.risk.score + '/100';
   $('dashCashCrypto').textContent=`현금 ${a.cashPct.toFixed(1)}% / 코인 ${a.cryptoPct.toFixed(1)}%`;
+  const totalAssets = Math.max(1, state.assets.reduce((s,x)=>s+assetValue(x),0));
+  const platformCount = platformSummaries().length;
+  const assetCount = state.assets.length;
+  const topPlatform = platformSummaries()[0];
+  const todayHint = a.recommendations[0] || (topPlatform ? `${topPlatform.label} 비중 ${((topPlatform.value/totalAssets)*100).toFixed(1)}% 확인` : '자산을 등록하면 오늘의 체크가 표시됩니다.');
+  const ds=$('dashMarketStatus'); if(ds) ds.textContent = marketStatusText();
+  const hero=$('homeHeroSummary');
+  if(hero){
+    hero.innerHTML = `<div class="home-hero-main"><span>총 순자산</span><strong>${money(t.net)}</strong><p>${month===null?'스냅샷 기준 변화 계산 대기':'이번 달 '+money(month)}</p></div><div class="home-hero-chips"><span>기관 ${platformCount}개</span><span>자산 ${assetCount}개</span><span>${a.risk.label.trim()}</span></div>`;
+  }
+  const focus=$('homeFocusGrid');
+  if(focus){
+    const cashValue = state.assets.filter(x=>String(x.type||'').includes('현금')||String(x.type||'').includes('은행')).reduce((s,x)=>s+assetValue(x),0);
+    const topValue = topPlatform ? topPlatform.value : 0;
+    focus.innerHTML = [
+      ['오늘 손익', p.profit, p.cost>0 ? `${p.rate.toFixed(1)}%` : '계산 대기'],
+      ['현금/은행', cashValue, `${a.cashPct.toFixed(1)}%`],
+      ['1위 기관', topValue, topPlatform ? topPlatform.label : '대기'],
+      ['오늘 체크', 0, todayHint]
+    ].map(([k,v,sub])=>`<article class="focus-card"><span>${escapeHtml(k)}</span><b>${k==='오늘 체크'?escapeHtml(sub):money(v)}</b><small>${k==='오늘 체크'?'':escapeHtml(sub)}</small></article>`).join('');
+  }
+  const platformBox=$('homePlatformPreview'); if(platformBox) platformBox.innerHTML=platformPreviewHtml(4);
+  const txBox=$('homeRecentTransactions'); if(txBox) txBox.innerHTML=recentTransactionRows(3);
   const entries=Object.entries(a.byType).sort((x,y)=>y[1]-x[1]);
   const parts=[]; let acc=0;
   entries.forEach(([k,v],idx)=>{ const start=acc; acc+=v; const hue=(idx*58)%360; parts.push(`hsl(${hue} 70% 55%) ${start}% ${acc}%`); });
@@ -667,7 +751,7 @@ function renderDashboard(){
     ['이번 주', week], ['이번 달', month], ['올해', year]
   ].map(([label,val])=>`<p><b>${label}</b><span>${val===null?'스냅샷 없음':money(val)}</span></p>`).join('');
   $('dashChecks').innerHTML = a.recommendations.slice(0,4).map(r=>`<p>• ${escapeHtml(r)}</p>`).join('');
-  const ds=$('dashMarketStatus'); if(ds) ds.textContent = marketStatusText();
+  bindDashboardHomeActions();
 }
 
 
@@ -1486,7 +1570,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-15-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
