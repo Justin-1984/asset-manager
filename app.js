@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.3-home-dashboard-polish';
+const APP_VERSION = 'v6.16.4-assets-overview-polish';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -464,6 +464,52 @@ function bindAssetViewControls(){
   if(mode) mode.onchange=()=>{ safeSettings().assetViewMode=mode.value; save(); renderLists(); };
   const search=$('assetSearchInput');
   if(search) search.oninput=()=>{ safeSettings().assetSearch=search.value; save(); renderLists(); };
+}
+
+function assetBucketOf(a){
+  const t=String(a.type||'').toLowerCase();
+  if(t.includes('현금') || t.includes('은행')) return 'cash';
+  if(t.includes('자동차') || t.includes('부동산')) return 'real';
+  if(t.includes('보험')) return 'insurance';
+  return 'investment';
+}
+function assetOverviewHtml(){
+  const list=state.assets || [];
+  if(!list.length) return '';
+  const fav=new Set((safeSettings().favoriteAssetIds||[]));
+  const total=list.reduce((s,a)=>s+assetValue(a),0);
+  const filtered=currentAssetItems();
+  const buckets=[
+    ['investment','투자자산','코인·주식·ETF·금','투자'],
+    ['cash','현금/은행','KRW·USD·HKD·AUD','현금'],
+    ['real','실물자산','자동차·부동산','자동차'],
+    ['favorite','즐겨찾기','자주 보는 자산','']
+  ];
+  const cards=buckets.map(([key,title,sub,filter])=>{
+    const items = key==='favorite' ? list.filter(a=>fav.has(a.id)) : list.filter(a=>assetBucketOf(a)===key);
+    const value = items.reduce((s,a)=>s+assetValue(a),0);
+    const pct = total>0 ? value/total*100 : 0;
+    const action = key==='favorite' ? 'favorite' : filter;
+    return `<button type="button" class="asset-overview-card" data-asset-overview="${escapeHtml(action)}"><span>${escapeHtml(title)}</span><strong>${money(value)}</strong><small>${items.length}개 · ${pct.toFixed(1)}% · ${escapeHtml(sub)}</small></button>`;
+  }).join('');
+  const currentValue=filtered.reduce((s,a)=>s+assetValue(a),0);
+  return `<section class="asset-overview-panel"><div class="asset-overview-head"><div><p class="eyebrow">Assets Overview</p><h3>자산 보기 요약</h3></div><strong>${money(currentValue)}</strong></div><div class="asset-overview-grid">${cards}</div></section>`;
+}
+function bindAssetOverviewActions(){
+  document.querySelectorAll('[data-asset-overview]').forEach(btn=>{
+    btn.onclick=()=>{
+      const v=btn.dataset.assetOverview || '';
+      const settings=safeSettings();
+      if(v==='favorite'){
+        settings.assetViewMode='favorite';
+        settings.assetSearch='';
+      }else{
+        settings.assetViewMode='type';
+        settings.assetSearch=v;
+      }
+      save(); renderLists();
+    };
+  });
 }
 
 function visualKeyFromText(text){
@@ -1215,7 +1261,8 @@ function displayAssetName(a){
   return a.name || code || '이름없음';
 }
 function renderLists(){
-  const assetList=$('assetList'); assetList.innerHTML=assetViewToolbarHtml();
+  const assetList=$('assetList'); assetList.innerHTML=assetOverviewHtml()+assetViewToolbarHtml();
+  bindAssetOverviewActions();
   bindAssetViewControls();
   const view=assetViewData();
   const content=document.createElement('div');
@@ -1640,7 +1687,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-4-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
