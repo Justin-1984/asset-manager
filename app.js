@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.6-platform-center-ui-polish';
+const APP_VERSION = 'v6.16.7-reports-foundation';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-15-0-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-7-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -1308,16 +1308,92 @@ function renderLists(){
   state.insurance.forEach(i=>insuranceList.appendChild(itemRow(`${i.company} ${i.product}`, `${i.type||'-'} · 매월 ${i.payday||'-'}일 · 월 ${money(i.premium)}`, i.includeRefund?money(i.refund):'자산 제외', ()=>startEdit('insurance', i), ()=>{ if(confirm('이 보험을 삭제할까요?')){state.insurance=state.insurance.filter(x=>x.id!==i.id); autoBackup('보험 삭제'); render();} }))); 
   if(!state.insurance.length) insuranceList.innerHTML='<div class="empty">등록된 보험이 없습니다.</div>';
 }
+function setHtml(id, html){ const el=$(id); if(el) el.innerHTML=html; }
+function reportValueRows(list, labelFn){
+  const total=list.reduce((s,item)=>s+assetValue(item),0);
+  const map=new Map();
+  list.forEach(item=>{
+    const label=String(labelFn(item)||'미분류').trim() || '미분류';
+    const current=map.get(label) || {label, value:0, count:0};
+    current.value += assetValue(item);
+    current.count += 1;
+    map.set(label,current);
+  });
+  return [...map.values()].sort((a,b)=>b.value-a.value).map(row=>({...row, pct:total>0 ? row.value/total*100 : 0}));
+}
+function reportBarRowsHtml(rows, options={}){
+  if(!rows.length) return '<div class="empty">분석할 데이터가 없습니다.</div>';
+  const limit=options.limit || 8;
+  return rows.slice(0,limit).map(row=>`<div class="report-bar-row"><div class="report-bar-label"><strong>${escapeHtml(row.label)}</strong><span>${row.count||0}개 · ${money(row.value)}</span></div><div class="report-bar-track"><i style="width:${Math.min(100,row.pct||0).toFixed(2)}%"></i></div><b>${(row.pct||0).toFixed(1)}%</b></div>`).join('');
+}
+function reportReturnRows(){
+  return groupDashboardAssets()
+    .filter(g=>isInvestmentAsset(g.items?.[0] || {type:g.type}))
+    .sort((a,b)=>Math.abs(b.profit)-Math.abs(a.profit));
+}
+function reportReturnHtml(){
+  const rows=reportReturnRows();
+  if(!rows.length) return '<div class="empty">투자 수익률을 계산할 자산이 없습니다.</div>';
+  return rows.slice(0,8).map(g=>{
+    const cls=g.profit>0?'positive':g.profit<0?'negative':'neutral';
+    return `<div class="report-return-row"><div><strong>${escapeHtml(g.name)}</strong><span>${escapeHtml(g.type||'자산')} · ${escapeHtml(g.placeText||'기관 미지정')}</span></div><b>${money(g.value)}</b><em class="${cls}">${signedMoney(g.profit)} / ${g.rate>=0?'+':''}${g.rate.toFixed(2)}%</em></div>`;
+  }).join('');
+}
+function reportSnapshotRows(){
+  const snapshots=normalizeArray(state.snapshots).filter(s=>s && s.date).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const monthly=new Map();
+  snapshots.forEach(s=>{
+    const d=new Date(s.date);
+    if(Number.isNaN(d.getTime())) return;
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthly.set(key,{label:key, net:num(s.net), assets:num(s.assets), debts:num(s.debts), date:s.date});
+  });
+  const rows=[...monthly.values()].sort((a,b)=>a.label.localeCompare(b.label));
+  const t=totals();
+  const currentKey=new Date().toISOString().slice(0,7);
+  if(!rows.length || rows[rows.length-1].label!==currentKey){ rows.push({label:currentKey, net:t.net, assets:t.assets, debts:t.debts, date:new Date().toISOString()}); }
+  return rows.slice(-8).map((row,idx,arr)=>({...row, change:idx>0 ? row.net-arr[idx-1].net : 0}));
+}
+function reportMonthlyHtml(){
+  const rows=reportSnapshotRows();
+  if(rows.length<=1 && !state.snapshots.length) return '<div class="empty">스냅샷을 만들면 월별 변화가 누적 표시됩니다.</div>';
+  return rows.map(row=>`<div class="report-month-row"><span>${escapeHtml(row.label)}</span><b>${money(row.net)}</b><em class="${row.change>0?'positive':row.change<0?'negative':'neutral'}">${signedMoney(row.change)}</em></div>`).join('');
+}
 function renderAnalysis(){
   const a=analyzePortfolio();
-  const cards=[['투자비중 점수',`${a.risk.score}/100`],['위험도',a.risk.label.trim()],['코인 비중',`${a.cryptoPct.toFixed(1)}%`],['현금 비중',`${a.cashPct.toFixed(1)}%`],['ETF/주식 비중',`${(a.etfPct+a.stockPct).toFixed(1)}%`],['단일자산 집중도',`${a.concentration.toFixed(1)}%`]];
-  $('analysisCards').innerHTML=cards.map(([k,v])=>`<article class="card metric"><span>${k}</span><strong>${v}</strong></article>`).join('');
-  $('rebalanceList').innerHTML=a.recommendations.map(r=>`<p>• ${escapeHtml(r)}</p>`).join('');
+  const t=totals();
+  const investCost=state.assets.reduce((s,x)=>s+assetCostKrw(x),0);
+  const investProfit=state.assets.reduce((s,x)=>s+assetValue(x),0)-investCost;
+  const investRate=investCost>0 ? investProfit/investCost*100 : 0;
+  const month=changeSince(31);
+  const typeRows=reportValueRows(state.assets, x=>x.type||'자산');
+  const countryRows=reportValueRows(state.assets, assetCountry);
+  const currencyRows=reportValueRows(state.assets, x=>String(x.currency||'KRW').toUpperCase());
+  const platformRows=reportValueRows(state.assets, assetPlatform);
+  const cards=[
+    ['순자산', money(t.net), month===null?'스냅샷 대기':'최근 변화 '+signedMoney(month)],
+    ['총 투자손익', signedMoney(investProfit), `${investRate>=0?'+':''}${investRate.toFixed(2)}%`],
+    ['위험도', a.risk.label.trim(), `${a.risk.score}/100`],
+    ['기관 수', `${platformRows.length}개`, `${state.assets.length}개 자산`],
+    ['통화 수', `${currencyRows.length}개`, currencyRows.map(r=>r.label).slice(0,3).join(' / ') || '-'],
+    ['단일자산 집중도', `${a.concentration.toFixed(1)}%`, '분산 점검']
+  ];
+  setHtml('reportMetricCards', cards.map(([k,v,sub])=>`<article class="card report-metric"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong><p>${escapeHtml(sub)}</p></article>`).join(''));
+  setHtml('analysisCards', cards.map(([k,v])=>`<article class="card metric"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></article>`).join(''));
+  setHtml('reportHeroSummary', `<div><span>Reports Foundation</span><strong>${money(t.assets)}</strong><p>자산 비중 · 국가 · 통화 · 기관 · 수익률 · 월별 변화를 한 화면에서 확인합니다.</p></div><div class="report-hero-side"><b>${state.assets.length}개 자산</b><small>${state.transactions.length}개 거래 · ${state.snapshots.length}개 스냅샷</small></div>`);
+  setHtml('reportAssetMix', reportBarRowsHtml(typeRows));
+  setHtml('reportCountryMix', reportBarRowsHtml(countryRows));
+  setHtml('reportCurrencyMix', reportBarRowsHtml(currencyRows));
+  setHtml('reportPlatformMix', reportBarRowsHtml(platformRows));
+  setHtml('reportReturnTable', reportReturnHtml());
+  setHtml('reportMonthlyChange', reportMonthlyHtml());
+  setHtml('rebalanceList', a.recommendations.map(r=>`<p>• ${escapeHtml(r)}</p>`).join(''));
   renderBars('allocationBars', a.byType); renderBars('countryBars', a.byCountry);
 }
 function renderBars(id,obj){
+  const el=$(id); if(!el) return;
   const entries=Object.entries(obj).sort((x,y)=>y[1]-x[1]);
-  $(id).innerHTML = entries.length ? entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div><i style="width:${Math.min(100,v)}%"></i></div><b>${v.toFixed(1)}%</b></div>`).join('') : '<div class="empty">분석할 데이터가 없습니다.</div>';
+  el.innerHTML = entries.length ? entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div><i style="width:${Math.min(100,v)}%"></i></div><b>${v.toFixed(1)}%</b></div>`).join('') : '<div class="empty">분석할 데이터가 없습니다.</div>';
 }
 
 
@@ -1715,7 +1791,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-4-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-7-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }

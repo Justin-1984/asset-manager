@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.16.6</title>
+  <title>자산 매니저 v6.16.7</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.6</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.7</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -112,11 +112,25 @@
     </section>
 
     <section id="analysis" class="panel">
-      <div class="section-head"><h2>v6.9.1 분석 엔진</h2><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
-      <div id="analysisCards" class="analysis-grid"></div>
-      <div class="card"><h3>리밸런싱 추천</h3><div id="rebalanceList" class="recommendations"></div></div>
-      <div class="card"><h3>자산 배분</h3><div id="allocationBars"></div></div>
-      <div class="card"><h3>국가별 비중</h3><div id="countryBars"></div></div>
+      <div class="section-head report-page-head"><div><p class="eyebrow">Reports</p><h2>분석 리포트</h2></div><button id="refreshAnalysis" class="primary">분석 갱신</button></div>
+      <article id="reportHeroSummary" class="report-hero card"></article>
+      <div id="reportMetricCards" class="analysis-grid report-metric-grid"></div>
+      <div class="report-grid two">
+        <article class="card report-card"><div class="report-card-head"><h3>자산 비중</h3><span>Type</span></div><div id="reportAssetMix" class="report-bars"></div></article>
+        <article class="card report-card"><div class="report-card-head"><h3>국가 비중</h3><span>Country</span></div><div id="reportCountryMix" class="report-bars"></div></article>
+      </div>
+      <div class="report-grid two">
+        <article class="card report-card"><div class="report-card-head"><h3>통화 비중</h3><span>Currency</span></div><div id="reportCurrencyMix" class="report-bars"></div></article>
+        <article class="card report-card"><div class="report-card-head"><h3>기관 비중</h3><span>Platform</span></div><div id="reportPlatformMix" class="report-bars"></div></article>
+      </div>
+      <div class="report-grid two">
+        <article class="card report-card"><div class="report-card-head"><h3>투자수익률</h3><span>Return</span></div><div id="reportReturnTable" class="report-return-table"></div></article>
+        <article class="card report-card"><div class="report-card-head"><h3>월별 변화</h3><span>Snapshot</span></div><div id="reportMonthlyChange" class="report-month-list"></div></article>
+      </div>
+      <div class="card report-card"><div class="report-card-head"><h3>리밸런싱 추천</h3><span>Risk Check</span></div><div id="rebalanceList" class="recommendations"></div></div>
+      <div id="analysisCards" class="analysis-grid hidden"></div>
+      <div id="allocationBars" class="hidden"></div>
+      <div id="countryBars" class="hidden"></div>
     </section>
 
 
