@@ -636,6 +636,13 @@ body.dark .platform-metrics span,body[data-theme="dark"] .platform-metrics span,
 
 /* v6.16.7 Reports Foundation */
 .report-page-head{align-items:center;gap:12px;}
+.report-quick-nav{display:flex;gap:8px;overflow:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch;}
+.report-quick-nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:900;white-space:nowrap;cursor:pointer;box-shadow:0 4px 12px rgba(15,23,42,.05);}
+.report-quick-nav button:active{transform:scale(.97);}
+.report-bar-row.top-rank{position:relative;padding:8px 10px 8px 12px;margin:-8px -10px -8px -12px;border-radius:14px;background:rgba(14,165,233,.07);}
+.report-bar-row.top-rank .report-bar-label strong{color:var(--accent);}
+body.dark .report-quick-nav button,body[data-theme="dark"] .report-quick-nav button{background:#0b1220!important;border-color:#263244!important;color:#cbd5e1!important;}
+body.dark .report-bar-row.top-rank,body[data-theme="dark"] .report-bar-row.top-rank{background:rgba(56,189,248,.1)!important;}
 .report-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;background:linear-gradient(135deg,#111827,#1d4ed8);color:#fff;border:0;box-shadow:0 18px 45px rgba(29,78,216,.24);}
 .report-hero span{display:block;font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.04em;color:#bfdbfe;margin-bottom:6px;}
 .report-hero strong{display:block;font-size:34px;letter-spacing:-.04em;line-height:1.05;}

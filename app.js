@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.7-reports-foundation';
+const APP_VERSION = 'v6.16.8-reports-ux-cleanup';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -1309,6 +1309,11 @@ function renderLists(){
   if(!state.insurance.length) insuranceList.innerHTML='<div class="empty">등록된 보험이 없습니다.</div>';
 }
 function setHtml(id, html){ const el=$(id); if(el) el.innerHTML=html; }
+function reportJumpTo(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'start'});
+}
 function reportValueRows(list, labelFn){
   const total=list.reduce((s,item)=>s+assetValue(item),0);
   const map=new Map();
@@ -1324,7 +1329,7 @@ function reportValueRows(list, labelFn){
 function reportBarRowsHtml(rows, options={}){
   if(!rows.length) return '<div class="empty">분석할 데이터가 없습니다.</div>';
   const limit=options.limit || 8;
-  return rows.slice(0,limit).map(row=>`<div class="report-bar-row"><div class="report-bar-label"><strong>${escapeHtml(row.label)}</strong><span>${row.count||0}개 · ${money(row.value)}</span></div><div class="report-bar-track"><i style="width:${Math.min(100,row.pct||0).toFixed(2)}%"></i></div><b>${(row.pct||0).toFixed(1)}%</b></div>`).join('');
+  return rows.slice(0,limit).map((row,idx)=>`<div class="report-bar-row${idx===0?' top-rank':''}"><div class="report-bar-label"><strong>${escapeHtml(row.label)}</strong><span>${row.count||0}개 · ${money(row.value)}</span></div><div class="report-bar-track"><i style="width:${Math.min(100,row.pct||0).toFixed(2)}%"></i></div><b>${(row.pct||0).toFixed(1)}%</b></div>`).join('');
 }
 function reportReturnRows(){
   return groupDashboardAssets()
@@ -1379,7 +1384,6 @@ function renderAnalysis(){
     ['단일자산 집중도', `${a.concentration.toFixed(1)}%`, '분산 점검']
   ];
   setHtml('reportMetricCards', cards.map(([k,v,sub])=>`<article class="card report-metric"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong><p>${escapeHtml(sub)}</p></article>`).join(''));
-  setHtml('analysisCards', cards.map(([k,v])=>`<article class="card metric"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></article>`).join(''));
   setHtml('reportHeroSummary', `<div><span>Reports Foundation</span><strong>${money(t.assets)}</strong><p>자산 비중 · 국가 · 통화 · 기관 · 수익률 · 월별 변화를 한 화면에서 확인합니다.</p></div><div class="report-hero-side"><b>${state.assets.length}개 자산</b><small>${state.transactions.length}개 거래 · ${state.snapshots.length}개 스냅샷</small></div>`);
   setHtml('reportAssetMix', reportBarRowsHtml(typeRows));
   setHtml('reportCountryMix', reportBarRowsHtml(countryRows));
@@ -1387,13 +1391,7 @@ function renderAnalysis(){
   setHtml('reportPlatformMix', reportBarRowsHtml(platformRows));
   setHtml('reportReturnTable', reportReturnHtml());
   setHtml('reportMonthlyChange', reportMonthlyHtml());
-  setHtml('rebalanceList', a.recommendations.map(r=>`<p>• ${escapeHtml(r)}</p>`).join(''));
-  renderBars('allocationBars', a.byType); renderBars('countryBars', a.byCountry);
-}
-function renderBars(id,obj){
-  const el=$(id); if(!el) return;
-  const entries=Object.entries(obj).sort((x,y)=>y[1]-x[1]);
-  el.innerHTML = entries.length ? entries.map(([k,v])=>`<div class="bar-row"><span>${escapeHtml(k)}</span><div><i style="width:${Math.min(100,v)}%"></i></div><b>${v.toFixed(1)}%</b></div>`).join('') : '<div class="empty">분석할 데이터가 없습니다.</div>';
+  setHtml('rebalanceList', a.recommendations.length ? a.recommendations.map(r=>`<p>• ${escapeHtml(r)}</p>`).join('') : '<div class="empty">현재 리밸런싱 추천 사항이 없습니다.</div>');
 }
 
 
