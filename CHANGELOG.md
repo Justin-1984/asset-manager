@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v6.16.9 Stable Cleanup - 2026-07-04
+
+### Changed
+- 앱 버전 표기를 v6.16.9로 업데이트
+- README 기준을 v6.16.9 Stable Cleanup으로 정리
+- Service Worker 캐시명을 v6.16.9로 업데이트
+- 백업 다운로드 파일명을 v6.16.9 기준으로 수정
+- Reports 히어로 문구를 Reports UX Cleanup 기준으로 수정
+
+### Fixed
+- 총 투자손익 계산에서 현금/은행/자동차/부동산 등 비투자 자산이 섞일 수 있던 문제 정리
+- 투자손익 계산 대상을 코인/주식/ETF/금 투자자산으로 제한
+
+### Unchanged
+- localStorage 키 유지
+- 자산/부채/보험/거래/스냅샷 데이터 구조 유지
+- 시세/환율 엔진 변경 없음
+
 ## v6.16.8 Reports UX Cleanup - 2026-07-04
 
 ### Added

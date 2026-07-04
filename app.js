@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.8-reports-ux-cleanup';
+const APP_VERSION = 'v6.16.9-stable-cleanup';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-7-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-9-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -1367,8 +1367,9 @@ function reportMonthlyHtml(){
 function renderAnalysis(){
   const a=analyzePortfolio();
   const t=totals();
-  const investCost=state.assets.reduce((s,x)=>s+assetCostKrw(x),0);
-  const investProfit=state.assets.reduce((s,x)=>s+assetValue(x),0)-investCost;
+  const investmentAssets=state.assets.filter(isInvestmentAsset);
+  const investCost=investmentAssets.reduce((s,x)=>s+assetCostKrw(x),0);
+  const investProfit=investmentAssets.reduce((s,x)=>s+assetValue(x),0)-investCost;
   const investRate=investCost>0 ? investProfit/investCost*100 : 0;
   const month=changeSince(31);
   const typeRows=reportValueRows(state.assets, x=>x.type||'자산');
@@ -1384,7 +1385,7 @@ function renderAnalysis(){
     ['단일자산 집중도', `${a.concentration.toFixed(1)}%`, '분산 점검']
   ];
   setHtml('reportMetricCards', cards.map(([k,v,sub])=>`<article class="card report-metric"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong><p>${escapeHtml(sub)}</p></article>`).join(''));
-  setHtml('reportHeroSummary', `<div><span>Reports Foundation</span><strong>${money(t.assets)}</strong><p>자산 비중 · 국가 · 통화 · 기관 · 수익률 · 월별 변화를 한 화면에서 확인합니다.</p></div><div class="report-hero-side"><b>${state.assets.length}개 자산</b><small>${state.transactions.length}개 거래 · ${state.snapshots.length}개 스냅샷</small></div>`);
+  setHtml('reportHeroSummary', `<div><span>Reports UX Cleanup</span><strong>${money(t.assets)}</strong><p>자산 비중 · 국가 · 통화 · 기관 · 투자수익률 · 월별 변화를 한 화면에서 확인합니다.</p></div><div class="report-hero-side"><b>${state.assets.length}개 자산</b><small>투자자산 ${investmentAssets.length}개 · 거래 ${state.transactions.length}개 · 스냅샷 ${state.snapshots.length}개</small></div>`);
   setHtml('reportAssetMix', reportBarRowsHtml(typeRows));
   setHtml('reportCountryMix', reportBarRowsHtml(countryRows));
   setHtml('reportCurrencyMix', reportBarRowsHtml(currencyRows));
@@ -1789,7 +1790,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-7-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-9-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }

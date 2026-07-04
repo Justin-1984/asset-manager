@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-16-8-reports-ux-cleanup-20260704';
+const CACHE_NAME = 'asset-manager-v6-16-9-stable-cleanup-20260704';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

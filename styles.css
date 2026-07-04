@@ -634,7 +634,7 @@ body.dark .platform-metrics span,body[data-theme="dark"] .platform-metrics span,
 @media(max-width:760px){.platform-metrics{grid-template-columns:1fr 1fr;}.platform-metrics p:nth-child(2){grid-column:1/-1;}.platform-card-pro{min-height:auto;}}
 
 
-/* v6.16.7 Reports Foundation */
+/* v6.16.9 Reports UX Cleanup */
 .report-page-head{align-items:center;gap:12px;}
 .report-quick-nav{display:flex;gap:8px;overflow:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch;}
 .report-quick-nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:900;white-space:nowrap;cursor:pointer;box-shadow:0 4px 12px rgba(15,23,42,.05);}
