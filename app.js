@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.17.0-institution-search';
+const APP_VERSION = 'v6.17.1-institution-overview-fix';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-0-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-1-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -429,7 +429,12 @@ function assetSearchMatch(a, q){
 function currentAssetItems(){
   const settings=safeSettings();
   const q=String(settings.assetSearch||'').trim();
-  return state.assets.filter(a=>assetSearchMatch(a,q));
+  const fav=new Set(settings.favoriteAssetIds || []);
+  const bucket=String(settings.assetOverviewBucket||'').trim();
+  let list=state.assets || [];
+  if(bucket==='favorite') list=list.filter(a=>fav.has(a.id));
+  else if(bucket) list=list.filter(a=>assetBucketOf(a)===bucket);
+  return list.filter(a=>assetSearchMatch(a,q));
 }
 function groupedBy(list, fn){
   const map=new Map();
@@ -465,11 +470,12 @@ function bindAssetViewControls(){
     const settings=safeSettings();
     settings.assetViewMode=mode.value;
     settings.assetSearch='';
+    settings.assetOverviewBucket='';
     save();
     renderLists();
   };
   const search=$('assetSearchInput');
-  if(search) search.oninput=()=>{ safeSettings().assetSearch=search.value; save(); renderLists(); };
+  if(search) search.oninput=()=>{ const settings=safeSettings(); settings.assetSearch=search.value; settings.assetOverviewBucket=''; save(); renderLists(); };
 }
 
 function assetBucketOf(a){
@@ -486,9 +492,9 @@ function assetOverviewHtml(){
   const total=list.reduce((s,a)=>s+assetValue(a),0);
   const filtered=currentAssetItems();
   const buckets=[
-    ['investment','투자자산','코인·주식·ETF·금','투자'],
-    ['cash','현금/은행','KRW·USD·HKD·AUD','현금'],
-    ['real','실물자산','자동차·부동산','자동차'],
+    ['investment','투자자산','코인·주식·ETF·금','investment'],
+    ['cash','현금/은행','KRW·USD·HKD·AUD','cash'],
+    ['real','실물자산','자동차·부동산','real'],
     ['favorite','즐겨찾기','자주 보는 자산','']
   ];
   const cards=buckets.map(([key,title,sub,filter])=>{
@@ -506,13 +512,9 @@ function bindAssetOverviewActions(){
     btn.onclick=()=>{
       const v=btn.dataset.assetOverview || '';
       const settings=safeSettings();
-      if(v==='favorite'){
-        settings.assetViewMode='favorite';
-        settings.assetSearch='';
-      }else{
-        settings.assetViewMode='type';
-        settings.assetSearch=v;
-      }
+      settings.assetSearch='';
+      settings.assetOverviewBucket = v;
+      settings.assetViewMode = v==='favorite' ? 'favorite' : 'merged';
       save(); renderLists();
     };
   });
@@ -545,7 +547,9 @@ const INSTITUTION_OPTIONS = {
     {key:'nh', label:'NH투자증권', aliases:['nh투자','나무','namuh','nh investment']},
     {key:'kbsec', label:'KB증권', aliases:['kb증권','국민증권','kb securities']},
     {key:'shinhansec', label:'신한투자증권', aliases:['신한투자','신한증권','shinhan securities']},
-    {key:'hanaSec', label:'하나증권', aliases:['하나증권','hana securities']},
+    {key:'hanasec', label:'하나증권', aliases:['하나증권','hana securities']},
+    {key:'kakaopaysec', label:'카카오페이증권', aliases:['카카오페이','카카오페이증권','kakao pay securities','kakaopay securities']},
+    {key:'naverpaysec', label:'네이버페이증권', aliases:['네이버페이','네이버페이증권','naver pay securities','naverpay securities']},
     {key:'ibkr', label:'Interactive Brokers', aliases:['interactive brokers','ibkr']}
   ],
   bank: [
@@ -685,6 +689,8 @@ function visualKeyFromText(text){
   if(t.includes('신한')) return 'shinhan';
   if(t.includes('우리')) return 'woori';
   if(t.includes('하나')) return 'hana';
+  if(t.includes('카카오페이') || t.includes('kakao pay')) return 'kakaopaysec';
+  if(t.includes('네이버페이') || t.includes('naver pay')) return 'naverpaysec';
   if(t.includes('카카오')) return 'kakaobank';
   if(t.includes('sc제일') || t.includes('standard chartered')) return 'sc';
   if(t.includes('hsbc')) return 'hsbc';
@@ -705,9 +711,9 @@ function platformIcon(label){
   const k=visualKeyFromText(label);
   return ({
     binance:'B', bybit:'Y', upbit:'U', okx:'OK', bithumb:'BT', coinone:'CO', coinbase:'CB', kraken:'KR', gate:'G', kucoin:'KC', bitget:'BG', htx:'HT', mexc:'MX', bingx:'BX',
-    kiwoom:'K', mirae:'M', samsung:'S', toss:'T', hantu:'KI', nh:'농',
+    kiwoom:'K', mirae:'M', samsung:'S', toss:'T', hantu:'KI', nh:'농', kakaopaysec:'KP', naverpaysec:'NP',
     kb:'국', shinhan:'신', woori:'우', hana:'하', kakaobank:'카',
-    tossbank:'TB', nhbank:'NH', sc:'SC', ibkr:'IB', kbsec:'KB', shinhansec:'신', hanaSec:'하', samsunglife:'생', samsungfire:'화', hyundaimarine:'현', db:'DB', kbins:'KB', meritz:'메', hanwha:'한', hsbc:'H', bank:'₩', crypto:'₿', stock:'↗', default:'•'
+    tossbank:'TB', nhbank:'NH', sc:'SC', ibkr:'IB', kbsec:'KB', shinhansec:'신', hanasec:'하', samsunglife:'생', samsungfire:'화', hyundaimarine:'현', db:'DB', kbins:'KB', meritz:'메', hanwha:'한', hsbc:'H', bank:'₩', crypto:'₿', stock:'↗', default:'•'
   })[k] || '•';
 }
 
@@ -715,7 +721,7 @@ function platformCategory(sec){
   const label=String(sec?.label||'').toLowerCase();
   const types=(sec?.types||[]).join(' ').toLowerCase();
   if(normalizeExchangeKey(label) || ['gate','bingx','htx','mexc','kucoin','bitget','coinbase','kraken'].some(x=>label.includes(x))) return 'exchange';
-  if(['키움','미래','삼성증권','토스증권','한국투자','한투','nh투자','ibkr','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
+  if(['키움','미래','삼성증권','토스증권','한국투자','한투','nh투자','ibkr','카카오페이','네이버페이','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
   if(['은행','bank','hsbc','sc','국민','신한','카카오','토스','우리','하나','농협'].some(x=>label.includes(x.toLowerCase())) || types.includes('은행') || types.includes('현금')) return 'bank';
   if(types.includes('보험') || ['생명','화재','손해보험','손보','현대해상','메리츠','한화생명'].some(x=>label.includes(x.toLowerCase()))) return 'insurance';
   return 'other';
@@ -1978,7 +1984,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-1-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
