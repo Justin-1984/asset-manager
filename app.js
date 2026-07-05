@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.17.1-institution-overview-fix';
+const APP_VERSION = 'v6.18.0-cost-engine-cleanup';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-1-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-18-0-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -246,11 +246,27 @@ function changeSince(days){
   return t.net - num(base.net);
 }
 function assetCostKrw(a){
-  // v6.10.3: 매입 원금도 통화를 선택할 수 있습니다.
-  // KRW면 그대로, USD/HKD/AUD/USDT면 현재 환율로 원화 환산합니다.
+  // v6.18.0: 투자자산 원금은 "평균 매입단가 × 보유수량"에서 계산된 총 원금을 저장/환산합니다.
+  // 기존 백업 호환을 위해 저장값은 그대로 cost/costCurrency를 사용하되, 신규 입력은 자동으로 총 원금으로 변환합니다.
   const cost = num(a.cost);
-  const cur = (a.costCurrency || 'KRW').toUpperCase();
+  const cur = (a.costCurrency || a.currency || 'KRW').toUpperCase();
   return cost * fx(cur);
+}
+function prepareAssetFormData(f){
+  f.currency=(f.currency||'KRW').toUpperCase();
+  const virtual={...f, type:f.type||'자산'};
+  const qty=num(f.amount);
+  const unitCost=num(f.cost);
+  if(isInvestmentAsset(virtual)){
+    // 입력창의 "평균 매입단가"를 내부 저장용 총 투자원금으로 변환합니다.
+    f.cost = qty>0 && unitCost>0 ? unitCost * qty : 0;
+    f.costCurrency = f.currency;
+  }else{
+    // 현금/은행/부동산/자동차 등은 수익률 계산 대상이 아니므로 원금 입력을 강제하지 않습니다.
+    f.cost = num(f.cost)||0;
+    f.costCurrency = (f.costCurrency || f.currency || 'KRW').toUpperCase();
+  }
+  return f;
 }
 function isGoldAsset(a){
   const t=String(a?.type||'').toLowerCase().replace(/\s+/g,'');
@@ -1447,7 +1463,15 @@ function startEdit(kind, item){
   const cancelBtn = form.querySelector('[data-cancel]');
   showForm(form,true);
   setFormValues(form,item);
-  if(kind==='assets') syncExchangeSelector();
+  if(kind==='assets'){
+    // 수정 화면에서는 내부 총 원금을 다시 사용자가 이해하기 쉬운 평균 매입단가로 보여줍니다.
+    if(isInvestmentAsset(item) && form.elements.cost){
+      const avg=assetAveragePrice(item);
+      form.elements.cost.value = avg ? String(Math.round(avg*100000000)/100000000) : '';
+    }
+    if(form.elements.costCurrency) form.elements.costCurrency.value=(item.currency||'KRW').toUpperCase();
+    syncExchangeSelector();
+  }
   if(title) title.textContent = kind==='assets' ? '자산 수정' : kind==='debts' ? '부채 수정' : '보험 수정';
   if(saveBtn) saveBtn.textContent = '수정 완료';
   if(cancelBtn) cancelBtn.classList.remove('hidden');
@@ -1967,8 +1991,7 @@ function bindForms(){
     const f=Object.fromEntries(new FormData(assetForm));
     const exSel=$('exchangeSelect');
     if(exSel && exSel.value && exSel.value!=='custom') f.country=institutionLabelFromKey(exSel.value) || f.country;
-    f.currency=(f.currency||'KRW').toUpperCase();
-    f.costCurrency=(f.costCurrency||'KRW').toUpperCase();
+    prepareAssetFormData(f);
     if(String(f.type||'').includes('한국 ETF')){
       const code=extractKoreanCode(f.symbol, f.name);
       if(code){
@@ -1984,7 +2007,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-1-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-18-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
