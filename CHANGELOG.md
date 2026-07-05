@@ -1,6 +1,38 @@
 # CHANGELOG
 
-## v6.18.0 Cost Engine Cleanup
+## v6.18.2 View State Consolidation - 2026-07-05
+
+### Added
+- `setAssetViewFilter()`, `setPlatformSearch()` 헬퍼 함수 — 자산/플랫폼 보기 상태를 한 곳에서 관리
+
+### Fixed
+- 홈/Platform Center에서 기관 클릭 후 자산 탭 이동 시, 이전 "보기 요약" 버킷 필터가 남아있어 일부 자산이 누락되어 보이던 문제 수정
+
+### Changed
+- 6곳의 분산된 assetSearch/assetOverviewBucket/platformSearch 직접 대입을 헬퍼 호출로 교체
+- 버전/타이틀/캐시명을 v6.18.2로 동기화
+
+### Unchanged
+- state.settings 필드명/구조, localStorage 키 동일
+- 다크모드 선택자 구조는 유지 (별도 작업 필요)
+
+## v6.18.1 Icon & Backup Cleanup - 2026-07-05
+
+### Added
+- 카카오페이증권, 네이버페이증권 아이콘 색상 규칙 추가
+- 백업 복원 확인창에 순자산/자산 개수 변화 미리보기 추가
+
+### Changed
+- 백업/백업묶음 파일명을 APP_VERSION 기반 자동 생성으로 변경 (하드코딩 제거)
+- 버전 표기를 v6.18.1로 단일화 (직전 3개 커밋이 모두 v6.18.0으로 중복 표기되어 있던 문제 정리)
+- 타이틀/버전 배지/Service Worker 캐시명 동기화
+
+### Unchanged
+- localStorage 키, 자산/거래/설정 스키마 유지
+- 검색/보기 상태 분산 구조는 유지 (별도 승인 필요, README 참고)
+- 다크모드 선택자 구조는 유지 (별도 작업 필요)
+
+## v6.18.0 (Cost Engine Cleanup / Institution Overview Fix / Institution Search)
 - 자산 입력 화면의 매입 원금 입력을 평균 매입단가 입력으로 변경
 - 투자원금 = 평균 매입단가 × 보유수량 자동 계산
 - 수익률/평가손익 계산 기준 정리

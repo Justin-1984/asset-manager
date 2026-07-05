@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.18.0-cost-engine-cleanup';
+const APP_VERSION = 'v6.18.2-view-state-consolidation';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -38,6 +38,17 @@ function safeSettings(){
   const cats = ['all','exchange','broker','bank','insurance','other'];
   if(!cats.includes(state.settings.platformCategory)) state.settings.platformCategory = 'all';
   return state.settings;
+}
+function setAssetViewFilter({mode, search='', bucket=''}={}){
+  const settings=safeSettings();
+  if(mode!==undefined) settings.assetViewMode=mode;
+  settings.assetSearch=search;
+  settings.assetOverviewBucket=bucket;
+  save();
+}
+function setPlatformSearch(value){
+  safeSettings().platformSearch=value;
+  save();
 }
 function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.debts&&s.debts.length)||(s.insurance&&s.insurance.length)||(s.transactions&&s.transactions.length)||(s.snapshots&&s.snapshots.length))); }
 function getPriceCache(){ try{return JSON.parse(localStorage.getItem(PRICE_CACHE_KEY)||'{}');}catch(e){return {};} }
@@ -118,16 +129,30 @@ function renderBackupHistory(){
 function restoreVersionBackup(index){
   const list=getBackupHistory(); const item=list[index];
   if(!item) return log('복원할 백업을 찾지 못했습니다.');
-  if(!confirm('선택한 백업으로 현재 데이터를 되돌릴까요? 현재 상태는 먼저 자동 백업됩니다.')) return;
+  const curNet = totals().net;
+  const curCount = Array.isArray(state.assets) ? state.assets.length : 0;
+  const bkNet = item.totals?.net;
+  const bkCount = Array.isArray(item.data?.assets) ? item.data.assets.length : null;
+  const netDiff = (typeof bkNet==='number') ? (bkNet-curNet) : null;
+  const countDiff = (bkCount!==null) ? (bkCount-curCount) : null;
+  const previewLines = [`이 백업으로 되돌리면:`];
+  if(netDiff!==null) previewLines.push(`순자산 ${netDiff>=0?'+':''}${money(netDiff)} (현재 ${money(curNet)} → 백업 ${money(bkNet)})`);
+  if(countDiff!==null) previewLines.push(`자산 개수 ${countDiff>=0?'+':''}${countDiff}개 (현재 ${curCount}개 → 백업 ${bkCount}개)`);
+  previewLines.push('현재 상태는 복원 전 자동으로 백업됩니다.');
+  if(!confirm(previewLines.join('\n'))) return;
   createLocalVersionBackup('복원 전 자동백업');
   state=normalizeState(item.data,'version-backup');
   render();
   log('버전 백업 복원 완료');
 }
+function versionSlug(){
+  const m = String(APP_VERSION||'').match(/(\d+)\.(\d+)\.(\d+)/);
+  return m ? `v${m[1]}-${m[2]}-${m[3]}` : 'v0-0-0';
+}
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-18-0-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-${versionSlug()}-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -483,15 +508,11 @@ function assetViewToolbarHtml(){
 function bindAssetViewControls(){
   const mode=$('assetViewMode');
   if(mode) mode.onchange=()=>{
-    const settings=safeSettings();
-    settings.assetViewMode=mode.value;
-    settings.assetSearch='';
-    settings.assetOverviewBucket='';
-    save();
+    setAssetViewFilter({mode: mode.value});
     renderLists();
   };
   const search=$('assetSearchInput');
-  if(search) search.oninput=()=>{ const settings=safeSettings(); settings.assetSearch=search.value; settings.assetOverviewBucket=''; save(); renderLists(); };
+  if(search) search.oninput=()=>{ setAssetViewFilter({mode: safeSettings().assetViewMode, search: search.value}); renderLists(); };
 }
 
 function assetBucketOf(a){
@@ -527,11 +548,8 @@ function bindAssetOverviewActions(){
   document.querySelectorAll('[data-asset-overview]').forEach(btn=>{
     btn.onclick=()=>{
       const v=btn.dataset.assetOverview || '';
-      const settings=safeSettings();
-      settings.assetSearch='';
-      settings.assetOverviewBucket = v;
-      settings.assetViewMode = v==='favorite' ? 'favorite' : 'merged';
-      save(); renderLists();
+      setAssetViewFilter({mode: v==='favorite' ? 'favorite' : 'merged', bucket: v});
+      renderLists();
     };
   });
 }
@@ -768,9 +786,7 @@ function platformPreviewHtml(limit=4){
 function bindDashboardHomeActions(){
   document.querySelectorAll('[data-home-platform]').forEach(btn=>{
     btn.onclick=()=>{
-      safeSettings().assetViewMode='platform';
-      safeSettings().assetSearch=btn.dataset.homePlatform || '';
-      save();
+      setAssetViewFilter({mode:'platform', search: btn.dataset.homePlatform || ''});
       showTab('assets');
       renderLists();
     };
@@ -875,9 +891,7 @@ function renderPlatformCenter(){
   }).join('');
   box.querySelectorAll('[data-platform-view]').forEach(btn=>{
     btn.onclick=()=>{
-      safeSettings().assetViewMode='platform';
-      safeSettings().assetSearch=btn.dataset.platformView || '';
-      save();
+      setAssetViewFilter({mode:'platform', search: btn.dataset.platformView || ''});
       showTab('assets');
       renderLists();
     };
@@ -886,9 +900,9 @@ function renderPlatformCenter(){
 
 function bindPlatformCenterControls(){
   const input=$('platformSearchInput');
-  if(input) input.oninput=()=>{ safeSettings().platformSearch=input.value; save(); renderPlatformCenter(); };
+  if(input) input.oninput=()=>{ setPlatformSearch(input.value); renderPlatformCenter(); };
   const clear=$('platformSearchClear');
-  if(clear) clear.onclick=()=>{ safeSettings().platformSearch=''; save(); renderPlatformCenter(); };
+  if(clear) clear.onclick=()=>{ setPlatformSearch(''); renderPlatformCenter(); };
 }
 
 function dashboardAssetGroupHtml(g, index){
@@ -2007,7 +2021,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-18-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-${versionSlug()}-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
