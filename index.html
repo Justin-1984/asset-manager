@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.16.13</title>
+  <title>자산 매니저 v6.17.0</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.16.13</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.17.0</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -54,7 +54,7 @@
         <label class="field"><span>자산명</span><input name="name" placeholder="예: BTC, SCHD, 현금, 069500" required /></label>
         <label class="field"><span>종목코드 / 티커</span><input name="symbol" placeholder="예: SCHD / BTC / 069500" /></label>
         <label class="field"><span>자산 종류</span><select name="type"><option>코인</option><option>미국주식</option><option>한국 ETF</option><option>은행</option><option>현금</option><option>자동차</option><option>부동산</option><option>금</option></select></label>
-        <label class="field"><span>기관 / 거래소 / 계좌</span><select id="exchangeSelect" class="hidden" aria-label="기관 선택"><option value="binance">Binance</option><option value="upbit">Upbit</option><option value="bithumb">Bithumb</option><option value="bybit">Bybit</option><option value="okx">OKX</option><option value="coinbase">Coinbase</option><option value="kraken">Kraken</option><option value="gate">Gate.io</option><option value="kucoin">KuCoin</option><option value="bitget">Bitget</option><option value="htx">HTX</option><option value="mexc">MEXC</option><option value="bingx">BingX</option><option value="coinone">Coinone</option><option value="custom">기타 직접입력</option></select><input name="country" placeholder="예: Binance, 키움증권, HSBC, 국민은행" /><small id="exchangeCustomWrap" class="muted hidden">목록에 없는 기관은 직접 입력하세요.</small></label>
+        <label class="field institution-field"><span>기관 / 거래소 / 계좌</span><input id="institutionSearchInput" class="hidden" type="search" placeholder="기관 검색: 바이낸스, 키움, 국민, HSBC" autocomplete="off" /><select id="exchangeSelect" class="hidden" aria-label="기관 선택"><option value="custom">기타 직접입력</option></select><input name="country" placeholder="예: Binance, 키움증권, HSBC, 국민은행" /><small id="institutionSelectHint" class="muted">자산 종류에 따라 거래소/증권사/은행 목록이 자동으로 바뀝니다.</small><small id="exchangeCustomWrap" class="muted hidden">목록에 없는 기관은 직접 입력하세요.</small></label>
         <label class="field"><span>통화</span><input name="currency" placeholder="KRW / USD / HKD / AUD / USDT" value="KRW" /></label>
         <label class="field"><span>수량</span><input name="amount" type="number" step="0.0001" placeholder="보유 수량" value="1" /></label>
         <label class="field"><span>현재 단가</span><input name="price" type="number" step="0.01" placeholder="현재 단가" required /></label>

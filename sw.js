@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-16-13-view-reset-fix';
+const CACHE_NAME = 'asset-manager-v6-17-0-institution-search';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.13-view-reset-fix';
+const APP_VERSION = 'v6.17.0-institution-search';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-13-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-0-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -579,7 +579,18 @@ function institutionBucketByAssetType(type){
   return 'all';
 }
 function allInstitutionOptions(){ return Object.values(INSTITUTION_OPTIONS).flat(); }
-function optionsForInstitutionBucket(bucket){ return bucket==='all' ? allInstitutionOptions() : (INSTITUTION_OPTIONS[bucket] || allInstitutionOptions()); }
+function optionsForInstitutionBucket(bucket){
+  const base = bucket==='all' ? allInstitutionOptions() : (INSTITUTION_OPTIONS[bucket] || allInstitutionOptions());
+  const seen = new Set();
+  return base.filter(o=>{ const k=String(o.key||'').toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; });
+}
+function institutionSearchText(inst){ return [inst.key, inst.label, ...(inst.aliases||[])].join(' ').toLowerCase(); }
+function normalizeInstitutionQuery(q){ return String(q||'').trim().toLowerCase(); }
+function filterInstitutionOptions(opts, query){
+  const q=normalizeInstitutionQuery(query);
+  if(!q) return opts;
+  return opts.filter(o=>institutionSearchText(o).includes(q));
+}
 function normalizeInstitutionKey(value){
   const raw=String(value||'').trim();
   const t=raw.toLowerCase();
@@ -598,28 +609,40 @@ function institutionLabelFromKey(key){
   return inst ? inst.label : '';
 }
 function exchangeLabelFromKey(key){ return institutionLabelFromKey(key); }
-function syncInstitutionSelector(){
+function syncInstitutionSelector(options={}){
   const form=$('assetForm'); if(!form) return;
   const typeEl=form.elements.type;
   const countryEl=form.elements.country;
   const sel=$('exchangeSelect');
   const custom=$('exchangeCustomWrap');
+  const search=$('institutionSearchInput');
+  const hint=$('institutionSelectHint');
   if(!typeEl || !countryEl || !sel) return;
   const bucket=institutionBucketByAssetType(typeEl.value);
-  const opts=optionsForInstitutionBucket(bucket);
+  const allOpts=optionsForInstitutionBucket(bucket);
+  const query=search ? search.value : '';
+  let opts=filterInstitutionOptions(allOpts, query);
   const currentKey=normalizeInstitutionKey(countryEl.value);
   const prev=sel.value;
+  if(currentKey && !opts.some(o=>o.key===currentKey) && allOpts.some(o=>o.key===currentKey)) opts=[allOpts.find(o=>o.key===currentKey), ...opts];
+  if(prev && prev!=='custom' && !opts.some(o=>o.key===prev) && allOpts.some(o=>o.key===prev)) opts=[allOpts.find(o=>o.key===prev), ...opts];
   sel.innerHTML = opts.map(o=>`<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join('') + '<option value="custom">기타 직접입력</option>';
   if(currentKey && opts.some(o=>o.key===currentKey)) sel.value=currentKey;
   else if(prev && opts.some(o=>o.key===prev)) sel.value=prev;
+  else if(opts.length && query && !options.keepCustom) sel.value=opts[0].key;
   else sel.value='custom';
   const isCustom=sel.value==='custom';
   sel.classList.remove('hidden');
+  if(search) search.classList.remove('hidden');
   countryEl.classList.toggle('hidden', !isCustom);
   if(custom){
     const label= bucket==='exchange' ? '목록에 없는 거래소는 직접 입력하세요.' : bucket==='broker' ? '목록에 없는 증권사는 직접 입력하세요.' : bucket==='bank' ? '목록에 없는 은행/현금 계좌는 직접 입력하세요.' : bucket==='insurance' ? '목록에 없는 보험사는 직접 입력하세요.' : '목록에 없는 기관은 직접 입력하세요.';
     custom.textContent=label;
     custom.classList.toggle('hidden', !isCustom);
+  }
+  if(hint){
+    const bucketLabel=platformCategoryLabel(bucket==='all'?'all':bucket);
+    hint.textContent = `${bucketLabel} ${allOpts.length}개 중 ${opts.length}개 표시 · 검색 후 선택하면 기관명이 자동 입력됩니다.`;
   }
   if(!isCustom) countryEl.value=institutionLabelFromKey(sel.value) || countryEl.value;
 }
@@ -1929,8 +1952,9 @@ async function testMarketWorker(){
 function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
   const krBtn=$('lookupKrEtfBtn'); if(krBtn) krBtn.onclick=lookupKoreanEtfNameFromInput;
-  const typeEl=assetForm?.elements?.type; if(typeEl) typeEl.onchange=()=>{ if(typeEl.value==='한국 ETF'){ assetForm.currency.value='KRW'; } syncExchangeSelector(); };
+  const typeEl=assetForm?.elements?.type; if(typeEl) typeEl.onchange=()=>{ if(typeEl.value==='한국 ETF'){ assetForm.currency.value='KRW'; } const search=$('institutionSearchInput'); if(search) search.value=''; syncExchangeSelector(); };
   const exSel=$('exchangeSelect'); if(exSel) exSel.onchange=applySelectedExchangeToAssetForm;
+  const institutionSearch=$('institutionSearchInput'); if(institutionSearch) institutionSearch.oninput=()=>syncInstitutionSelector({keepCustom:false});
   syncExchangeSelector();
   assetForm.onsubmit=e=>{
     e.preventDefault();
@@ -1954,7 +1978,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-13-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-17-0-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }

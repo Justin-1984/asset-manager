@@ -732,3 +732,5 @@ body.dark .report-return-row,body[data-theme="dark"] .report-return-row,body.dar
 .asset-skin-hanwha .asset-avatar,.asset-view-section-hanwha .section-summary-left i,.platform-skin-hanwha .platform-title i,.home-platform-row.platform-skin-hanwha i{background:#f97316;color:#fff}
 
 .asset-skin-default .asset-avatar,.asset-view-section-default .section-summary-left i,.platform-skin-default .platform-title i,.home-platform-row.platform-skin-default i{background:#475569;color:#fff}
+
+.institution-field{grid-column:span 2}.institution-field #institutionSearchInput{margin-bottom:6px}.institution-field #exchangeSelect{margin-bottom:6px}.institution-field small{display:block;margin-top:4px;color:#64748b;font-size:12px;font-weight:700}@media(max-width:640px){.institution-field{grid-column:1/-1}}
