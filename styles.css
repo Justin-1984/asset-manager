@@ -711,4 +711,24 @@ body.dark .report-return-row,body[data-theme="dark"] .report-return-row,body.dar
 .asset-skin-bank .asset-avatar,.asset-view-section-bank .section-summary-left i,.platform-skin-bank .platform-title i,.home-platform-row.platform-skin-bank i{background:#16a34a;color:#fff}
 .asset-skin-crypto .asset-avatar,.asset-view-section-crypto .section-summary-left i,.platform-skin-crypto .platform-title i,.home-platform-row.platform-skin-crypto i{background:#f97316;color:#fff}
 .asset-skin-stock .asset-avatar,.asset-view-section-stock .section-summary-left i,.platform-skin-stock .platform-title i,.home-platform-row.platform-skin-stock i{background:#2563eb;color:#fff}
+
+.asset-skin-coinbase .asset-avatar,.asset-view-section-coinbase .section-summary-left i,.platform-skin-coinbase .platform-title i,.home-platform-row.platform-skin-coinbase i{background:#0052ff;color:#fff}
+.asset-skin-kraken .asset-avatar,.asset-view-section-kraken .section-summary-left i,.platform-skin-kraken .platform-title i,.home-platform-row.platform-skin-kraken i{background:#5841d8;color:#fff}
+.asset-skin-gate .asset-avatar,.asset-view-section-gate .section-summary-left i,.platform-skin-gate .platform-title i,.home-platform-row.platform-skin-gate i{background:#2563eb;color:#fff}
+.asset-skin-kucoin .asset-avatar,.asset-view-section-kucoin .section-summary-left i,.platform-skin-kucoin .platform-title i,.home-platform-row.platform-skin-kucoin i{background:#00b894;color:#fff}
+.asset-skin-bitget .asset-avatar,.asset-view-section-bitget .section-summary-left i,.platform-skin-bitget .platform-title i,.home-platform-row.platform-skin-bitget i{background:#00f0ff;color:#0f172a}
+.asset-skin-htx .asset-avatar,.asset-view-section-htx .section-summary-left i,.platform-skin-htx .platform-title i,.home-platform-row.platform-skin-htx i{background:#111827;color:#22c55e}
+.asset-skin-mexc .asset-avatar,.asset-view-section-mexc .section-summary-left i,.platform-skin-mexc .platform-title i,.home-platform-row.platform-skin-mexc i{background:#0f766e;color:#fff}
+.asset-skin-bingx .asset-avatar,.asset-view-section-bingx .section-summary-left i,.platform-skin-bingx .platform-title i,.home-platform-row.platform-skin-bingx i{background:#0ea5e9;color:#fff}
+.asset-skin-tossbank .asset-avatar,.asset-view-section-tossbank .section-summary-left i,.platform-skin-tossbank .platform-title i,.home-platform-row.platform-skin-tossbank i{background:#1b64da;color:#fff}
+.asset-skin-nhbank .asset-avatar,.asset-view-section-nhbank .section-summary-left i,.platform-skin-nhbank .platform-title i,.home-platform-row.platform-skin-nhbank i{background:#04a94a;color:#fff}
+.asset-skin-sc .asset-avatar,.asset-view-section-sc .section-summary-left i,.platform-skin-sc .platform-title i,.home-platform-row.platform-skin-sc i{background:#0072ce;color:#fff}
+.asset-skin-ibkr .asset-avatar,.asset-view-section-ibkr .section-summary-left i,.platform-skin-ibkr .platform-title i,.home-platform-row.platform-skin-ibkr i{background:#b91c1c;color:#fff}
+.asset-skin-samsunglife .asset-avatar,.asset-view-section-samsunglife .section-summary-left i,.platform-skin-samsunglife .platform-title i,.home-platform-row.platform-skin-samsunglife i,.asset-skin-samsungfire .asset-avatar,.asset-view-section-samsungfire .section-summary-left i,.platform-skin-samsungfire .platform-title i,.home-platform-row.platform-skin-samsungfire i{background:#1428a0;color:#fff}
+.asset-skin-hyundaimarine .asset-avatar,.asset-view-section-hyundaimarine .section-summary-left i,.platform-skin-hyundaimarine .platform-title i,.home-platform-row.platform-skin-hyundaimarine i{background:#f97316;color:#fff}
+.asset-skin-db .asset-avatar,.asset-view-section-db .section-summary-left i,.platform-skin-db .platform-title i,.home-platform-row.platform-skin-db i{background:#16a34a;color:#fff}
+.asset-skin-kbins .asset-avatar,.asset-view-section-kbins .section-summary-left i,.platform-skin-kbins .platform-title i,.home-platform-row.platform-skin-kbins i{background:#ffcc00;color:#111827}
+.asset-skin-meritz .asset-avatar,.asset-view-section-meritz .section-summary-left i,.platform-skin-meritz .platform-title i,.home-platform-row.platform-skin-meritz i{background:#ef4444;color:#fff}
+.asset-skin-hanwha .asset-avatar,.asset-view-section-hanwha .section-summary-left i,.platform-skin-hanwha .platform-title i,.home-platform-row.platform-skin-hanwha i{background:#f97316;color:#fff}
+
 .asset-skin-default .asset-avatar,.asset-view-section-default .section-summary-left i,.platform-skin-default .platform-title i,.home-platform-row.platform-skin-default i{background:#475569;color:#fff}

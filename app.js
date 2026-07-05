@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.10-institution-icons-safe';
+const APP_VERSION = 'v6.16.12-institution-select-icons';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -512,26 +512,161 @@ function bindAssetOverviewActions(){
   });
 }
 
+
+const INSTITUTION_OPTIONS = {
+  exchange: [
+    {key:'binance', label:'Binance', aliases:['binance','바이낸스']},
+    {key:'upbit', label:'Upbit', aliases:['upbit','업비트']},
+    {key:'bithumb', label:'Bithumb', aliases:['bithumb','빗썸','bithumb korea']},
+    {key:'bybit', label:'Bybit', aliases:['bybit','바이비트']},
+    {key:'okx', label:'OKX', aliases:['okx']},
+    {key:'coinbase', label:'Coinbase', aliases:['coinbase','코인베이스']},
+    {key:'kraken', label:'Kraken', aliases:['kraken','크라켄']},
+    {key:'gate', label:'Gate.io', aliases:['gate.io','gate','게이트']},
+    {key:'kucoin', label:'KuCoin', aliases:['kucoin','쿠코인']},
+    {key:'bitget', label:'Bitget', aliases:['bitget','비트겟']},
+    {key:'htx', label:'HTX', aliases:['htx','huobi','후오비']},
+    {key:'mexc', label:'MEXC', aliases:['mexc','멕스씨','멕시']},
+    {key:'bingx', label:'BingX', aliases:['bingx','빙엑스']},
+    {key:'coinone', label:'Coinone', aliases:['coinone','코인원']}
+  ],
+  broker: [
+    {key:'kiwoom', label:'키움증권', aliases:['키움','kiwoom']},
+    {key:'mirae', label:'미래에셋증권', aliases:['미래','미래에셋','mirae']},
+    {key:'samsung', label:'삼성증권', aliases:['삼성증권','samsung securities']},
+    {key:'toss', label:'토스증권', aliases:['토스증권','toss securities']},
+    {key:'hantu', label:'한국투자증권', aliases:['한국투자','한투','korea investment']},
+    {key:'nh', label:'NH투자증권', aliases:['nh투자','나무','namuh','nh investment']},
+    {key:'kbsec', label:'KB증권', aliases:['kb증권','국민증권','kb securities']},
+    {key:'shinhansec', label:'신한투자증권', aliases:['신한투자','신한증권','shinhan securities']},
+    {key:'hanaSec', label:'하나증권', aliases:['하나증권','hana securities']},
+    {key:'ibkr', label:'Interactive Brokers', aliases:['interactive brokers','ibkr']}
+  ],
+  bank: [
+    {key:'kb', label:'KB국민은행', aliases:['국민','국민은행','kb bank','kb국민']},
+    {key:'shinhan', label:'신한은행', aliases:['신한','shinhan bank']},
+    {key:'woori', label:'우리은행', aliases:['우리','woori bank']},
+    {key:'hana', label:'하나은행', aliases:['하나','hana bank']},
+    {key:'kakaobank', label:'카카오뱅크', aliases:['카카오','카카오뱅크','kakaobank','kakao bank']},
+    {key:'tossbank', label:'토스뱅크', aliases:['토스뱅크','toss bank']},
+    {key:'nhbank', label:'NH농협은행', aliases:['농협은행','nh bank','농협']},
+    {key:'sc', label:'SC제일은행', aliases:['sc제일','standard chartered','sc bank']},
+    {key:'hsbc', label:'HSBC', aliases:['hsbc']}
+  ],
+  insurance: [
+    {key:'samsunglife', label:'삼성생명', aliases:['삼성생명']},
+    {key:'samsungfire', label:'삼성화재', aliases:['삼성화재']},
+    {key:'hyundaimarine', label:'현대해상', aliases:['현대해상']},
+    {key:'db', label:'DB손해보험', aliases:['db손보','db손해보험']},
+    {key:'kbins', label:'KB손해보험', aliases:['kb손보','kb손해보험']},
+    {key:'meritz', label:'메리츠화재', aliases:['메리츠']},
+    {key:'hanwha', label:'한화생명', aliases:['한화생명']}
+  ]
+};
+const EXCHANGE_OPTIONS = INSTITUTION_OPTIONS.exchange;
+function institutionBucketByAssetType(type){
+  const t=String(type||'').toLowerCase();
+  if(t.includes('코인') || t.includes('crypto')) return 'exchange';
+  if(t.includes('주식') || t.includes('etf') || t.includes('stock')) return 'broker';
+  if(t.includes('은행') || t.includes('현금') || t.includes('cash') || t.includes('예금') || t.includes('적금')) return 'bank';
+  if(t.includes('보험')) return 'insurance';
+  return 'all';
+}
+function allInstitutionOptions(){ return Object.values(INSTITUTION_OPTIONS).flat(); }
+function optionsForInstitutionBucket(bucket){ return bucket==='all' ? allInstitutionOptions() : (INSTITUTION_OPTIONS[bucket] || allInstitutionOptions()); }
+function normalizeInstitutionKey(value){
+  const raw=String(value||'').trim();
+  const t=raw.toLowerCase();
+  if(!t) return '';
+  for(const inst of allInstitutionOptions()){
+    if(String(inst.key).toLowerCase()===t || String(inst.label).toLowerCase()===t || (inst.aliases||[]).some(a=>t.includes(String(a).toLowerCase()))) return inst.key;
+  }
+  return '';
+}
+function normalizeExchangeKey(value){
+  const k=normalizeInstitutionKey(value);
+  return EXCHANGE_OPTIONS.some(x=>x.key===k) ? k : '';
+}
+function institutionLabelFromKey(key){
+  const inst=allInstitutionOptions().find(x=>x.key===key);
+  return inst ? inst.label : '';
+}
+function exchangeLabelFromKey(key){ return institutionLabelFromKey(key); }
+function syncInstitutionSelector(){
+  const form=$('assetForm'); if(!form) return;
+  const typeEl=form.elements.type;
+  const countryEl=form.elements.country;
+  const sel=$('exchangeSelect');
+  const custom=$('exchangeCustomWrap');
+  if(!typeEl || !countryEl || !sel) return;
+  const bucket=institutionBucketByAssetType(typeEl.value);
+  const opts=optionsForInstitutionBucket(bucket);
+  const currentKey=normalizeInstitutionKey(countryEl.value);
+  const prev=sel.value;
+  sel.innerHTML = opts.map(o=>`<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join('') + '<option value="custom">기타 직접입력</option>';
+  if(currentKey && opts.some(o=>o.key===currentKey)) sel.value=currentKey;
+  else if(prev && opts.some(o=>o.key===prev)) sel.value=prev;
+  else sel.value='custom';
+  const isCustom=sel.value==='custom';
+  sel.classList.remove('hidden');
+  countryEl.classList.toggle('hidden', !isCustom);
+  if(custom){
+    const label= bucket==='exchange' ? '목록에 없는 거래소는 직접 입력하세요.' : bucket==='broker' ? '목록에 없는 증권사는 직접 입력하세요.' : bucket==='bank' ? '목록에 없는 은행/현금 계좌는 직접 입력하세요.' : bucket==='insurance' ? '목록에 없는 보험사는 직접 입력하세요.' : '목록에 없는 기관은 직접 입력하세요.';
+    custom.textContent=label;
+    custom.classList.toggle('hidden', !isCustom);
+  }
+  if(!isCustom) countryEl.value=institutionLabelFromKey(sel.value) || countryEl.value;
+}
+function syncExchangeSelector(){ syncInstitutionSelector(); }
+function applySelectedExchangeToAssetForm(){
+  const form=$('assetForm'); if(!form) return;
+  const sel=$('exchangeSelect');
+  const countryEl=form.elements.country;
+  if(sel && countryEl && sel.value && sel.value!=='custom') countryEl.value=institutionLabelFromKey(sel.value) || sel.value;
+  syncInstitutionSelector();
+}
+
 function visualKeyFromText(text){
   const t=String(text||'').toLowerCase();
-  if(t.includes('binance')) return 'binance';
+  if(t.includes('binance') || t.includes('바이낸스')) return 'binance';
   if(t.includes('bybit')) return 'bybit';
   if(t.includes('upbit')) return 'upbit';
   if(t.includes('okx')) return 'okx';
   if(t.includes('빗썸') || t.includes('bithumb')) return 'bithumb';
   if(t.includes('코인원') || t.includes('coinone')) return 'coinone';
+  if(t.includes('coinbase') || t.includes('코인베이스')) return 'coinbase';
+  if(t.includes('kraken') || t.includes('크라켄')) return 'kraken';
+  if(t.includes('gate')) return 'gate';
+  if(t.includes('kucoin') || t.includes('쿠코인')) return 'kucoin';
+  if(t.includes('bitget') || t.includes('비트겟')) return 'bitget';
+  if(t.includes('htx') || t.includes('huobi') || t.includes('후오비')) return 'htx';
+  if(t.includes('mexc') || t.includes('멕스')) return 'mexc';
+  if(t.includes('bingx') || t.includes('빙엑스')) return 'bingx';
   if(t.includes('kiwoom') || t.includes('키움')) return 'kiwoom';
   if(t.includes('mirae') || t.includes('미래')) return 'mirae';
   if(t.includes('삼성증권') || t.includes('samsung')) return 'samsung';
+  if(t.includes('토스증권')) return 'toss';
+  if(t.includes('토스뱅크')) return 'tossbank';
   if(t.includes('토스')) return 'toss';
   if(t.includes('한국투자') || t.includes('한투')) return 'hantu';
+  if(t.includes('nh투자') || t.includes('나무')) return 'nh';
+  if(t.includes('농협은행')) return 'nhbank';
   if(t.includes('nh') || t.includes('농협')) return 'nh';
   if(t.includes('국민') || t.includes('kb')) return 'kb';
   if(t.includes('신한')) return 'shinhan';
   if(t.includes('우리')) return 'woori';
   if(t.includes('하나')) return 'hana';
   if(t.includes('카카오')) return 'kakaobank';
+  if(t.includes('sc제일') || t.includes('standard chartered')) return 'sc';
   if(t.includes('hsbc')) return 'hsbc';
+  if(t.includes('interactive brokers') || t.includes('ibkr')) return 'ibkr';
+  if(t.includes('삼성생명')) return 'samsunglife';
+  if(t.includes('삼성화재')) return 'samsungfire';
+  if(t.includes('현대해상')) return 'hyundaimarine';
+  if(t.includes('db손')) return 'db';
+  if(t.includes('kb손')) return 'kbins';
+  if(t.includes('메리츠')) return 'meritz';
+  if(t.includes('한화생명')) return 'hanwha';
   if(t.includes('bank') || t.includes('은행') || t.includes('현금')) return 'bank';
   if(t.includes('코인') || t.includes('coin') || t.includes('btc') || t.includes('eth')) return 'crypto';
   if(t.includes('etf') || t.includes('주식') || t.includes('schd') || t.includes('voo')) return 'stock';
@@ -540,20 +675,20 @@ function visualKeyFromText(text){
 function platformIcon(label){
   const k=visualKeyFromText(label);
   return ({
-    binance:'B', bybit:'Y', upbit:'U', okx:'OK', bithumb:'BT', coinone:'CO',
+    binance:'B', bybit:'Y', upbit:'U', okx:'OK', bithumb:'BT', coinone:'CO', coinbase:'CB', kraken:'KR', gate:'G', kucoin:'KC', bitget:'BG', htx:'HT', mexc:'MX', bingx:'BX',
     kiwoom:'K', mirae:'M', samsung:'S', toss:'T', hantu:'KI', nh:'농',
     kb:'국', shinhan:'신', woori:'우', hana:'하', kakaobank:'카',
-    hsbc:'H', bank:'₩', crypto:'₿', stock:'↗', default:'•'
+    tossbank:'TB', nhbank:'NH', sc:'SC', ibkr:'IB', kbsec:'KB', shinhansec:'신', hanaSec:'하', samsunglife:'생', samsungfire:'화', hyundaimarine:'현', db:'DB', kbins:'KB', meritz:'메', hanwha:'한', hsbc:'H', bank:'₩', crypto:'₿', stock:'↗', default:'•'
   })[k] || '•';
 }
 
 function platformCategory(sec){
   const label=String(sec?.label||'').toLowerCase();
   const types=(sec?.types||[]).join(' ').toLowerCase();
-  if(['binance','bybit','okx','upbit','bithumb','빗썸','coinone','코인원','gate','bingx','htx'].some(x=>label.includes(x))) return 'exchange';
+  if(normalizeExchangeKey(label) || ['gate','bingx','htx','mexc','kucoin','bitget','coinbase','kraken'].some(x=>label.includes(x))) return 'exchange';
   if(['키움','미래','삼성증권','토스증권','한국투자','한투','nh투자','ibkr','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
   if(['은행','bank','hsbc','sc','국민','신한','카카오','토스','우리','하나','농협'].some(x=>label.includes(x.toLowerCase())) || types.includes('은행') || types.includes('현금')) return 'bank';
-  if(types.includes('보험')) return 'insurance';
+  if(types.includes('보험') || ['생명','화재','손해보험','손보','현대해상','메리츠','한화생명'].some(x=>label.includes(x.toLowerCase()))) return 'insurance';
   return 'other';
 }
 function platformCategoryLabel(cat){
@@ -1261,6 +1396,7 @@ function resetEdit(kind){
   editing[kind]=null;
   const form = kind==='assets' ? assetForm : kind==='debts' ? debtForm : insuranceForm;
   form.reset();
+  if(kind==='assets') syncExchangeSelector();
   const title = document.querySelector(`[data-title="${kind}"]`);
   const saveBtn = form.querySelector('[data-save]') || form.querySelector('button[type=submit]');
   const cancelBtn = form.querySelector('[data-cancel]');
@@ -1276,6 +1412,7 @@ function startEdit(kind, item){
   const cancelBtn = form.querySelector('[data-cancel]');
   showForm(form,true);
   setFormValues(form,item);
+  if(kind==='assets') syncExchangeSelector();
   if(title) title.textContent = kind==='assets' ? '자산 수정' : kind==='debts' ? '부채 수정' : '보험 수정';
   if(saveBtn) saveBtn.textContent = '수정 완료';
   if(cancelBtn) cancelBtn.classList.remove('hidden');
@@ -1786,10 +1923,14 @@ async function testMarketWorker(){
 function bindForms(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$(b.dataset.open).classList.toggle('hidden'));
   const krBtn=$('lookupKrEtfBtn'); if(krBtn) krBtn.onclick=lookupKoreanEtfNameFromInput;
-  const typeEl=assetForm?.elements?.type; if(typeEl) typeEl.onchange=()=>{ if(typeEl.value==='한국 ETF'){ assetForm.currency.value='KRW'; } };
+  const typeEl=assetForm?.elements?.type; if(typeEl) typeEl.onchange=()=>{ if(typeEl.value==='한국 ETF'){ assetForm.currency.value='KRW'; } syncExchangeSelector(); };
+  const exSel=$('exchangeSelect'); if(exSel) exSel.onchange=applySelectedExchangeToAssetForm;
+  syncExchangeSelector();
   assetForm.onsubmit=e=>{
     e.preventDefault();
     const f=Object.fromEntries(new FormData(assetForm));
+    const exSel=$('exchangeSelect');
+    if(exSel && exSel.value && exSel.value!=='custom') f.country=institutionLabelFromKey(exSel.value) || f.country;
     f.currency=(f.currency||'KRW').toUpperCase();
     f.costCurrency=(f.costCurrency||'KRW').toUpperCase();
     if(String(f.type||'').includes('한국 ETF')){
@@ -1807,7 +1948,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-10-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-11-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
