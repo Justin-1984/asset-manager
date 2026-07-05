@@ -1,22 +1,32 @@
 # CHANGELOG
 
-## v6.16.9 Stable Cleanup - 2026-07-04
-
-### Changed
-- 앱 버전 표기를 v6.16.9로 업데이트
-- README 기준을 v6.16.9 Stable Cleanup으로 정리
-- Service Worker 캐시명을 v6.16.9로 업데이트
-- 백업 다운로드 파일명을 v6.16.9 기준으로 수정
-- Reports 히어로 문구를 Reports UX Cleanup 기준으로 수정
+## v6.16.10 Institution Icons Safe Cleanup - 2026-07-05
 
 ### Fixed
-- 총 투자손익 계산에서 현금/은행/자동차/부동산 등 비투자 자산이 섞일 수 있던 문제 정리
-- 투자손익 계산 대상을 코인/주식/ETF/금 투자자산으로 제한
+- v6.16.9 Stable Cleanup에서 수정했던 백업 다운로드 파일명이 v6.16.7로 되돌아간 회귀 수정
+- Reports 투자손익 계산이 모든 자산 기준으로 되돌아간 회귀 수정
+- Reports 히어로 문구가 Reports Foundation으로 되돌아간 회귀 수정
+- Reports CSS 주석 버전 표기 정리
+
+### Kept
+- 기관/거래소/은행 아이콘 매핑 확장 유지
+- 아이콘 색상 통합 CSS 유지
+- 데이터 구조/localStorage 키/시세·환율 엔진 변경 없음
+
+## v6.16.9 Institution Icons & Simplify - 2026-07-05
+
+### Added
+- 거래소/증권사/은행 아이콘 매핑 15종 신규 추가 (OKX, Bithumb, Coinone, 삼성증권, 토스, 한국투자증권, NH, KB, 신한, 우리, 하나, 카카오뱅크 등)
+- 브랜드별 아이콘 색상을 자산카드/섹션요약/Platforms카드/홈 리스트에 공통 적용하는 통합 CSS 규칙
+
+### Changed
+- 앱 버전 표기를 v6.16.9로 업데이트, Service Worker 캐시명 갱신
+- Platforms 카드: 장식용 그라데이션 띠 제거, 그림자 축소, radius 26px→22px로 단순화
+- 자산 카드 상단 배너를 브랜드별 파스텔 그라데이션에서 단일 중립 톤으로 통일
 
 ### Unchanged
-- localStorage 키 유지
-- 자산/부채/보험/거래/스냅샷 데이터 구조 유지
-- 시세/환율 엔진 변경 없음
+- localStorage 키, 자산/부채/보험/거래/스냅샷 데이터 구조 유지
+- 기존 6종 브랜드(binance/bybit/upbit/kiwoom/mirae/hsbc)의 키워드 매칭 로직 유지
 
 ## v6.16.8 Reports UX Cleanup - 2026-07-04
 

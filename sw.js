@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-16-9-stable-cleanup-20260704';
+const CACHE_NAME = 'asset-manager-v6-16-10-institution-icons-safe-20260705';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

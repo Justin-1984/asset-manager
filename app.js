@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.16.9-stable-cleanup';
+const APP_VERSION = 'v6.16.10-institution-icons-safe';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -127,7 +127,7 @@ function restoreVersionBackup(index){
 function downloadBackupHistory(){
   const payload={app:'AssetManagerPWA',version:APP_VERSION,exportedAt:new Date().toISOString(),current:state,history:getBackupHistory()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-9-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-10-backup-history.json`; a.click(); URL.revokeObjectURL(a.href);
   log('백업묶음 다운로드 완료');
 }
 function integrityCheck(){
@@ -517,8 +517,20 @@ function visualKeyFromText(text){
   if(t.includes('binance')) return 'binance';
   if(t.includes('bybit')) return 'bybit';
   if(t.includes('upbit')) return 'upbit';
+  if(t.includes('okx')) return 'okx';
+  if(t.includes('빗썸') || t.includes('bithumb')) return 'bithumb';
+  if(t.includes('코인원') || t.includes('coinone')) return 'coinone';
   if(t.includes('kiwoom') || t.includes('키움')) return 'kiwoom';
   if(t.includes('mirae') || t.includes('미래')) return 'mirae';
+  if(t.includes('삼성증권') || t.includes('samsung')) return 'samsung';
+  if(t.includes('토스')) return 'toss';
+  if(t.includes('한국투자') || t.includes('한투')) return 'hantu';
+  if(t.includes('nh') || t.includes('농협')) return 'nh';
+  if(t.includes('국민') || t.includes('kb')) return 'kb';
+  if(t.includes('신한')) return 'shinhan';
+  if(t.includes('우리')) return 'woori';
+  if(t.includes('하나')) return 'hana';
+  if(t.includes('카카오')) return 'kakaobank';
   if(t.includes('hsbc')) return 'hsbc';
   if(t.includes('bank') || t.includes('은행') || t.includes('현금')) return 'bank';
   if(t.includes('코인') || t.includes('coin') || t.includes('btc') || t.includes('eth')) return 'crypto';
@@ -527,15 +539,20 @@ function visualKeyFromText(text){
 }
 function platformIcon(label){
   const k=visualKeyFromText(label);
-  return ({binance:'B',bybit:'Y',upbit:'U',kiwoom:'K',mirae:'M',hsbc:'H',bank:'₩',crypto:'₿',stock:'↗',default:'•'})[k] || '•';
+  return ({
+    binance:'B', bybit:'Y', upbit:'U', okx:'OK', bithumb:'BT', coinone:'CO',
+    kiwoom:'K', mirae:'M', samsung:'S', toss:'T', hantu:'KI', nh:'농',
+    kb:'국', shinhan:'신', woori:'우', hana:'하', kakaobank:'카',
+    hsbc:'H', bank:'₩', crypto:'₿', stock:'↗', default:'•'
+  })[k] || '•';
 }
 
 function platformCategory(sec){
   const label=String(sec?.label||'').toLowerCase();
   const types=(sec?.types||[]).join(' ').toLowerCase();
-  if(['binance','bybit','okx','upbit','bithumb','coinone','gate','bingx','htx'].some(x=>label.includes(x))) return 'exchange';
-  if(['키움','미래','삼성증권','토스증권','ibkr','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
-  if(['은행','bank','hsbc','sc','국민','신한','카카오','토스','우리','하나'].some(x=>label.includes(x.toLowerCase())) || types.includes('은행') || types.includes('현금')) return 'bank';
+  if(['binance','bybit','okx','upbit','bithumb','빗썸','coinone','코인원','gate','bingx','htx'].some(x=>label.includes(x))) return 'exchange';
+  if(['키움','미래','삼성증권','토스증권','한국투자','한투','nh투자','ibkr','증권','securities','broker'].some(x=>label.includes(x.toLowerCase()))) return 'broker';
+  if(['은행','bank','hsbc','sc','국민','신한','카카오','토스','우리','하나','농협'].some(x=>label.includes(x.toLowerCase())) || types.includes('은행') || types.includes('현금')) return 'bank';
   if(types.includes('보험')) return 'insurance';
   return 'other';
 }
@@ -1790,7 +1807,7 @@ function bindForms(){
   debtForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(debtForm)); f.currency=(f.currency||'KRW').toUpperCase(); upsert('debts', f); render(); };
   insuranceForm.onsubmit=e=>{ e.preventDefault(); const f=Object.fromEntries(new FormData(insuranceForm)); f.includeRefund=insuranceForm.includeRefund.checked; upsert('insurance', f); render(); };
 }
-function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-9-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
+function backup(){ const blob=new Blob([JSON.stringify({...state,version:APP_VERSION,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`asset-manager-v6-16-10-backup.json`; a.click(); URL.revokeObjectURL(a.href); }
 function restore(file){ const r=new FileReader(); r.onload=()=>{ try{ createLocalVersionBackup('복원 전 자동백업'); state=normalizeState(JSON.parse(r.result),'restore'); createLocalVersionBackup('파일 복원 완료'); render(); log('복원 완료'); }catch(e){ log('복원 실패: JSON 파일을 확인하세요.'); } }; r.readAsText(file); }
 function log(msg){ $('logBox').textContent=`[${new Date().toLocaleString()}] ${msg}`; }
 function takeSnapshot(){ const t=totals(); state.snapshots.push({id:uid(),date:new Date().toISOString(),...t}); autoBackup('스냅샷 저장'); render(); log('스냅샷 저장 완료'); }
