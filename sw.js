@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asset-manager-v6-18-3-stable-candidate';
+const CACHE_NAME = 'asset-manager-v6-18-4-account-layer';
 const ASSETS = ['./','./index.html','./app.js','./styles.css','./manifest.json','./sw.js'];
 
 self.addEventListener('install', event => {

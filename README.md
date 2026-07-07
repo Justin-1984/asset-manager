@@ -1,25 +1,23 @@
-# AssetManager PWA v6.18.3 Stable Candidate
+# AssetManager PWA v6.18.4 Account Layer
 
-기준: v6.18.2 View State Consolidation
+기준: v6.18.3 Stable Candidate
 
 ## 변경 사항
-- 자산 보기 상태(보기 모드/검색어/보기 요약 버킷)를 `setAssetViewFilter()` 단일 함수로 통합, 6곳의 분산된 직접 대입을 모두 교체
-- Platform Center 검색 상태도 `setPlatformSearch()`로 통합
-- **버그 수정**: 홈 화면에서 기관을 클릭하거나 Platform Center에서 "열기"를 눌러 자산 탭으로 이동할 때, 이전에 설정된 "자산 보기 요약" 버킷 필터(예: 현금/은행)가 지워지지 않아 일부 자산이 목록에서 누락되어 보이던 문제 수정
+- 기관과 계좌를 분리했습니다.
+  - 기관: 미래에셋증권, 바이낸스, 국민은행, HSBC 등
+  - 계좌/지갑: 일반계좌, ISA, 연금저축, IRP, Spot, Earn, 외화통장 등
+- 자산 추가/수정 화면에 `계좌 / 지갑 구분` 입력을 추가했습니다.
+- 자산 카드에는 `기관 · 계좌` 형식으로 표시합니다.
+- Platform Center는 기존처럼 기관 기준으로 묶고, 내부 자산/보유내역에서 계좌를 구분합니다.
+- 자산 검색/플랫폼 검색에서 계좌명도 검색됩니다.
 
 ## 데이터 저장 구조 영향
-없음 — `state.settings`의 필드명/구조는 그대로이며, 값을 쓰는 경로만 함수로 모았습니다. localStorage 키/스키마 변경 없음.
+- 기존 데이터는 유지됩니다.
+- 새 필드 `accountName`이 추가됩니다.
+- 계좌명이 없는 기존 자산은 화면에서 자동으로 `기본계좌`처럼 처리됩니다.
+- localStorage 키는 그대로 `assetManagerPWA_v6`를 사용합니다.
 
-## 모바일/PC 영향
-없음 — 로직만 변경, DOM/CSS 변경 없음.
-
-## 확인했지만 이번엔 손대지 않은 항목
-- 다크모드 선택자 3중 구조(html.dark / body.dark / [data-theme="dark"])는 미해결 — 별도 작업으로 분리 권장
-
-
-## v6.18.3 Stable Candidate
-- Claude v6.18.2 View State Consolidation을 기준으로 안정화했습니다.
-- 평균 매입단가 기반 투자원금 계산 흐름을 유지했습니다.
-- 투자 손익/수익률 계산을 투자자산 기준으로 정리했습니다.
-- 자산 요약/검색/보기 상태 초기화 흐름을 재점검했습니다.
-- 기관 목록 중복 항목을 정리했습니다.
+## 확인
+- JS 문법 검사 통과
+- Service Worker 캐시명 v6.18.4 반영
+- 백업 파일명은 APP_VERSION 기반 자동 생성 유지
