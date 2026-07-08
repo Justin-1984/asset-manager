@@ -736,3 +736,20 @@ body.dark .report-return-row,body[data-theme="dark"] .report-return-row,body.dar
 .asset-skin-default .asset-avatar,.asset-view-section-default .section-summary-left i,.platform-skin-default .platform-title i,.home-platform-row.platform-skin-default i{background:#475569;color:#fff}
 
 .institution-field{grid-column:span 2}.institution-field #institutionSearchInput{margin-bottom:6px}.institution-field #exchangeSelect{margin-bottom:6px}.institution-field small{display:block;margin-top:4px;color:#64748b;font-size:12px;font-weight:700}@media(max-width:640px){.institution-field{grid-column:1/-1}}
+
+/* v6.19 Financial Planner */
+.planner-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.planner-toolbar{margin:14px 0}
+.planner-list{display:grid;gap:10px}
+.planner-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px}
+.planner-row.done{opacity:.62}
+.planner-row.done .planner-title strong{text-decoration:line-through}
+.planner-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.planner-title em{font-style:normal;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 8px;background:var(--soft)}
+.planner-row p{margin:6px 0 3px;color:var(--muted);font-size:13px}
+.planner-row small{color:var(--muted)}
+.planner-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.planner-actions b{min-width:110px;text-align:right}
+.planner-actions button{padding:7px 9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+[data-custom-planner].hidden{display:none!important}
+@media (max-width:760px){.planner-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.planner-row{display:block}.planner-actions{justify-content:flex-start;margin-top:10px}.planner-actions b{text-align:left;min-width:auto;width:100%}}

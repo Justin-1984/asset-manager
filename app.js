@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.18.4-account-layer';
+const APP_VERSION = 'v6.19.0-financial-planner-beta';
 
 function displayVersion(){
   const m = String(APP_VERSION || '').match(/^v\d+\.\d+\.\d+/);
@@ -11,7 +11,7 @@ const PRICE_CACHE_KEY = 'assetManagerPWA_v6_priceCache';
 const MARKET_LOG_KEY = 'assetManagerPWA_v6_marketLog';
 const LEGACY_KEYS = ['asset-manager-v4-5-1','asset-manager-v4-5','asset-manager-v4-4','asset-manager-v4','asset-manager-v3-9','assetManagerPWA_v5_4','assetManagerPWA_v54','assetManager_v5_4','assetManagerPWA_v5','assetManagerPWA','assetManager','asset_manager_data'];
 const MARKET_REFRESH_MINUTES = 15;
-const tabs = [['dashboard','🏠 Home'],['assets','💼 Assets'],['platforms','🏦 Platforms'],['transactions','🧾 Transactions'],['analysis','📊 Reports'],['calculator','🧮 Tools'],['settings','⚙ Settings'],['debts','부채'],['insurance','보험']];
+const tabs = [['dashboard','🏠 Home'],['assets','💼 Assets'],['platforms','🏦 Platforms'],['transactions','🧾 Transactions'],['planner','📅 재무 일정'],['analysis','📊 Reports'],['calculator','🧮 Tools'],['settings','⚙ Settings'],['debts','부채'],['insurance','보험']];
 const fxDefaults = { KRW:1, USD:1380, USDT:1380, HKD:195, AUD:1080 };
 let state = loadState();
 (function applyLegacyPrefsOnce(){ const p=getLegacyPrefs(); if(p){ if(!state.settings) state.settings={}; if(!state.settings.marketWorkerUrl && p.marketWorkerUrl) state.settings.marketWorkerUrl=p.marketWorkerUrl; if(goodRate("USD",p.usdRate)) state.fx.USD=Number(p.usdRate); if(goodRate("USDT",p.usdtRate)) state.fx.USDT=Number(p.usdtRate); if(goodRate("HKD",p.hkdRate)) state.fx.HKD=Number(p.hkdRate); if(goodRate("AUD",p.audRate)) state.fx.AUD=Number(p.audRate); } })();
@@ -54,7 +54,7 @@ function setPlatformSearch(value){
   safeSettings().platformSearch=value;
   save();
 }
-function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.debts&&s.debts.length)||(s.insurance&&s.insurance.length)||(s.transactions&&s.transactions.length)||(s.snapshots&&s.snapshots.length))); }
+function hasMeaningfulData(s){ return !!(s && ((s.assets&&s.assets.length)||(s.debts&&s.debts.length)||(s.insurance&&s.insurance.length)||(s.transactions&&s.transactions.length)||(s.snapshots&&s.snapshots.length)||(s.financialPlanner&&s.financialPlanner.length))); }
 function getPriceCache(){ try{return JSON.parse(localStorage.getItem(PRICE_CACHE_KEY)||'{}');}catch(e){return {};} }
 function setPriceCache(cache){ try{localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache||{}));}catch(e){} }
 function marketLog(entry){ try{ const list=JSON.parse(localStorage.getItem(MARKET_LOG_KEY)||'[]'); list.unshift({time:new Date().toISOString(), ...entry}); localStorage.setItem(MARKET_LOG_KEY, JSON.stringify(list.slice(0,80))); }catch(e){} }
@@ -161,7 +161,7 @@ function downloadBackupHistory(){
 }
 function integrityCheck(){
   const problems=[];
-  ['assets','debts','insurance','transactions','snapshots'].forEach(k=>{ if(!Array.isArray(state[k])) problems.push(`${k} 배열 오류`); });
+  ['assets','debts','insurance','transactions','snapshots','financialPlanner'].forEach(k=>{ if(!Array.isArray(state[k])) problems.push(`${k} 배열 오류`); });
   if(!state.fx || typeof state.fx!=='object') problems.push('환율 정보 오류');
   state.assets.forEach((a,i)=>{ if(!a.id) problems.push(`자산 ${i+1} ID 없음`); if(!a.name) problems.push(`자산 ${i+1} 이름 없음`); });
   state.debts.forEach((d,i)=>{ if(!d.id) problems.push(`부채 ${i+1} ID 없음`); });
@@ -185,13 +185,14 @@ function normalizeState(raw, source='unknown'){
     fx: {...fxDefaults, ...(old.fx||old.exchangeRates||{})},
     assets: normalizeArray(old.assets || old.assetList).map(a=>({id:a.id||uid(), name:a.name||a.title||'이름없음', symbol:a.symbol||a.ticker||a.code||'', type:a.type||a.category||'자산', country:a.country||a.institution||a.platform||a.exchange||a.account||'', account:a.account||'', accountName:a.accountName||a.subAccount||a.wallet||a.accountType||'', currency:(a.currency||'KRW').toUpperCase(), amount:a.amount??a.quantity??a.qty??1, price:a.price??a.currentPrice??0, cost:a.cost??a.costPrice??a.principal??0, costCurrency:(a.costCurrency||a.costCur||a.purchaseCurrency||'KRW').toUpperCase(), value:a.value, krwValue:a.krwValue, priceSource:a.priceSource||'', priceUpdatedAt:a.priceUpdatedAt||''})),
     transactions: normalizeArray(old.transactions || old.trades || old.transactionList).map(t=>({id:t.id||uid(), date:t.date||new Date().toISOString().slice(0,10), type:t.type||'매수', assetId:t.assetId||'', assetName:t.assetName||t.name||'', symbol:t.symbol||'', assetType:t.assetType||'', currency:(t.currency||'KRW').toUpperCase(), qty:t.qty??t.amount??0, price:t.price??0, fee:t.fee??0, memo:t.memo||'', totalKrw:t.totalKrw||0, createdAt:t.createdAt||new Date().toISOString()})),
+    financialPlanner: normalizeArray(old.financialPlanner || old.planner || old.financialTasks).map(normalizePlannerItem),
     debts: normalizeArray(old.debts || old.debtList).map(d=>({id:d.id||uid(), name:d.name||d.title||'부채', type:d.type||'일반 부채', currency:(d.currency||'KRW').toUpperCase(), balance:d.balance??d.amount??d.value??0, rate:d.rate||0, monthly:d.monthly||0, value:d.value, krwValue:d.krwValue})),
     insurance: normalizeArray(old.insurance || old.insurances || old.policies).map(i=>({id:i.id||uid(), company:i.company||i.insurer||'', product:i.product||i.name||'', type:i.type||'', premium:i.premium||0, payday:i.payday||'', refund:i.refund||0, includeRefund:!!i.includeRefund, memo:i.memo||''})),
     snapshots: normalizeArray(old.snapshots),
     settings: { hiddenTabs: [], theme: 'light', finnhubToken: old.finnhubToken || '', marketWorkerUrl: old.marketWorkerUrl || old.settings?.marketWorkerUrl || '', favoriteAssetIds: [], platformSearch: '', ...(old.settings||{}) }
   };
 }
-function looksLikeAssetData(obj){ return obj && typeof obj==='object' && (Array.isArray(obj.assets)||Array.isArray(obj.assetList)||Array.isArray(obj.debts)||Array.isArray(obj.insurance)||Array.isArray(obj.insurances)); }
+function looksLikeAssetData(obj){ return obj && typeof obj==='object' && (Array.isArray(obj.assets)||Array.isArray(obj.assetList)||Array.isArray(obj.debts)||Array.isArray(obj.insurance)||Array.isArray(obj.insurances)||Array.isArray(obj.financialPlanner)||Array.isArray(obj.financialTasks)); }
 function findLegacyState(){
   for(const key of [STORAGE_KEY, ...LEGACY_KEYS]){
     const raw = localStorage.getItem(key);
@@ -1035,6 +1036,7 @@ function renderDashboard(){
   const totalAssets = Math.max(1, state.assets.reduce((s,x)=>s+assetValue(x),0));
   const platformCount = platformSummaries().length;
   const assetCount = state.assets.length;
+  const todayPlans = plannerOccurrences('today').filter(x=>!isPlannerDone(x.item, x.date)).slice(0,3);
   const topPlatform = platformSummaries()[0];
   const todayHint = a.recommendations[0] || (topPlatform ? `${topPlatform.label} 비중 ${((topPlatform.value/totalAssets)*100).toFixed(1)}% 확인` : '자산을 등록하면 오늘의 체크가 표시됩니다.');
   const ds=$('dashMarketStatus'); if(ds) ds.textContent = marketStatusText();
@@ -1052,7 +1054,7 @@ function renderDashboard(){
       ['오늘 손익', p.profit, p.cost>0 ? `${p.rate.toFixed(1)}%` : '계산 대기'],
       ['현금/은행', cashValue, `${a.cashPct.toFixed(1)}%`],
       ['1위 기관', topValue, topPlatform ? topPlatform.label : '대기'],
-      ['오늘 체크', 0, todayHint]
+      ['재무 일정', 0, todayPlans.length ? todayPlans.map(x=>x.item.title).join(' · ') : '오늘 예정 없음']
     ].map(([k,v,sub])=>`<article class="focus-card"><span>${escapeHtml(k)}</span><b>${k==='오늘 체크'?escapeHtml(sub):money(v)}</b><small>${k==='오늘 체크'?'':escapeHtml(sub)}</small></article>`).join('');
   }
   const platformBox=$('homePlatformPreview'); if(platformBox) platformBox.innerHTML=platformPreviewHtml(4);
@@ -1067,7 +1069,7 @@ function renderDashboard(){
   $('dashChanges').innerHTML = [
     ['이번 주', week], ['이번 달', month], ['올해', year]
   ].map(([label,val])=>`<p><b>${label}</b><span>${val===null?'스냅샷 없음':money(val)}</span></p>`).join('');
-  $('dashChecks').innerHTML = a.recommendations.slice(0,4).map(r=>`<p>• ${escapeHtml(r)}</p>`).join('');
+  $('dashChecks').innerHTML = dashboardPlannerHtml() || a.recommendations.slice(0,4).map(r=>`<p>• ${escapeHtml(r)}</p>`).join('');
   bindDashboardHomeActions();
 }
 
@@ -1457,8 +1459,9 @@ function showTab(id){
   if(id==='analysis') renderAnalysis();
   if(id==='dashboard') renderDashboard();
   if(id==='platforms') { renderPlatformCenter(); bindPlatformCenterControls(); }
+  if(id==='planner') renderPlanner();
 }
-function render(){ applyTheme(); renderSummary(); renderLists(); renderPlatformCenter(); renderAnalysis(); renderDashboard(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderTransactions(); renderAverageAssetOptions(); save(); }
+function render(){ applyTheme(); renderSummary(); renderLists(); renderPlatformCenter(); renderAnalysis(); renderDashboard(); renderPlanner(); renderBackupHistory(); updateBackupStatus(); renderMarketSettings(); renderTransactions(); renderAverageAssetOptions(); save(); }
 function renderSummary(){
   const t=totals(); const a=analyzePortfolio();
   $('versionBadge').textContent=displayVersion(); $('totalAssets').textContent=money(t.assets); $('totalDebts').textContent=money(t.debts); $('netWorth').textContent=money(t.net); $('riskLevel').textContent=a.risk.label.trim();
@@ -1967,6 +1970,152 @@ async function copyAverageResult(){
   catch(e){ log('복사 실패. 결과를 직접 선택해서 복사하세요.'); }
 }
 
+
+// Financial Planner v6.19.0
+let editingPlannerId = null;
+function normalizePlannerItem(x={}){
+  const today = new Date().toISOString().slice(0,10);
+  return {
+    id: x.id || uid(),
+    title: x.title || x.name || '재무 일정',
+    type: x.type || '출금',
+    amount: Number(x.amount || 0),
+    institution: x.institution || x.country || '',
+    accountName: x.accountName || x.account || '',
+    startDate: x.startDate || x.date || today,
+    endDate: x.endDate || '',
+    repeat: x.repeat || 'none',
+    customInterval: Number(x.customInterval || 1),
+    customUnit: x.customUnit || 'month',
+    customWeekdays: Array.isArray(x.customWeekdays) ? x.customWeekdays.map(Number) : [],
+    monthMode: x.monthMode || 'date',
+    monthDay: Number(x.monthDay || new Date(x.startDate || today).getDate() || 1),
+    maxOccurrences: Number(x.maxOccurrences || 0),
+    status: x.status || '예정',
+    memo: x.memo || '',
+    completed: x.completed || {},
+    skipped: x.skipped || {},
+    createdAt: x.createdAt || new Date().toISOString(),
+    updatedAt: x.updatedAt || ''
+  };
+}
+function plannerItems(){ if(!Array.isArray(state.financialPlanner)) state.financialPlanner=[]; state.financialPlanner=state.financialPlanner.map(normalizePlannerItem); return state.financialPlanner; }
+function parseDateLocal(s){ const d=new Date(String(s||'').slice(0,10)+'T00:00:00'); return Number.isNaN(d.getTime()) ? new Date(new Date().toISOString().slice(0,10)+'T00:00:00') : d; }
+function ymd(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function addMonths(d,n){ const x=new Date(d); const day=x.getDate(); x.setMonth(x.getMonth()+n); if(x.getDate()<day) x.setDate(0); return x; }
+function addYears(d,n){ const x=new Date(d); x.setFullYear(x.getFullYear()+n); return x; }
+function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); return x; }
+function periodRange(filter){
+  const today=parseDateLocal(new Date().toISOString().slice(0,10));
+  if(filter==='today') return [today, today];
+  if(filter==='week') return [startOfWeek(today), addDays(startOfWeek(today),6)];
+  if(filter==='month') return [new Date(today.getFullYear(),today.getMonth(),1), new Date(today.getFullYear(),today.getMonth()+1,0)];
+  return [addDays(today,-30), addDays(today,365)];
+}
+function plannerRepeatStep(item, cur){
+  const r=item.repeat;
+  if(r==='daily') return addDays(cur,1);
+  if(r==='weekly') return addDays(cur,7);
+  if(r==='biweekly') return addDays(cur,14);
+  if(r==='monthly') return addMonths(cur,1);
+  if(r==='yearly') return addYears(cur,1);
+  if(r==='custom'){
+    const n=Math.max(1, Number(item.customInterval||1));
+    if(item.customUnit==='day') return addDays(cur,n);
+    if(item.customUnit==='week') return addDays(cur,7*n);
+    if(item.customUnit==='year') return addYears(cur,n);
+    return addMonths(cur,n);
+  }
+  return null;
+}
+function plannerOccurrences(filter='month'){
+  const [from,to]=periodRange(filter);
+  const out=[];
+  plannerItems().forEach(item=>{
+    const start=parseDateLocal(item.startDate);
+    const end=item.endDate ? parseDateLocal(item.endDate) : to;
+    let cur=new Date(start);
+    let guard=0;
+    const max=item.maxOccurrences>0 ? item.maxOccurrences : 500;
+    while(cur<=to && cur<=end && guard<max){
+      const key=ymd(cur);
+      if(cur>=from && !item.skipped?.[key]) out.push({item, date:key, d:new Date(cur)});
+      const next=plannerRepeatStep(item, cur);
+      if(!next) break;
+      cur=next; guard++;
+    }
+  });
+  return out.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function isPlannerDone(item,date){ return !!item.completed?.[date] || item.status==='완료'; }
+function plannerTypeIcon(type){ return {'출금':'💸','입금':'💵','투자':'📈','배당':'🎁','세금':'🏛','일반':'📝'}[type] || '📝'; }
+function plannerRepeatLabel(item){
+  const map={none:'반복 없음',daily:'매일',weekly:'매주',biweekly:'격주',monthly:'매월',yearly:'매년'};
+  if(item.repeat!=='custom') return map[item.repeat] || '반복 없음';
+  const unit={day:'일',week:'주',month:'개월',year:'년'}[item.customUnit]||'개월';
+  return `매 ${item.customInterval||1}${unit}마다`;
+}
+function ddayLabel(date){ const t=parseDateLocal(new Date().toISOString().slice(0,10)); const d=parseDateLocal(date); const diff=Math.round((d-t)/86400000); return diff===0?'D-Day':diff>0?`D-${diff}`:`D+${Math.abs(diff)}`; }
+function plannerSummaryHtml(){
+  const occ=plannerOccurrences('month');
+  const income=occ.filter(x=>['입금','배당'].includes(x.item.type)).reduce((s,x)=>s+Number(x.item.amount||0),0);
+  const out=occ.filter(x=>['출금','투자','세금'].includes(x.item.type)).reduce((s,x)=>s+Number(x.item.amount||0),0);
+  const today=plannerOccurrences('today').filter(x=>!isPlannerDone(x.item,x.date)).length;
+  return `<div class="planner-summary-grid"><article class="card stat"><span>오늘 일정</span><strong>${today}건</strong></article><article class="card stat"><span>이번 달 입금/배당</span><strong>${money(income)}</strong></article><article class="card stat"><span>이번 달 출금/투자/세금</span><strong>${money(out)}</strong></article><article class="card stat"><span>예상 순흐름</span><strong>${money(income-out)}</strong></article></div>`;
+}
+function plannerRowHtml(o){
+  const item=o.item, done=isPlannerDone(item,o.date);
+  return `<article class="planner-row card ${done?'done':''}"><div><div class="planner-title"><span>${plannerTypeIcon(item.type)}</span><strong>${escapeHtml(item.title)}</strong><em>${ddayLabel(o.date)}</em></div><p>${escapeHtml(o.date)} · ${escapeHtml(item.type)} · ${escapeHtml(plannerRepeatLabel(item))}</p><small>${escapeHtml([item.institution,item.accountName,item.memo].filter(Boolean).join(' · '))}</small></div><div class="planner-actions"><b>${item.amount?money(item.amount):'-'}</b><button type="button" data-planner-done="${escapeHtml(item.id)}" data-date="${escapeHtml(o.date)}">${done?'완료취소':'완료'}</button><button type="button" data-planner-skip="${escapeHtml(item.id)}" data-date="${escapeHtml(o.date)}">건너뛰기</button><button type="button" data-planner-edit="${escapeHtml(item.id)}">수정</button><button type="button" data-planner-delete="${escapeHtml(item.id)}">삭제</button></div></article>`;
+}
+function renderPlanner(){
+  const box=$('plannerList'); if(!box) return;
+  const filter=$('plannerFilter')?.value || 'month';
+  $('plannerSummary').innerHTML=plannerSummaryHtml();
+  const occ=plannerOccurrences(filter);
+  box.innerHTML=occ.length ? occ.map(plannerRowHtml).join('') : '<div class="empty">등록된 재무 일정이 없습니다.</div>';
+  bindPlannerActions();
+  updatePlannerCustomFields();
+}
+function dashboardPlannerHtml(){
+  const rows=plannerOccurrences('today').slice(0,4);
+  if(!rows.length) return '';
+  return rows.map(o=>`<p><b>${plannerTypeIcon(o.item.type)} ${escapeHtml(o.item.title)}</b><span>${isPlannerDone(o.item,o.date)?'완료':ddayLabel(o.date)}</span></p>`).join('');
+}
+function resetPlannerForm(){
+  const form=$('plannerForm'); if(!form) return;
+  form.reset(); editingPlannerId=null;
+  const today=new Date().toISOString().slice(0,10); form.elements.startDate.value=today; form.elements.repeat.value='none'; form.elements.customInterval.value='1'; form.elements.customUnit.value='month'; form.elements.monthDay.value=String(new Date().getDate());
+  $('plannerSaveBtn').textContent='일정 저장'; updatePlannerCustomFields();
+}
+function updatePlannerCustomFields(){
+  const form=$('plannerForm'); if(!form) return;
+  const isCustom=form.elements.repeat.value==='custom';
+  document.querySelectorAll('[data-custom-planner]').forEach(el=>el.classList.toggle('hidden', !isCustom));
+}
+function savePlanner(e){
+  e.preventDefault(); const form=e.currentTarget; const f=Object.fromEntries(new FormData(form));
+  const item=normalizePlannerItem({...f, id:editingPlannerId||uid(), completed: editingPlannerId ? (plannerItems().find(x=>x.id===editingPlannerId)?.completed||{}) : {}, skipped: editingPlannerId ? (plannerItems().find(x=>x.id===editingPlannerId)?.skipped||{}) : {}, updatedAt:new Date().toISOString()});
+  const list=plannerItems();
+  if(editingPlannerId) state.financialPlanner=list.map(x=>x.id===editingPlannerId?item:x); else state.financialPlanner.unshift(item);
+  autoBackup('재무 일정 저장'); resetPlannerForm(); render(); log('재무 일정 저장 완료');
+}
+function bindPlannerActions(){
+  document.querySelectorAll('[data-planner-done]').forEach(btn=>btn.onclick=()=>{ const item=plannerItems().find(x=>x.id===btn.dataset.plannerDone); if(!item) return; item.completed=item.completed||{}; if(item.completed[btn.dataset.date]) delete item.completed[btn.dataset.date]; else item.completed[btn.dataset.date]=new Date().toISOString(); autoBackup('재무 일정 완료 변경'); render(); });
+  document.querySelectorAll('[data-planner-skip]').forEach(btn=>btn.onclick=()=>{ const item=plannerItems().find(x=>x.id===btn.dataset.plannerSkip); if(!item) return; item.skipped=item.skipped||{}; item.skipped[btn.dataset.date]=new Date().toISOString(); autoBackup('재무 일정 건너뛰기'); render(); });
+  document.querySelectorAll('[data-planner-edit]').forEach(btn=>btn.onclick=()=>{ const item=plannerItems().find(x=>x.id===btn.dataset.plannerEdit); if(!item) return; editingPlannerId=item.id; const form=$('plannerForm'); Object.keys(item).forEach(k=>{ if(form.elements[k]) form.elements[k].value=item[k]??''; }); $('plannerSaveBtn').textContent='일정 수정 저장'; updatePlannerCustomFields(); form.classList.remove('hidden'); showTab('planner'); });
+  document.querySelectorAll('[data-planner-delete]').forEach(btn=>btn.onclick=()=>{ if(!confirm('이 재무 일정을 삭제할까요?')) return; state.financialPlanner=plannerItems().filter(x=>x.id!==btn.dataset.plannerDelete); autoBackup('재무 일정 삭제'); render(); });
+}
+function bindPlannerForm(){
+  const form=$('plannerForm'); if(!form) return;
+  form.addEventListener('submit', savePlanner);
+  $('plannerAddBtn')?.addEventListener('click', ()=>{ form.classList.toggle('hidden'); if(!form.classList.contains('hidden')) resetPlannerForm(); });
+  $('plannerCancelBtn')?.addEventListener('click', ()=>{ form.classList.add('hidden'); resetPlannerForm(); });
+  $('plannerFilter')?.addEventListener('change', renderPlanner);
+  form.elements.repeat?.addEventListener('change', updatePlannerCustomFields);
+  resetPlannerForm();
+}
+
 function applyTheme(){
   if(!state.settings) state.settings = {};
   const theme = state.settings.theme === 'dark' ? 'dark' : 'light';
@@ -2143,6 +2292,7 @@ window.addEventListener('load',()=>{
   initTabs();
   bindForms();
   bindPlatformCenterControls();
+  bindPlannerForm();
   applyTheme();
   render();
   log(`로드 완료 · 데이터 출처: ${state.migratedFrom || 'unknown'}`);
@@ -2191,6 +2341,7 @@ window.addEventListener('load',()=>{
   ['avgCurrentQty','avgCurrentPrice','avgAddQty','avgAddPrice','avgFee','avgFxRate'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', calculateAverageBuy); });
   const avgCur=$('avgCurrency'); if(avgCur) avgCur.addEventListener('change', ()=>{ syncAvgFxRate(); calculateAverageBuy(); });
   syncAvgFxRate();
+  renderPlanner();
   startAutoMarketRefresh();
 
   document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>resetEdit(btn.dataset.cancel)));

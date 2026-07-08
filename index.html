@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>자산 매니저 v6.18.4</title>
+  <title>자산 매니저 v6.19.0</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.18.4</span></h1></div>
+    <div><p class="eyebrow">PWA Asset Manager</p><h1>자산 매니저 <span id="versionBadge">v6.19.0</span></h1></div>
     <button id="snapshotBtn" class="primary small">스냅샷</button>
   </header>
   <main>
@@ -164,6 +164,33 @@
         </form>
       </article>
       <div id="transactionList" class="list"></div>
+    </section>
+
+
+    <section id="planner" class="panel">
+      <div class="section-head"><div><p class="eyebrow">Financial Planner</p><h2>재무 일정</h2></div><button id="plannerAddBtn" class="primary" type="button">일정 추가</button></div>
+      <div id="plannerSummary"></div>
+      <form id="plannerForm" class="form hidden">
+        <label class="field"><span>제목</span><input name="title" placeholder="예: 홍콩 모기지, ISA 입금, 배당 확인" required /></label>
+        <label class="field"><span>유형</span><select name="type"><option>출금</option><option>입금</option><option>투자</option><option>배당</option><option>세금</option><option>일반</option></select></label>
+        <label class="field"><span>금액(선택)</span><input name="amount" type="number" step="0.01" placeholder="예: 18500" /></label>
+        <label class="field"><span>기관</span><input name="institution" placeholder="예: HSBC, 미래에셋증권" /></label>
+        <label class="field"><span>계좌</span><input name="accountName" placeholder="예: 모기지, ISA, 연금저축" /></label>
+        <label class="field"><span>시작일</span><input name="startDate" type="date" required /></label>
+        <label class="field"><span>종료일(선택)</span><input name="endDate" type="date" /></label>
+        <label class="field"><span>반복</span><select name="repeat"><option value="none">반복 없음</option><option value="daily">매일</option><option value="weekly">매주</option><option value="biweekly">격주</option><option value="monthly">매월</option><option value="yearly">매년</option><option value="custom">커스텀</option></select></label>
+        <label class="field" data-custom-planner><span>커스텀 간격</span><input name="customInterval" type="number" min="1" step="1" value="1" /></label>
+        <label class="field" data-custom-planner><span>커스텀 단위</span><select name="customUnit"><option value="day">일</option><option value="week">주</option><option value="month">개월</option><option value="year">년</option></select></label>
+        <label class="field" data-custom-planner><span>월 반복 기준일</span><input name="monthDay" type="number" min="1" max="31" placeholder="예: 15" /></label>
+        <label class="field"><span>최대 반복 횟수(선택)</span><input name="maxOccurrences" type="number" min="0" step="1" placeholder="0이면 자동 제한" /></label>
+        <label class="field wide"><span>메모</span><textarea name="memo" placeholder="처리 방법, 참고사항"></textarea></label>
+        <button id="plannerSaveBtn" class="primary" type="submit">일정 저장</button>
+        <button id="plannerCancelBtn" class="secondary" type="button">취소</button>
+      </form>
+      <div class="asset-view-toolbar planner-toolbar">
+        <label class="asset-search"><span>보기</span><select id="plannerFilter"><option value="today">오늘</option><option value="week">이번 주</option><option value="month" selected>이번 달</option><option value="all">전체</option></select></label>
+      </div>
+      <div id="plannerList" class="planner-list"></div>
     </section>
 
 

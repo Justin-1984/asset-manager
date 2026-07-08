@@ -1,4 +1,15 @@
-# AssetManager PWA v6.18.4 Account Layer
+# AssetManager PWA v6.19.0 Financial Planner Beta
+
+자산매니저 내부 전용 재무 일정 기능이 추가된 버전입니다. 카드매니저 연동 없이 독립 모듈로 동작합니다.
+
+## 주요 추가 기능
+- 재무 일정 등록/수정/삭제
+- 완료 및 건너뛰기 처리
+- 반복 없음/매일/매주/격주/매월/매년/커스텀 반복
+- 오늘/이번 주/이번 달/전체 보기
+- 이번 달 예상 입금·출금·순흐름 요약
+
+# AssetManager PWA v6.19.0 Account Layer
 
 기준: v6.18.3 Stable Candidate
 
@@ -19,5 +30,5 @@
 
 ## 확인
 - JS 문법 검사 통과
-- Service Worker 캐시명 v6.18.4 반영
+- Service Worker 캐시명 v6.19.0 반영
 - 백업 파일명은 APP_VERSION 기반 자동 생성 유지
